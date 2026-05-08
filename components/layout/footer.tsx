@@ -144,19 +144,19 @@ export function Footer() {
               <li className="flex items-center gap-2">
                 <Phone className="h-5 w-5 shrink-0" />
                 <a
-                  href="tel:+201000000000"
+                  href="tel:+201004761171"
                   className="text-[#FFDCC2]/80 hover:text-[#FFDCC2] transition-colors"
                 >
-                  +20 100 000 0000
+                  +201004761171
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-5 w-5 shrink-0" />
                 <a
-                  href="mailto:hello@linecoffee.com.eg"
+                  href="mailto:m.sayed@abu-elhassan.com"
                   className="text-[#FFDCC2]/80 hover:text-[#FFDCC2] transition-colors"
                 >
-                  hello@linecoffee.com.eg
+                  m.sayed@abu-elhassan.com
                 </a>
               </li>
             </ul>
