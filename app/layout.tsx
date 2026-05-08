@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Playfair_Display, Noto_Naskh_Arabic } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import { Suspense } from 'react'
 import { LanguageProvider } from '@/lib/context/language'
 import { AuthProvider } from '@/lib/context/auth'
 import { Header } from '@/components/layout/header'
@@ -84,7 +85,9 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <ScrollProgress />
-            <PageLoader />
+            <Suspense fallback={null}>
+              <PageLoader />
+            </Suspense>
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
