@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/config/site'
 
 const DEFAULT_ANNOUNCEMENT = {
-  text: 'مرحباً بكم في لاين كوفي — توصيل سريع لجميع أنحاء مصر 🚀',
+  text: '🚀 توصيل مجاني على الطلبات فوق 500 ج',
   active: true,
 }
 

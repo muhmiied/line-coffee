@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
@@ -52,23 +51,8 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center">
-            <div className="relative h-16 w-48">
-              <Image
-                src="/brand/logo-dark.svg"
-                alt="Line Coffee"
-                fill
-                className="object-contain"
-                onError={(e) => {
-                  const el = e.currentTarget as HTMLImageElement
-                  el.src = '/brand/logo-white.svg'
-                }}
-              />
-            </div>
-          </Link>
-          <h1 className="font-serif text-2xl font-bold mt-6">
+          <h1 className="font-serif text-2xl font-bold">
             {t('Welcome Back', 'مرحباً بعودتك')}
           </h1>
           <p className="text-muted-foreground mt-2">

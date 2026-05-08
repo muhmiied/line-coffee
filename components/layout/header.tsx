@@ -127,8 +127,7 @@ export function Header() {
     <>
       <header
         className={cn(
-          'fixed left-0 right-0 z-50 transition-all duration-[400ms] ease-in-out',
-          'top-[var(--ann-h,0px)]',
+          'w-full transition-all duration-[400ms] ease-in-out',
           isHomePage
             ? isScrolled
               ? 'backdrop-blur-[16px] bg-[rgba(82,37,0,0.9)]'
