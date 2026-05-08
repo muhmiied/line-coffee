@@ -106,23 +106,39 @@ export function ContactSection() {
             <h3 className="font-serif text-xl font-semibold mb-6">
               {t('Send Us a Message', 'أرسل لنا رسالة')}
             </h3>
-            <form className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const fd = new FormData(e.currentTarget)
+                const name = fd.get('name') as string
+                const emailVal = fd.get('email') as string
+                const subject = fd.get('subject') as string
+                const message = fd.get('message') as string
+                const text = `رسالة من الموقع:\nالاسم: ${name}\nالإيميل: ${emailVal}\nالموضوع: ${subject}\nالرسالة: ${message}`
+                window.open(`https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+              }}
+            >
               <div className="grid sm:grid-cols-2 gap-4">
                 <Input
+                  name="name"
                   placeholder={t('Your Name', 'اسمك')}
                   className="bg-secondary/50"
                 />
                 <Input
+                  name="email"
                   type="email"
                   placeholder={t('Your Email', 'بريدك الإلكتروني')}
                   className="bg-secondary/50"
                 />
               </div>
               <Input
+                name="subject"
                 placeholder={t('Subject', 'الموضوع')}
                 className="bg-secondary/50"
               />
               <Textarea
+                name="message"
                 placeholder={t('Your Message', 'رسالتك')}
                 rows={5}
                 className="bg-secondary/50 resize-none"

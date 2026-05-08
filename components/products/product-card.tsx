@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore } from '@/lib/store/wishlist'
 import type { Product, ProductSize } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -21,6 +22,7 @@ interface ProductCardProps {
 export function ProductCard({ product, className }: ProductCardProps) {
   const { t, language } = useLanguage()
   const { addItem } = useCartStore()
+  const wishlistStore = useWishlistStore()
   const [isHovered, setIsHovered] = useState(false)
 
   const name = language === 'ar' ? product.name_ar : product.name_en
@@ -114,10 +116,19 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  toast.info(t('Added to wishlist', 'تمت الإضافة للمفضلة'))
+                  const inWl = wishlistStore.isInWishlist(product.id)
+                  wishlistStore.toggleItem({
+                    productId: product.id,
+                    name_en: product.name_en,
+                    name_ar: product.name_ar,
+                    slug: product.slug,
+                    image: product.images?.[0] || '',
+                    price: lowestPrice,
+                  })
+                  toast.success(inWl ? t('Removed from wishlist', 'تمت الإزالة من المفضلة') : t('Added to wishlist', 'تمت الإضافة للمفضلة'))
                 }}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={cn('h-4 w-4', wishlistStore.isInWishlist(product.id) && 'fill-destructive text-destructive')} />
               </Button>
               <Button
                 size="icon"

@@ -349,7 +349,14 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 size="lg"
                 variant="outline"
                 onClick={() => {
-                  toggleItem(product.id)
+                  toggleItem({
+                    productId: product.id,
+                    name_en: product.name_en,
+                    name_ar: product.name_ar,
+                    slug: product.slug,
+                    image: product.images?.[0] || '',
+                    price: selectedSize?.price || product.sizes?.[0]?.price || 0,
+                  })
                   toast.success(
                     inWishlist
                       ? t('Removed from wishlist', 'تمت الإزالة من المفضلة')

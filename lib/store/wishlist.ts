@@ -3,16 +3,21 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface WishlistItem {
+export interface WishlistItem {
   productId: string
+  name_en: string
+  name_ar: string
+  slug: string
+  image: string
+  price: number
 }
 
 interface WishlistStore {
   items: WishlistItem[]
   isOpen: boolean
-  addItem: (productId: string) => void
+  addItem: (item: WishlistItem) => void
   removeItem: (productId: string) => void
-  toggleItem: (productId: string) => void
+  toggleItem: (item: WishlistItem) => void
   isInWishlist: (productId: string) => boolean
   openWishlist: () => void
   closeWishlist: () => void
@@ -25,11 +30,11 @@ export const useWishlistStore = create<WishlistStore>()(
       items: [],
       isOpen: false,
 
-      addItem: (productId) => {
+      addItem: (item) => {
         set((state) => {
-          const exists = state.items.some((i) => i.productId === productId)
+          const exists = state.items.some((i) => i.productId === item.productId)
           if (exists) return state
-          return { items: [...state.items, { productId }] }
+          return { items: [...state.items, item] }
         })
       },
 
@@ -39,12 +44,12 @@ export const useWishlistStore = create<WishlistStore>()(
         }))
       },
 
-      toggleItem: (productId) => {
-        const exists = get().items.some((i) => i.productId === productId)
+      toggleItem: (item) => {
+        const exists = get().items.some((i) => i.productId === item.productId)
         if (exists) {
-          get().removeItem(productId)
+          get().removeItem(item.productId)
         } else {
-          get().addItem(productId)
+          get().addItem(item)
         }
       },
 
