@@ -72,8 +72,7 @@ export function Header() {
   const { openWishlist } = useWishlistStore()
   const { user, profile, signOut } = useAuth()
   const cartItemCount = isMounted ? getTotalItems() : 0
-  const topStateTextClass = 'text-white'
-  const logoSrc = '/brand/logo-white.svg'
+  const topStateTextClass = '!text-white'
 
   const displayName = isMounted
     ? (profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || null)
@@ -131,12 +130,13 @@ export function Header() {
   }
 
   const isHomePage = pathname === '/'
+  const logoSrc = isHomePage && !isScrolled ? '/brand/logo-white.svg' : '/brand/logo-dark.svg'
 
   return (
     <>
       <header
         className={cn(
-          'w-full transition-all duration-[400ms] ease-in-out',
+          'w-full transition-all duration-[400ms] ease-in-out text-white',
           isHomePage
             ? isScrolled
               ? 'backdrop-blur-[16px] bg-[rgba(82,37,0,0.9)]'
