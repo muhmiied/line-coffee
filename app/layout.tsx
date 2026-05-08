@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 import { LanguageProvider } from '@/lib/context/language'
 import { AuthProvider } from '@/lib/context/auth'
 import { Header } from '@/components/layout/header'
+import { AnnouncementBar } from '@/components/layout/announcement-bar'
 import { Footer } from '@/components/layout/footer'
 import { PageLoader } from '@/components/layout/page-loader'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -95,6 +96,7 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <PageLoader />
             </Suspense>
+            <AnnouncementBar />
             <Header />
             <main className="flex-1 w-full">{children}</main>
             <Footer />

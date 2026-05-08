@@ -2,13 +2,12 @@
 
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
-
-const WHATSAPP_NUMBER = '201141262176'
+import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
 
 export function WhatsAppButton() {
   const handleClick = () => {
     const message = encodeURIComponent('مرحباً، أريد الاستفسار عن منتجاتكم')
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
+    window.open(`https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${message}`, '_blank')
   }
 
   return (

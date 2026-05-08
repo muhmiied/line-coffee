@@ -35,7 +35,8 @@ export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [whatsAppUrl, setWhatsAppUrl] = useState('')
-  
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -58,12 +59,19 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Validate
-    if (!formData.firstName || !formData.lastName || !formData.phone || !formData.address || !formData.city) {
-      toast.error(t('Please fill in all required fields', 'يرجى ملء جميع الحقول المطلوبة'))
+
+    const errors: Record<string, string> = {}
+    if (!formData.firstName.trim()) errors.firstName = 'من فضلك ادخل اسمك الأول'
+    if (!formData.lastName.trim()) errors.lastName = 'من فضلك ادخل اسمك الأخير'
+    if (!formData.phone.trim()) errors.phone = 'من فضلك ادخل رقم تليفونك'
+    if (!formData.address.trim()) errors.address = 'من فضلك ادخل عنوانك'
+    if (!formData.city.trim()) errors.city = 'من فضلك ادخل مدينتك'
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
       return
     }
+    setFieldErrors({})
 
     if (items.length === 0) {
       toast.error(t('Your cart is empty', 'سلتك فارغة'))
@@ -238,8 +246,9 @@ export default function CheckoutPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      required
+                      className={fieldErrors.firstName ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.firstName && <p className="text-destructive text-xs mt-1">{fieldErrors.firstName}</p>}
                   </div>
                   <div>
                     <Label htmlFor="lastName">{t('Last Name', 'الاسم الأخير')} *</Label>
@@ -248,8 +257,9 @@ export default function CheckoutPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      required
+                      className={fieldErrors.lastName ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.lastName && <p className="text-destructive text-xs mt-1">{fieldErrors.lastName}</p>}
                   </div>
                   <div>
                     <Label htmlFor="email">{t('Email', 'البريد الإلكتروني')}</Label>
@@ -269,8 +279,9 @@ export default function CheckoutPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      required
+                      className={fieldErrors.phone ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.phone && <p className="text-destructive text-xs mt-1">{fieldErrors.phone}</p>}
                   </div>
                 </div>
               </div>
@@ -290,8 +301,9 @@ export default function CheckoutPage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       placeholder={t('Street address', 'عنوان الشارع')}
-                      required
+                      className={fieldErrors.address ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.address && <p className="text-destructive text-xs mt-1">{fieldErrors.address}</p>}
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
@@ -301,8 +313,9 @@ export default function CheckoutPage() {
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
-                        required
+                        className={fieldErrors.city ? 'border-destructive' : ''}
                       />
+                      {fieldErrors.city && <p className="text-destructive text-xs mt-1">{fieldErrors.city}</p>}
                     </div>
                     <div>
                       <Label htmlFor="postalCode">{t('Postal Code', 'الرمز البريدي')}</Label>

@@ -121,21 +121,27 @@ export function Header() {
     setSearchQuery('')
   }
 
+  const isHomePage = pathname === '/'
+
   return (
     <>
       <header
         className={cn(
           'fixed left-0 right-0 z-50 transition-all duration-[400ms] ease-in-out',
-          'top-0',
-          isScrolled
-            ? 'backdrop-blur-[16px] bg-[rgba(82,37,0,0.75)]'
-            : 'bg-transparent'
+          'top-[var(--ann-h,0px)]',
+          isHomePage
+            ? isScrolled
+              ? 'backdrop-blur-[16px] bg-[rgba(82,37,0,0.9)]'
+              : 'bg-transparent'
+            : 'bg-[#522500]'
         )}
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20 md:h-24 relative">
-            {/* Centered line under header */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] md:w-[60%] h-[2px] bg-white/40 rounded-full" />
+            {/* Centered line under header - home only */}
+            {isHomePage && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] md:w-[60%] h-[2px] bg-white/40 rounded-full" />
+            )}
             {/* Logo */}
             <Link href="/" className="flex items-center">
               <motion.div

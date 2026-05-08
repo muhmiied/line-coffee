@@ -59,7 +59,10 @@ export default function DashboardPage() {
     if (!isLoading && !user) {
       router.push('/auth/login')
     }
-  }, [isLoading, user, router])
+    if (!isLoading && user && isAdmin) {
+      router.replace('/dashboard/admin')
+    }
+  }, [isLoading, user, isAdmin, router])
 
   const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User'
   const lastName = profile?.last_name || user?.user_metadata?.last_name || ''

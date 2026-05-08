@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Coffee } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +13,7 @@ import { useLanguage } from '@/lib/context/language'
 import { signIn } from '@/lib/actions/auth.actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { ADMIN_EMAIL } from '@/lib/config/site'
 
 export default function LoginPage() {
   const { t, dir } = useLanguage()
@@ -30,7 +32,8 @@ export default function LoginPage() {
       
       if (result.success) {
         toast.success(t('Login successful!', 'تم تسجيل الدخول بنجاح!'))
-        router.push('/')
+        const dest = email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? '/dashboard/admin' : '/dashboard'
+        router.push(dest)
         router.refresh()
       } else {
         toast.error(result.error || t('Login failed. Please try again.', 'فشل تسجيل الدخول. حاول مرة أخرى.'))
@@ -51,12 +54,19 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <Coffee className="h-8 w-8 text-primary" />
-            <span className="font-serif text-2xl font-bold">
-              <span className="text-primary">Line</span>
-              <span className="text-foreground ml-1">Coffee</span>
-            </span>
+          <Link href="/" className="inline-flex items-center justify-center">
+            <div className="relative h-16 w-48">
+              <Image
+                src="/brand/logo-dark.svg"
+                alt="Line Coffee"
+                fill
+                className="object-contain"
+                onError={(e) => {
+                  const el = e.currentTarget as HTMLImageElement
+                  el.src = '/brand/logo-white.svg'
+                }}
+              />
+            </div>
           </Link>
           <h1 className="font-serif text-2xl font-bold mt-6">
             {t('Welcome Back', 'مرحباً بعودتك')}

@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useLanguage } from '@/lib/context/language'
+import { useAuth } from '@/lib/context/auth'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ADMIN_EMAIL } from '@/lib/config/site'
+import { toast } from 'sonner'
 
 type AdminOrder = {
   id: string
@@ -28,10 +31,15 @@ type AdminProduct = {
 
 export default function AdminDashboardPage() {
   const { t, language } = useLanguage()
+  const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [products, setProducts] = useState<AdminProduct[]>([])
   const [totalSales, setTotalSales] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [annText, setAnnText] = useState('')
+  const [annActive, setAnnActive] = useState(true)
+  const [annSaving, setAnnSaving] = useState(false)
 
   const [newProduct, setNewProduct] = useState({
     name_ar: '',
@@ -43,23 +51,53 @@ export default function AdminDashboardPage() {
     price_1000: '',
   })
 
+  useEffect(() => {
+    if (!authLoading && user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      router.replace('/dashboard')
+    }
+  }, [authLoading, user, router])
+
   const loadAll = async () => {
     setLoading(true)
-    const [ordersRes, productsRes] = await Promise.all([
+    const [ordersRes, productsRes, annRes] = await Promise.all([
       fetch('/api/admin/orders', { cache: 'no-store' }),
       fetch('/api/admin/products', { cache: 'no-store' }),
+      fetch('/api/settings/announcement', { cache: 'no-store' }),
     ])
     const ordersData = await ordersRes.json()
     const productsData = await productsRes.json()
+    const annData = await annRes.json()
     setOrders(ordersData?.data?.orders || [])
     setTotalSales(ordersData?.data?.stats?.totalSales || 0)
     setProducts(productsData?.data || [])
+    setAnnText(annData?.text || '')
+    setAnnActive(annData?.active ?? true)
     setLoading(false)
   }
 
   useEffect(() => {
     loadAll()
   }, [])
+
+  const saveAnnouncement = async () => {
+    setAnnSaving(true)
+    try {
+      const res = await fetch('/api/settings/announcement', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: annText, active: annActive }),
+      })
+      if (res.ok) {
+        toast.success(t('Announcement saved!', 'تم حفظ الإعلان!'))
+      } else {
+        toast.error(t('Failed to save', 'فشل الحفظ'))
+      }
+    } catch {
+      toast.error(t('Failed to save', 'فشل الحفظ'))
+    } finally {
+      setAnnSaving(false)
+    }
+  }
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     await fetch(`/api/admin/orders/${orderId}`, {
@@ -143,6 +181,35 @@ export default function AdminDashboardPage() {
             <p className="text-2xl font-bold">{totalOrders}</p>
           </div>
         </div>
+
+        <section className="bg-card border border-border rounded-xl p-5">
+          <h2 className="font-semibold mb-4">{t('Announcement Bar', 'شريط الإعلانات')}</h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            {t(
+              'Requires "site_settings" table in Supabase (key text PK, value text).',
+              'يتطلب جدول "site_settings" في Supabase (key text PK, value text).'
+            )}
+          </p>
+          <div className="space-y-3">
+            <Input
+              value={annText}
+              onChange={(e) => setAnnText(e.target.value)}
+              placeholder={t('Announcement text...', 'نص الإعلان...')}
+            />
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={annActive}
+                onChange={(e) => setAnnActive(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <span className="text-sm">{t('Active', 'مفعّل')}</span>
+            </label>
+            <Button onClick={saveAnnouncement} disabled={annSaving}>
+              {annSaving ? t('Saving...', 'جاري الحفظ...') : t('Save Announcement', 'حفظ الإعلان')}
+            </Button>
+          </div>
+        </section>
 
         <section className="bg-card border border-border rounded-xl p-5">
           <h2 className="font-semibold mb-4">{t('Orders Management', 'إدارة الطلبات')}</h2>
