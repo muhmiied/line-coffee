@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,9 +14,11 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ADMIN_EMAIL } from '@/lib/config/site'
 
-export default function LoginPage() {
+function LoginForm() {
   const { t, dir } = useLanguage()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -31,7 +33,8 @@ export default function LoginPage() {
       
       if (result.success) {
         toast.success(t('Login successful!', 'تم تسجيل الدخول بنجاح!'))
-        const dest = email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? '/dashboard/admin' : '/dashboard'
+        const isAdmin = email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+        const dest = isAdmin ? '/dashboard/admin' : (redirectTo ?? '/')
         router.push(dest)
         router.refresh()
       } else {
@@ -130,5 +133,13 @@ export default function LoginPage() {
         </p>
       </motion.div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   )
 }

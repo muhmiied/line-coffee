@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -24,13 +24,21 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
+import { useAuth } from '@/lib/context/auth'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 export default function CheckoutPage() {
   const { t, language, dir } = useLanguage()
   const router = useRouter()
+  const { user, isLoading: authLoading } = useAuth()
   const { items, getTotal, clearCart } = useCartStore()
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/auth/login?redirect=/checkout')
+    }
+  }, [authLoading, user, router])
   const [isLoading, setIsLoading] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')

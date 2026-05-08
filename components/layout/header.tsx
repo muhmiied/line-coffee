@@ -13,6 +13,8 @@ import {
   X,
   Heart,
   ChevronDown,
+  Package,
+  LogOut,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,11 +22,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore } from '@/lib/store/wishlist'
+import { useAuth } from '@/lib/context/auth'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
@@ -66,9 +70,14 @@ export function Header() {
   const { language, setLanguage, t } = useLanguage()
   const { openCart, getTotalItems } = useCartStore()
   const { openWishlist } = useWishlistStore()
+  const { user, profile, signOut } = useAuth()
   const cartItemCount = isMounted ? getTotalItems() : 0
   const topStateTextClass = 'text-white'
   const logoSrc = '/brand/logo-white.svg'
+
+  const displayName = isMounted
+    ? (profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || null)
+    : null
 
   // Fix hydration mismatch - only show cart count after mount
   useEffect(() => {
@@ -316,24 +325,57 @@ export function Header() {
                 )}
               </Button>
 
-              {/* User */}
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                className={cn(
-                  'hidden md:flex',
-                  topStateTextClass,
-                  'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                )}
-              >
-                <Link
-                  href="/auth/login"
-                  aria-label={t('Account', 'الحساب')}
+              {/* User — logged in: name + dropdown | guest: icon → login */}
+              {isMounted && displayName ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        'hidden md:flex items-center gap-1.5 px-2 max-w-[120px]',
+                        topStateTextClass,
+                        'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
+                      )}
+                    >
+                      <User className="h-4 w-4 shrink-0" />
+                      <span className="text-sm truncate">{displayName}</span>
+                      <ChevronDown className="h-3 w-3 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/orders" className="flex items-center gap-2 cursor-pointer">
+                        <Package className="h-4 w-4" />
+                        {t('My Orders', 'أوردراتي')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => { signOut(); router.push('/') }}
+                      className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {t('Sign Out', 'تسجيل خروج')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className={cn(
+                    'hidden md:flex',
+                    topStateTextClass,
+                    'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
+                  )}
                 >
-                  <User className="h-5 w-5" />
-                </Link>
-              </Button>
+                  <Link href="/auth/login" aria-label={t('Account', 'الحساب')}>
+                    <User className="h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
 
               {/* Mobile Menu Toggle */}
               <Button
