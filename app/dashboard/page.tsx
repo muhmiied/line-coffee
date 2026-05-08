@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { User, Package, Heart, MapPin, Settings, LogOut, ChevronRight, Edit, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -49,20 +51,35 @@ const menuItems = [
 
 export default function DashboardPage() {
   const { t, dir } = useLanguage()
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, isLoading } = useAuth()
+  const router = useRouter()
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
 
-  // Demo profile data
-  const demoProfile = {
-    firstName: 'Ahmed',
-    lastName: 'Hassan',
-    email: 'ahmed@example.com',
-    phone: '+20 100 000 0000',
-    whatsapp: '+20 100 000 0000',
-    address: 'Cairo, Egypt',
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/auth/login')
+    }
+  }, [isLoading, user, router])
+
+  const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User'
+  const lastName = profile?.last_name || user?.user_metadata?.last_name || ''
+  const displayEmail = user?.email || ''
+
+  const displayProfile = {
+    firstName,
+    lastName,
+    email: displayEmail,
   }
 
-  const displayProfile = profile || demoProfile
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!user) return null
 
   return (
     <div className="min-h-screen py-8">
@@ -78,7 +95,7 @@ export default function DashboardPage() {
               {t('My Account', 'حسابي')}
             </h1>
             <p className="text-muted-foreground">
-              {t('Welcome back,', 'مرحباً بعودتك،')} {displayProfile.firstName}!
+              {t('Welcome back,', 'مرحباً بعودتك،')} {firstName}!
             </p>
           </motion.div>
 
@@ -99,7 +116,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <h2 className="font-semibold text-lg">
-                    {displayProfile.firstName} {displayProfile.lastName}
+                    {displayProfile.firstName}{displayProfile.lastName ? ` ${displayProfile.lastName}` : ''}
                   </h2>
                   <p className="text-sm text-muted-foreground">{displayProfile.email}</p>
                 </div>

@@ -223,7 +223,7 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
               {/* Contact Information */}
               <div className="bg-card rounded-xl border border-border p-6">
                 <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">

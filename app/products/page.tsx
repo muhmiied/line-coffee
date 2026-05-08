@@ -147,18 +147,18 @@ const beanCatalog = {
 
 const presetBlends = {
   'turkish-base': [
-    { id: 'turkish-strength', nameAr: 'قوة الصباح', nameEn: 'Morning Strength', tierAr: 'اقتصادي', tierEn: 'Economy', pricePerKg: 303, descriptionAr: 'روبوستا قوي مع حلاوة خفيفة من البرازيلي — كافيين عالي، مناسب لبداية يومك', descriptionEn: 'Strong robusta with light Brazilian sweetness and high caffeine', compositionAr: 'إندونيسي روبوستا 40% + برازيلي 35% + فيتنامي 25%' },
-    { id: 'turkish-balance', nameAr: 'التوازن المثالي', nameEn: 'Perfect Balance', tierAr: 'وسط', tierEn: 'Medium', pricePerKg: 417, descriptionAr: 'نكهة مثيرة للاهتمام — فلورال خفيف مع ثقل الروبوستا، مناسب للفنادق والكافيهات', descriptionEn: 'Interesting floral profile with robusta body', compositionAr: 'كولومبي 25% + حبشي 25% + Base 50%' },
-    { id: 'turkish-clean', nameAr: 'النظافة المحترفة', nameEn: 'Professional Clean Cup', tierAr: 'وسط-بريميوم', tierEn: 'Mid-premium', pricePerKg: 497, descriptionAr: 'أرابيكا 65% نظيف ومتسق — شوكولاتة واضحة، مناسب للمحترفين', descriptionEn: '65% arabica clean cup with clear chocolate notes', compositionAr: 'برازيلي 40% + هندي بلانتيشن 25% + إندونيسي 20% + فيتنامي 15%' },
-    { id: 'turkish-premium', nameAr: 'البريميوم', nameEn: 'Premium', tierAr: 'بريميوم', tierEn: 'Premium', pricePerKg: 561, descriptionAr: 'أرابيكا 90% — specialty coffee حقيقية، فلورال وفاكهي', descriptionEn: '90% arabica, true specialty floral-fruity profile', compositionAr: 'حبشي 45% + كولومبي 30% + هندي بلانتيشن 15% + إندونيسي 10%' },
+    { id: 'turkish-strength', nameAr: 'قوة الصباح', nameEn: 'Morning Strength', tierAr: 'اقتصادي', tierEn: 'Economy', price250: 125, price500: 240, price1000: 460, descriptionAr: 'روبوستا قوي مع حلاوة خفيفة من البرازيلي — كافيين عالي، مناسب لبداية يومك', descriptionEn: 'Strong robusta with light Brazilian sweetness and high caffeine', compositionAr: 'إندونيسي روبوستا 40% + برازيلي 35% + فيتنامي 25%' },
+    { id: 'turkish-balance', nameAr: 'التوازن المثالي', nameEn: 'Perfect Balance', tierAr: 'وسط', tierEn: 'Medium', price250: 170, price500: 320, price1000: 600, descriptionAr: 'نكهة مثيرة للاهتمام — فلورال خفيف مع ثقل الروبوستا، مناسب للفنادق والكافيهات', descriptionEn: 'Interesting floral profile with robusta body', compositionAr: 'كولومبي 25% + حبشي 25% + إندونيسي 50%' },
+    { id: 'turkish-clean', nameAr: 'النظافة المحترفة', nameEn: 'Professional Clean Cup', tierAr: 'وسط بريميوم', tierEn: 'Mid-premium', price250: 200, price500: 380, price1000: 720, descriptionAr: 'أرابيكا 65% نظيف ومتسق — شوكولاتة واضحة، مناسب للمحترفين', descriptionEn: '65% arabica clean cup with clear chocolate notes', compositionAr: 'برازيلي 40% + هندي بلانتيشن 25% + إندونيسي 20% + فيتنامي 15%' },
+    { id: 'turkish-premium', nameAr: 'البريميوم', nameEn: 'Premium', tierAr: 'بريميوم', tierEn: 'Premium', price250: 230, price500: 440, price1000: 840, descriptionAr: 'أرابيكا 90% — specialty coffee حقيقية، فلورال وفاكهي', descriptionEn: '90% arabica, true specialty floral-fruity profile', compositionAr: 'حبشي 45% + كولومبي 30% + هندي بلانتيشن 15% + إندونيسي 10%' },
   ],
   'espresso-base': [
-    { id: 'espresso-crema-economy', nameAr: 'الكريمة الاقتصادية', nameEn: 'Economy Crema', tierAr: 'اقتصادي', tierEn: 'Economy', pricePerKg: 324, descriptionAr: 'كريمة ممتازة وقوة عالية — مناسب للكميات الكبيرة', descriptionEn: 'Excellent crema and high power for volume brewing', compositionAr: 'فيتنامي 45% + برازيلي 35% + إندونيسي 20%' },
-    { id: 'espresso-italian', nameAr: 'الكلاسيك الإيطالي', nameEn: 'Classic Italian', tierAr: 'وسط', tierEn: 'Medium', pricePerKg: 488, descriptionAr: 'شوكولاتة وكراميل، كريمة غنية — الأنسب للكابتشينو واللاتيه', descriptionEn: 'Chocolate-caramel profile with rich crema', compositionAr: 'برازيلي 35% + فيتنامي 30% + هندي بلانتيشن 20% + إندونيسي 15%' },
-    { id: 'espresso-specialty', nameAr: 'الفلورال الـSpecialty', nameEn: 'Specialty Floral', tierAr: 'وسط-بريميوم', tierEn: 'Mid-premium', pricePerKg: 512, descriptionAr: 'فلورال وفاكهي، أخف كريمة — الأفضل كشوت مباشر', descriptionEn: 'Floral-fruity with lighter crema for direct shots', compositionAr: 'حبشي 50% + جواتيمالا 25% + Base 25%' },
-    { id: 'espresso-vip', nameAr: 'بريميوم VIP', nameEn: 'Premium VIP', tierAr: 'بريميوم', tierEn: 'Premium', pricePerKg: 622, descriptionAr: 'أرابيكا 90%، كولومبي واضح وقوي، كريمة ذهبية', descriptionEn: '90% arabica with strong Colombian profile and golden crema', compositionAr: 'كولومبي 40% + حبشي 30% + هندي بلانتيشن 20% + إندونيسي 10%' },
+    { id: 'espresso-crema-economy', nameAr: 'الكريمة الاقتصادية', nameEn: 'Economy Crema', tierAr: 'اقتصادي', tierEn: 'Economy', price250: 135, price500: 260, price1000: 500, descriptionAr: 'كريمة ممتازة وقوة عالية — مناسب للكميات الكبيرة', descriptionEn: 'Excellent crema and high power for volume brewing', compositionAr: 'فيتنامي 45% + برازيلي 35% + إندونيسي 20%' },
+    { id: 'espresso-italian', nameAr: 'الكلاسيك الإيطالي', nameEn: 'Classic Italian', tierAr: 'وسط', tierEn: 'Medium', price250: 200, price500: 380, price1000: 720, descriptionAr: 'شوكولاتة وكراميل، كريمة غنية — الأنسب للكابتشينو واللاتيه', descriptionEn: 'Chocolate-caramel profile with rich crema', compositionAr: 'برازيلي 35% + فيتنامي 30% + هندي بلانتيشن 20% + إندونيسي 15%' },
+    { id: 'espresso-specialty', nameAr: 'الفلورال الـ Specialty', nameEn: 'Specialty Floral', tierAr: 'وسط بريميوم', tierEn: 'Mid-premium', price250: 210, price500: 400, price1000: 760, descriptionAr: 'فلورال وفاكهي، أخف كريمة — الأفضل كشوت مباشر لعشاق الـ specialty', descriptionEn: 'Floral-fruity with lighter crema for direct shots', compositionAr: 'حبشي 50% + جواتيمالا 25% + برازيلي 25%' },
+    { id: 'espresso-vip', nameAr: 'بريميوم VIP', nameEn: 'Premium VIP', tierAr: 'بريميوم', tierEn: 'Premium', price250: 255, price500: 490, price1000: 940, descriptionAr: 'أرابيكا 90%، كولومبي واضح وقوي، كريمة ذهبية — للفنادق 5 نجوم والـ VIP', descriptionEn: '90% arabica with strong Colombian profile and golden crema', compositionAr: 'كولومبي 40% + حبشي 30% + هندي بلانتيشن 20% + إندونيسي 10%' },
   ],
-} as const
+}
 
 // All flavors flat array
 const allFlavors = [
@@ -500,7 +500,9 @@ function CustomizeProduct() {
   const [selectedSize, setSelectedSize] = useState<'250g' | '500g' | '1kg'>('250g')
 
   const isBeanBase = selectedBase?.id === 'turkish-base' || selectedBase?.id === 'espresso-base'
-  const availablePresets = selectedBase ? presetBlends[selectedBase.id as keyof typeof presetBlends] || [] : []
+  const availablePresets = (selectedBase && selectedBase.id in presetBlends)
+    ? presetBlends[selectedBase.id as keyof typeof presetBlends]
+    : []
 
   const toggleFlavor = (flavor: typeof allFlavors[0]) => {
     if (selectedFlavors.find(f => f.id === flavor.id)) {
@@ -530,8 +532,9 @@ function CustomizeProduct() {
   const getPrice = () => {
     if (!selectedBase) return 0
     if (isBeanBase && selectedPreset) {
-      const ratio = selectedSize === '250g' ? 0.25 : selectedSize === '500g' ? 0.5 : 1
-      return Math.round(selectedPreset.pricePerKg * ratio)
+      if (selectedSize === '250g') return selectedPreset.price250
+      if (selectedSize === '500g') return selectedPreset.price500
+      return selectedPreset.price1000
     }
     const basePrice = selectedSize === '250g' ? selectedBase.price250 : selectedSize === '500g' ? selectedBase.price500 : selectedBase.price1000
     const flavorPrice = selectedFlavors.length * (selectedSize === '250g' ? 10 : selectedSize === '500g' ? 18 : 30)
@@ -771,8 +774,12 @@ function CustomizeProduct() {
                         )}
                       >
                         <p className="font-medium">{language === 'ar' ? preset.nameAr : preset.nameEn}</p>
-                        <p className="text-xs text-muted-foreground">{language === 'ar' ? preset.tierAr : preset.tierEn} - {preset.pricePerKg} {t('EGP/kg', 'ج.م/كيلو')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar' ? preset.tierAr : preset.tierEn}
+                          {' — '}{t('from', 'من')} {preset.price250} {t('EGP', 'ج.م')}
+                        </p>
                         <p className="text-xs mt-1 text-muted-foreground">{preset.compositionAr}</p>
+                        <p className="text-xs mt-1 text-primary/80 italic">{language === 'ar' ? preset.descriptionAr : preset.descriptionEn}</p>
                       </button>
                     ))}
                   </div>

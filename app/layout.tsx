@@ -80,7 +80,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${notoNaskhArabic.variable} bg-background`}>
+    <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${notoNaskhArabic.variable} bg-background`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var l=localStorage.getItem('line-coffee-language');if(l==='ar'){document.documentElement.dir='rtl';document.documentElement.lang='ar';}else{document.documentElement.dir='ltr';document.documentElement.lang='en';}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased min-h-screen flex flex-col w-full overflow-x-hidden">
         <LanguageProvider>
           <AuthProvider>

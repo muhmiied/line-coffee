@@ -9,10 +9,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en')
 
   useEffect(() => {
-    // Check localStorage on mount
     const stored = localStorage.getItem('line-coffee-language') as Language
     if (stored && (stored === 'en' || stored === 'ar')) {
       setLanguageState(stored)
+      document.documentElement.dir = stored === 'ar' ? 'rtl' : 'ltr'
+      document.documentElement.lang = stored
     }
   }, [])
 

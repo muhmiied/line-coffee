@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore } from '@/lib/store/wishlist'
 import type { Product, ProductSize } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -41,6 +42,8 @@ interface ProductDetailProps {
 export function ProductDetail({ product }: ProductDetailProps) {
   const { t, language } = useLanguage()
   const { addItem } = useCartStore()
+  const { toggleItem, isInWishlist } = useWishlistStore()
+  const inWishlist = isInWishlist(product.id)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(
     product.sizes?.[0] || null
   )
@@ -345,9 +348,16 @@ export function ProductDetail({ product }: ProductDetailProps) {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => toast.info(t('Added to wishlist', 'تمت الإضافة للمفضلة'))}
+                onClick={() => {
+                  toggleItem(product.id)
+                  toast.success(
+                    inWishlist
+                      ? t('Removed from wishlist', 'تمت الإزالة من المفضلة')
+                      : t('Added to wishlist', 'تمت الإضافة للمفضلة')
+                  )
+                }}
               >
-                <Heart className="h-5 w-5" />
+                <Heart className={cn('h-5 w-5', inWishlist && 'fill-destructive text-destructive')} />
               </Button>
               <Button size="lg" variant="outline">
                 <Share2 className="h-5 w-5" />
@@ -363,7 +373,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </div>
               <div>
                 <p className="font-medium text-sm">{t('Free Shipping', 'شحن مجاني')}</p>
-                <p className="text-xs text-muted-foreground">{t('Over 200 EGP', 'فوق 200 ريال')}</p>
+                <p className="text-xs text-muted-foreground">{t('Over 200 EGP', 'فوق 200 ج.م')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/lib/context/language'
 import { SectionReveal, FadeUp, StaggerContainer, WordByWord } from '@/components/ui/motion-primitives'
+import { CONTACT_PHONE, CONTACT_EMAIL, WHATSAPP_ORDER_PHONE_E164, WHATSAPP_DISPLAY } from '@/lib/config/site'
 
 export function ContactSection() {
   const { t } = useLanguage()
@@ -57,13 +58,13 @@ export function ContactSection() {
                 </div>
                 <div>
                   <p className="font-medium">{t('Phone / WhatsApp', 'الهاتف / واتساب')}</p>
-                  <a 
-                    href="https://wa.me/201141262176" 
+                  <a
+                    href={`https://wa.me/${WHATSAPP_ORDER_PHONE_E164}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-primary transition-colors"
                   >
-                    +20 114 126 2176
+                    {WHATSAPP_DISPLAY}
                   </a>
                 </div>
               </FadeUp>
@@ -74,11 +75,11 @@ export function ContactSection() {
                 </div>
                 <div>
                   <p className="font-medium">{t('Email', 'البريد الإلكتروني')}</p>
-                  <a 
-                    href="mailto:hello@linecoffee.com.eg" 
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
                     className="text-muted-foreground hover:text-primary transition-colors"
                   >
-                    hello@linecoffee.com.eg
+                    {CONTACT_EMAIL}
                   </a>
                 </div>
               </FadeUp>
