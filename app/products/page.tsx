@@ -73,10 +73,92 @@ const flavorOptions = {
 
 // Base options for customization
 const baseOptions = [
-  { id: 'cappuccino', nameEn: 'Cappuccino', nameAr: 'كابتشينو', price250: 65, price500: 120, price1000: 220 },
-  { id: 'coffee-mix', nameEn: 'Coffee Mix', nameAr: 'كوفي ميكس', price250: 55, price500: 100, price1000: 180 },
-  { id: 'hot-chocolate', nameEn: 'Hot Chocolate', nameAr: 'هوت شوكلت', price250: 60, price500: 110, price1000: 200 },
+  {
+    id: 'cappuccino',
+    nameEn: 'Cappuccino',
+    nameAr: 'كابتشينو',
+    descriptionEn: 'Creamy and balanced with a smooth texture.',
+    descriptionAr: 'كريمي ومتوازن بطعم ناعم.',
+    price250: 65,
+    price500: 120,
+    price1000: 220,
+  },
+  {
+    id: 'coffee-mix',
+    nameEn: 'Coffee Mix',
+    nameAr: 'كوفي ميكس',
+    descriptionEn: 'Easy daily blend with sweet profile.',
+    descriptionAr: 'خلطة يومية سهلة بطابع حلو.',
+    price250: 55,
+    price500: 100,
+    price1000: 180,
+  },
+  {
+    id: 'hot-chocolate',
+    nameEn: 'Hot Chocolate',
+    nameAr: 'هوت شوكلت',
+    descriptionEn: 'Rich chocolate drink with deep cocoa notes.',
+    descriptionAr: 'مشروب شوكولاتة غني بنكهة كاكاو واضحة.',
+    price250: 60,
+    price500: 110,
+    price1000: 200,
+  },
+  {
+    id: 'turkish-base',
+    nameEn: 'Turkish Coffee Base',
+    nameAr: 'بن تركي',
+    descriptionEn: 'Traditional dense cup with strong aroma for authentic Turkish brewing.',
+    descriptionAr: 'قاعدة تركي تقليدية بقوام قوي ورائحة واضحة.',
+    price250: 85,
+    price500: 160,
+    price1000: 303,
+  },
+  {
+    id: 'espresso-base',
+    nameEn: 'Espresso Base',
+    nameAr: 'بن إسبريسو',
+    descriptionEn: 'Optimized for espresso machines with crema-focused extraction.',
+    descriptionAr: 'قاعدة مناسبة لماكينات الإسبريسو مع كريمة ممتازة.',
+    price250: 90,
+    price500: 170,
+    price1000: 324,
+  },
 ]
+
+const beanCatalog = {
+  arabica: [
+    { id: 'brazilian', nameAr: 'برازيلي', nameEn: 'Brazilian', descriptionAr: 'ناعم وحلو، شوكولاتة خفيفة، مرارة منخفضة', descriptionEn: 'Smooth and sweet, light chocolate, low bitterness' },
+    { id: 'colombian', nameAr: 'كولومبي', nameEn: 'Colombian', descriptionAr: 'متوازن، كراميل وفاكهة خفيفة، مناسب لأغلب الأذواق', descriptionEn: 'Balanced with caramel and light fruit notes' },
+    { id: 'ethiopian', nameAr: 'حبشي (إثيوبي)', nameEn: 'Ethiopian', descriptionAr: 'فلورال وفاكهي، حموضة خفيفة، specialty coffee', descriptionEn: 'Floral and fruity with light acidity' },
+    { id: 'guatemalan', nameAr: 'جواتيمالا', nameEn: 'Guatemalan', descriptionAr: 'شوكولاتة داكنة، جسم متوسط، مميز', descriptionEn: 'Dark chocolate and medium body' },
+    { id: 'yemeni', nameAr: 'يمني', nameEn: 'Yemeni', descriptionAr: 'تراثي وعطري، مميز جداً، نكهة فريدة', descriptionEn: 'Heritage aromatic profile with unique notes' },
+    { id: 'peruvian', nameAr: 'بيرو', nameEn: 'Peruvian', descriptionAr: 'ناعم ونظيف، حموضة خفيفة', descriptionEn: 'Clean and smooth with light acidity' },
+    { id: 'costa-rican', nameAr: 'كوستاريكا', nameEn: 'Costa Rican', descriptionAr: 'فاكهي ومشرق، حموضة حيوية', descriptionEn: 'Fruity and bright with lively acidity' },
+    { id: 'mexican', nameAr: 'ميكسيكي', nameEn: 'Mexican', descriptionAr: 'خفيف وناعم، مناسب للشرب اليومي', descriptionEn: 'Light smooth profile for daily drinking' },
+  ],
+  robusta: [
+    { id: 'indonesian', nameAr: 'إندونيسي', nameEn: 'Indonesian', descriptionAr: 'قوي وثقيل، ترابي، كافيين عالي', descriptionEn: 'Strong, heavy body, earthy, high caffeine' },
+    { id: 'indonesian-xl', nameAr: 'إندونيسي XL', nameEn: 'Indonesian XL', descriptionAr: 'أقوى من العادي، جسم كامل جداً', descriptionEn: 'Stronger than regular Indonesian with full body' },
+    { id: 'indian', nameAr: 'هندي', nameEn: 'Indian', descriptionAr: 'متوازن وقوي، مناسب كـbase', descriptionEn: 'Balanced and strong, good base bean' },
+    { id: 'indian-plantation', nameAr: 'هندي بلانتيشن', nameEn: 'Indian Plantation', descriptionAr: 'ناعم نسبياً مقارنة بباقي الروبوستا', descriptionEn: 'Relatively smoother robusta profile' },
+    { id: 'vietnamese', nameAr: 'فيتنامي', nameEn: 'Vietnamese', descriptionAr: 'الأقوى، مرارة عالية، كريمة ممتازة في الإسبريسو', descriptionEn: 'Strongest profile, high bitterness, great crema' },
+  ],
+}
+
+const presetBlends = {
+  'turkish-base': [
+    { id: 'turkish-strength', nameAr: 'قوة الصباح', nameEn: 'Morning Strength', tierAr: 'اقتصادي', tierEn: 'Economy', pricePerKg: 303, descriptionAr: 'روبوستا قوي مع حلاوة خفيفة من البرازيلي — كافيين عالي، مناسب لبداية يومك', descriptionEn: 'Strong robusta with light Brazilian sweetness and high caffeine', compositionAr: 'إندونيسي روبوستا 40% + برازيلي 35% + فيتنامي 25%' },
+    { id: 'turkish-balance', nameAr: 'التوازن المثالي', nameEn: 'Perfect Balance', tierAr: 'وسط', tierEn: 'Medium', pricePerKg: 417, descriptionAr: 'نكهة مثيرة للاهتمام — فلورال خفيف مع ثقل الروبوستا، مناسب للفنادق والكافيهات', descriptionEn: 'Interesting floral profile with robusta body', compositionAr: 'كولومبي 25% + حبشي 25% + Base 50%' },
+    { id: 'turkish-clean', nameAr: 'النظافة المحترفة', nameEn: 'Professional Clean Cup', tierAr: 'وسط-بريميوم', tierEn: 'Mid-premium', pricePerKg: 497, descriptionAr: 'أرابيكا 65% نظيف ومتسق — شوكولاتة واضحة، مناسب للمحترفين', descriptionEn: '65% arabica clean cup with clear chocolate notes', compositionAr: 'برازيلي 40% + هندي بلانتيشن 25% + إندونيسي 20% + فيتنامي 15%' },
+    { id: 'turkish-premium', nameAr: 'البريميوم', nameEn: 'Premium', tierAr: 'بريميوم', tierEn: 'Premium', pricePerKg: 561, descriptionAr: 'أرابيكا 90% — specialty coffee حقيقية، فلورال وفاكهي', descriptionEn: '90% arabica, true specialty floral-fruity profile', compositionAr: 'حبشي 45% + كولومبي 30% + هندي بلانتيشن 15% + إندونيسي 10%' },
+  ],
+  'espresso-base': [
+    { id: 'espresso-crema-economy', nameAr: 'الكريمة الاقتصادية', nameEn: 'Economy Crema', tierAr: 'اقتصادي', tierEn: 'Economy', pricePerKg: 324, descriptionAr: 'كريمة ممتازة وقوة عالية — مناسب للكميات الكبيرة', descriptionEn: 'Excellent crema and high power for volume brewing', compositionAr: 'فيتنامي 45% + برازيلي 35% + إندونيسي 20%' },
+    { id: 'espresso-italian', nameAr: 'الكلاسيك الإيطالي', nameEn: 'Classic Italian', tierAr: 'وسط', tierEn: 'Medium', pricePerKg: 488, descriptionAr: 'شوكولاتة وكراميل، كريمة غنية — الأنسب للكابتشينو واللاتيه', descriptionEn: 'Chocolate-caramel profile with rich crema', compositionAr: 'برازيلي 35% + فيتنامي 30% + هندي بلانتيشن 20% + إندونيسي 15%' },
+    { id: 'espresso-specialty', nameAr: 'الفلورال الـSpecialty', nameEn: 'Specialty Floral', tierAr: 'وسط-بريميوم', tierEn: 'Mid-premium', pricePerKg: 512, descriptionAr: 'فلورال وفاكهي، أخف كريمة — الأفضل كشوت مباشر', descriptionEn: 'Floral-fruity with lighter crema for direct shots', compositionAr: 'حبشي 50% + جواتيمالا 25% + Base 25%' },
+    { id: 'espresso-vip', nameAr: 'بريميوم VIP', nameEn: 'Premium VIP', tierAr: 'بريميوم', tierEn: 'Premium', pricePerKg: 622, descriptionAr: 'أرابيكا 90%، كولومبي واضح وقوي، كريمة ذهبية', descriptionEn: '90% arabica with strong Colombian profile and golden crema', compositionAr: 'كولومبي 40% + حبشي 30% + هندي بلانتيشن 20% + إندونيسي 10%' },
+  ],
+} as const
 
 // All flavors flat array
 const allFlavors = [
@@ -413,7 +495,12 @@ function CustomizeProduct() {
   const [step, setStep] = useState(1)
   const [selectedBase, setSelectedBase] = useState<typeof baseOptions[0] | null>(null)
   const [selectedFlavors, setSelectedFlavors] = useState<typeof allFlavors>([])
+  const [selectedBeans, setSelectedBeans] = useState<Array<{ id: string; nameAr: string; nameEn: string; percent: string }>>([])
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
   const [selectedSize, setSelectedSize] = useState<'250g' | '500g' | '1kg'>('250g')
+
+  const isBeanBase = selectedBase?.id === 'turkish-base' || selectedBase?.id === 'espresso-base'
+  const availablePresets = selectedBase ? presetBlends[selectedBase.id as keyof typeof presetBlends] || [] : []
 
   const toggleFlavor = (flavor: typeof allFlavors[0]) => {
     if (selectedFlavors.find(f => f.id === flavor.id)) {
@@ -423,24 +510,64 @@ function CustomizeProduct() {
     }
   }
 
+  const toggleBean = (bean: { id: string; nameAr: string; nameEn: string }) => {
+    const exists = selectedBeans.find((item) => item.id === bean.id)
+    if (exists) {
+      setSelectedBeans(selectedBeans.filter((item) => item.id !== bean.id))
+      return
+    }
+    if (selectedBeans.length >= 4) return
+    setSelectedBeans([...selectedBeans, { ...bean, percent: '' }])
+    setSelectedPresetId(null)
+  }
+
+  const updateBeanPercent = (beanId: string, percent: string) => {
+    setSelectedBeans((prev) => prev.map((bean) => (bean.id === beanId ? { ...bean, percent } : bean)))
+  }
+
+  const selectedPreset = availablePresets.find((preset) => preset.id === selectedPresetId) || null
+
   const getPrice = () => {
     if (!selectedBase) return 0
+    if (isBeanBase && selectedPreset) {
+      const ratio = selectedSize === '250g' ? 0.25 : selectedSize === '500g' ? 0.5 : 1
+      return Math.round(selectedPreset.pricePerKg * ratio)
+    }
     const basePrice = selectedSize === '250g' ? selectedBase.price250 : selectedSize === '500g' ? selectedBase.price500 : selectedBase.price1000
     const flavorPrice = selectedFlavors.length * (selectedSize === '250g' ? 10 : selectedSize === '500g' ? 18 : 30)
     return basePrice + flavorPrice
   }
 
   const handleAddToCart = () => {
-    if (!selectedBase || selectedFlavors.length === 0) return
+    if (!selectedBase) return
+    if (!isBeanBase && selectedFlavors.length === 0) return
+    if (isBeanBase && !selectedPreset && selectedBeans.length === 0) return
 
-    const flavorNames = selectedFlavors.map(f => language === 'ar' ? f.nameAr : f.nameEn).join(' + ')
     const baseName = language === 'ar' ? selectedBase.nameAr : selectedBase.nameEn
+    const beanPercentValues = selectedBeans
+      .map((bean) => Number(bean.percent || 0))
+      .filter((value) => value > 0)
+    const beansPercentTotal = beanPercentValues.reduce((sum, value) => sum + value, 0)
+    if (isBeanBase && beanPercentValues.length > 0 && beansPercentTotal !== 100) {
+      toast.error(t('Percentages must total 100%', 'يجب أن يكون مجموع النسب 100%'))
+      return
+    }
+
+    const customPart = isBeanBase
+      ? selectedPreset
+        ? `${selectedPreset.nameEn} / ${selectedPreset.nameAr}`
+        : selectedBeans
+            .map((bean) =>
+              `${language === 'ar' ? bean.nameAr : bean.nameEn}${bean.percent ? ` ${bean.percent}%` : ` (${t('standard', 'ستاندرد')})`}`,
+            )
+            .join(' + ')
+      : selectedFlavors.map((f) => (language === 'ar' ? f.nameAr : f.nameEn)).join(' + ')
 
     addItem({
-      id: `custom-${selectedBase.id}-${selectedFlavors.map(f => f.id).join('-')}-${selectedSize}`,
+      id: `custom-${selectedBase.id}-${selectedPresetId || selectedBeans.map((b) => b.id).join('-') || selectedFlavors.map((f) => f.id).join('-')}-${selectedSize}`,
       product_id: `custom-${selectedBase.id}`,
-      name_en: `Custom ${selectedBase.nameEn} - ${selectedFlavors.map(f => f.nameEn).join(' + ')}`,
-      name_ar: `${selectedBase.nameAr} مخصص - ${selectedFlavors.map(f => f.nameAr).join(' + ')}`,
+      name_en: `Custom ${selectedBase.nameEn} - ${customPart}`,
+      name_ar: `${selectedBase.nameAr} مخصص - ${customPart}`,
       size: selectedSize,
       price: getPrice(),
       quantity: 1,
@@ -453,6 +580,8 @@ function CustomizeProduct() {
     setStep(1)
     setSelectedBase(null)
     setSelectedFlavors([])
+    setSelectedBeans([])
+    setSelectedPresetId(null)
     setSelectedSize('250g')
   }
 
@@ -467,7 +596,7 @@ function CustomizeProduct() {
             {t('Create Your Perfect Blend', 'صمم خلطتك المثالية')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {t('Mix up to 3 flavors with your favorite base', 'امزج حتى 3 نكهات مع القاعدة المفضلة')}
+            {t('Choose base, then custom flavors or coffee-bean blends', 'اختَر القاعدة ثم خصّص النكهات أو توليفات البن')}
           </p>
         </div>
       </div>
@@ -514,6 +643,9 @@ function CustomizeProduct() {
                   )}
                 >
                   <h4 className="font-semibold mb-1">{language === 'ar' ? base.nameAr : base.nameEn}</h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {language === 'ar' ? base.descriptionAr : base.descriptionEn}
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {t(`From ${base.price250} EGP`, `من ${base.price250} ج.م`)}
                   </p>
@@ -543,63 +675,156 @@ function CustomizeProduct() {
 
             {/* Selected Flavors */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="text-sm text-muted-foreground">{t('Flavors:', 'النكهات:')}</span>
-              {selectedFlavors.length === 0 ? (
+              <span className="text-sm text-muted-foreground">{isBeanBase ? t('Blend:', 'التوليفة:') : t('Flavors:', 'النكهات:')}</span>
+              {(!isBeanBase && selectedFlavors.length === 0) || (isBeanBase && selectedBeans.length === 0 && !selectedPreset) ? (
                 <span className="text-sm text-muted-foreground italic">{t('None selected', 'لم يتم الاختيار')}</span>
               ) : (
-                selectedFlavors.map((flavor) => (
-                  <span
-                    key={flavor.id}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm"
-                  >
-                    {language === 'ar' ? flavor.nameAr : flavor.nameEn}
-                    <button onClick={() => toggleFlavor(flavor)}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))
+                <>
+                  {selectedPreset && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm">
+                      {language === 'ar' ? selectedPreset.nameAr : selectedPreset.nameEn}
+                      <button onClick={() => setSelectedPresetId(null)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {!isBeanBase && selectedFlavors.map((flavor) => (
+                    <span
+                      key={flavor.id}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm"
+                    >
+                      {language === 'ar' ? flavor.nameAr : flavor.nameEn}
+                      <button onClick={() => toggleFlavor(flavor)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {isBeanBase && selectedBeans.map((bean) => (
+                    <span
+                      key={bean.id}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm"
+                    >
+                      {language === 'ar' ? bean.nameAr : bean.nameEn}{bean.percent ? ` ${bean.percent}%` : ''}
+                      <button onClick={() => toggleBean(bean)}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </>
               )}
-              <span className="text-xs text-muted-foreground">({selectedFlavors.length}/3)</span>
+              {!isBeanBase && <span className="text-xs text-muted-foreground">({selectedFlavors.length}/3)</span>}
             </div>
 
-            {/* Flavor Categories */}
-            <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2">
-              {Object.entries(flavorOptions).map(([category, flavors]) => (
-                <div key={category}>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2 capitalize">
-                    {category === 'nuts' ? t('Nuts', 'المكسرات') :
-                     category === 'chocolate' ? t('Chocolate & Sweet', 'شوكولاتة وحلويات') :
-                     category === 'creamy' ? t('Creamy', 'كريمي') :
-                     category === 'fruits' ? t('Fruits', 'فواكه') :
-                     t('Special', 'مميزة')}
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {flavors.map((flavor) => {
-                      const isSelected = selectedFlavors.find(f => f.id === flavor.id)
-                      const isDisabled = !isSelected && selectedFlavors.length >= 3
-                      return (
-                        <button
-                          key={flavor.id}
-                          onClick={() => !isDisabled && toggleFlavor(flavor)}
-                          disabled={isDisabled}
-                          className={cn(
-                            'px-3 py-1.5 rounded-full text-sm transition-all',
-                            isSelected
-                              ? 'bg-primary text-primary-foreground'
-                              : isDisabled
-                              ? 'bg-secondary/50 text-muted-foreground cursor-not-allowed'
-                              : 'bg-secondary hover:bg-secondary/80 text-foreground'
-                          )}
-                        >
-                          {isSelected && <Check className="w-3 h-3 inline mr-1" />}
-                          {language === 'ar' ? flavor.nameAr : flavor.nameEn}
-                        </button>
-                      )
-                    })}
+            {!isBeanBase ? (
+              <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2">
+                {Object.entries(flavorOptions).map(([category, flavors]) => (
+                  <div key={category}>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2 capitalize">
+                      {category === 'nuts' ? t('Nuts', 'المكسرات') :
+                       category === 'chocolate' ? t('Chocolate & Sweet', 'شوكولاتة وحلويات') :
+                       category === 'creamy' ? t('Creamy', 'كريمي') :
+                       category === 'fruits' ? t('Fruits', 'فواكه') :
+                       t('Special', 'مميزة')}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {flavors.map((flavor) => {
+                        const isSelected = selectedFlavors.find(f => f.id === flavor.id)
+                        const isDisabled = !isSelected && selectedFlavors.length >= 3
+                        return (
+                          <button
+                            key={flavor.id}
+                            onClick={() => !isDisabled && toggleFlavor(flavor)}
+                            disabled={isDisabled}
+                            className={cn(
+                              'px-3 py-1.5 rounded-full text-sm transition-all',
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : isDisabled
+                                ? 'bg-secondary/50 text-muted-foreground cursor-not-allowed'
+                                : 'bg-secondary hover:bg-secondary/80 text-foreground'
+                            )}
+                          >
+                            {isSelected && <Check className="w-3 h-3 inline mr-1" />}
+                            {language === 'ar' ? flavor.nameAr : flavor.nameEn}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-6 max-h-[420px] overflow-y-auto pr-2">
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">{t('Ready blends', 'التوليفات الجاهزة')}</h4>
+                  <div className="grid md:grid-cols-2 gap-2">
+                    {availablePresets.map((preset) => (
+                      <button
+                        key={preset.id}
+                        onClick={() => {
+                          setSelectedPresetId(preset.id)
+                          setSelectedBeans([])
+                        }}
+                        className={cn(
+                          'text-left p-3 rounded-lg border transition-all',
+                          selectedPresetId === preset.id ? 'border-primary bg-primary/5' : 'border-border'
+                        )}
+                      >
+                        <p className="font-medium">{language === 'ar' ? preset.nameAr : preset.nameEn}</p>
+                        <p className="text-xs text-muted-foreground">{language === 'ar' ? preset.tierAr : preset.tierEn} - {preset.pricePerKg} {t('EGP/kg', 'ج.م/كيلو')}</p>
+                        <p className="text-xs mt-1 text-muted-foreground">{preset.compositionAr}</p>
+                      </button>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">{t('Or build your blend', 'أو صمّم خلطتك')}</h4>
+                  {Object.entries(beanCatalog).map(([family, beans]) => (
+                    <div key={family} className="mb-4">
+                      <p className="text-xs text-muted-foreground mb-2">{family === 'arabica' ? 'Arabica' : 'Robusta'}</p>
+                      <div className="space-y-2">
+                        {beans.map((bean) => {
+                          const selected = selectedBeans.find((item) => item.id === bean.id)
+                          return (
+                            <div key={bean.id} className="p-2 border border-border rounded-lg">
+                              <div className="flex items-center justify-between gap-2">
+                                <button
+                                  className={cn(
+                                    'text-left flex-1 px-2 py-1 rounded-md transition-all',
+                                    selected ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'
+                                  )}
+                                  onClick={() => {
+                                    toggleBean(bean)
+                                    setSelectedPresetId(null)
+                                  }}
+                                >
+                                  {language === 'ar' ? bean.nameAr : bean.nameEn}
+                                </button>
+                                {selected && (
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={selected.percent}
+                                    onChange={(e) => updateBeanPercent(bean.id, e.target.value)}
+                                    placeholder="%"
+                                    className="w-20 h-8"
+                                  />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {language === 'ar' ? bean.descriptionAr : bean.descriptionEn}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Size Selection */}
             <div className="mt-6 pt-6 border-t border-border">
@@ -635,7 +860,7 @@ function CustomizeProduct() {
               <Button
                 size="lg"
                 onClick={handleAddToCart}
-                disabled={selectedFlavors.length === 0}
+                disabled={!selectedBase || (!isBeanBase && selectedFlavors.length === 0) || (isBeanBase && selectedBeans.length === 0 && !selectedPreset)}
                 className="gap-2"
               >
                 <ShoppingBag className="w-5 h-5" />

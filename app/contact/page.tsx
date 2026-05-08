@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/lib/context/language'
 import { toast } from 'sonner'
+import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
 
 export default function ContactPage() {
   const { t } = useLanguage()
@@ -37,25 +38,25 @@ export default function ContactPage() {
       icon: Phone,
       labelEn: 'Phone',
       labelAr: 'الهاتف',
-      valueEn: '+20 100 000 0000',
-      valueAr: '+20 100 000 0000',
-      href: 'tel:+201000000000',
+      valueEn: CONTACT_PHONE,
+      valueAr: CONTACT_PHONE,
+      href: `tel:${CONTACT_PHONE}`,
     },
     {
       icon: Mail,
       labelEn: 'Email',
       labelAr: 'البريد الإلكتروني',
-      valueEn: 'hello@linecoffee.com.eg',
-      valueAr: 'hello@linecoffee.com.eg',
-      href: 'mailto:hello@linecoffee.com.eg',
+      valueEn: CONTACT_EMAIL,
+      valueAr: CONTACT_EMAIL,
+      href: `mailto:${CONTACT_EMAIL}`,
     },
     {
       icon: MessageCircle,
       labelEn: 'WhatsApp',
       labelAr: 'واتساب',
-      valueEn: '+20 100 000 0000',
-      valueAr: '+20 100 000 0000',
-      href: 'https://wa.me/201000000000',
+      valueEn: CONTACT_PHONE,
+      valueAr: CONTACT_PHONE,
+      href: `https://wa.me/${WHATSAPP_ORDER_PHONE_E164}`,
     },
   ]
 

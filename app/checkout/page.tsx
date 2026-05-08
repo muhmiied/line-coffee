@@ -34,6 +34,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
+  const [whatsAppUrl, setWhatsAppUrl] = useState('')
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -106,24 +107,18 @@ export default function CheckoutPage() {
 
       if (response.ok && data.success) {
         setOrderNumber(data.order.order_number)
+        setWhatsAppUrl(data.whatsapp_url || '')
         setOrderPlaced(true)
         clearCart()
         toast.success(t('Order placed successfully!', 'تم تأكيد الطلب بنجاح!'))
+        if (data.whatsapp_url) {
+          window.open(data.whatsapp_url, '_blank', 'noopener,noreferrer')
+        }
       } else {
-        // If API fails (user not logged in), still show success for demo
-        const demoOrderNumber = `LC-${Date.now().toString().slice(-8)}`
-        setOrderNumber(demoOrderNumber)
-        setOrderPlaced(true)
-        clearCart()
-        toast.success(t('Order placed successfully!', 'تم تأكيد الطلب بنجاح!'))
+        toast.error(data.error || t('Failed to place order', 'فشل في إنشاء الطلب'))
       }
     } catch (error) {
-      // Demo mode - still show success
-      const demoOrderNumber = `LC-${Date.now().toString().slice(-8)}`
-      setOrderNumber(demoOrderNumber)
-      setOrderPlaced(true)
-      clearCart()
-      toast.success(t('Order placed successfully!', 'تم تأكيد الطلب بنجاح!'))
+      toast.error(t('Failed to place order', 'فشل في إنشاء الطلب'))
     } finally {
       setIsLoading(false)
     }
@@ -157,6 +152,13 @@ export default function CheckoutPage() {
             )}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {whatsAppUrl && (
+              <Button asChild variant="secondary">
+                <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
+                  {t('Send to WhatsApp', 'إرسال الطلب واتساب')}
+                </a>
+              </Button>
+            )}
             <Button asChild>
               <Link href="/products">
                 {t('Continue Shopping', 'متابعة التسوق')}

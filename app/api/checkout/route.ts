@@ -8,6 +8,38 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
+
+function buildWhatsAppOrderMessage(payload: {
+  orderNumber: string
+  customerName: string
+  customerPhone: string
+  customerEmail?: string
+  address: string
+  items: Array<{ product_name: string; size?: string; quantity: number; unit_price: number; total_price: number }>
+  total: number
+}) {
+  const itemsText = payload.items
+    .map((item, index) => {
+      const size = item.size ? ` - ${item.size}` : ''
+      return `${index + 1}) ${item.product_name}${size}\nالكمية: ${item.quantity}\nسعر الوحدة: ${item.unit_price} ج.م\nالإجمالي: ${item.total_price} ج.م`
+    })
+    .join('\n\n')
+
+  return [
+    'طلب جديد من الموقع - Line Coffee',
+    `رقم الطلب: ${payload.orderNumber}`,
+    `العميل: ${payload.customerName}`,
+    `الموبايل: ${payload.customerPhone}`,
+    `الإيميل: ${payload.customerEmail || '-'}`,
+    `العنوان: ${payload.address}`,
+    '',
+    'تفاصيل المنتجات:',
+    itemsText,
+    '',
+    `الإجمالي النهائي: ${payload.total} ج.م`,
+  ].join('\n')
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +86,11 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert({
         user_id: user?.id || null,  // يمكن أن يكون null للضيوف
+        customer_name: `${shipping_address.first_name || ''} ${shipping_address.last_name || ''}`.trim(),
+        customer_email: shipping_address.email || null,
+        customer_phone: shipping_address.phone || null,
+        address: [shipping_address.address, shipping_address.city].filter(Boolean).join(', '),
+        items,
         subtotal: subtotal || 0,
         shipping_cost: shipping_cost || 0,
         tax: 0,
@@ -109,6 +146,23 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    const customerName = `${shipping_address.first_name || ''} ${shipping_address.last_name || ''}`.trim()
+    const customerAddress = [shipping_address.address, shipping_address.city]
+      .filter(Boolean)
+      .join(', ')
+
+    const whatsappMessage = buildWhatsAppOrderMessage({
+      orderNumber: order.order_number || order.id,
+      customerName,
+      customerPhone: shipping_address.phone || '-',
+      customerEmail: shipping_address.email,
+      address: customerAddress || '-',
+      items,
+      total: order.total,
+    })
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${encodeURIComponent(whatsappMessage)}`
+
     return NextResponse.json({
       success: true,
       order: {
@@ -117,6 +171,7 @@ export async function POST(request: NextRequest) {
         total: order.total,
         status: order.status
       },
+      whatsapp_url: whatsappUrl,
       message: 'Order created successfully'
     })
     

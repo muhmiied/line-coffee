@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { User, Package, Heart, MapPin, Settings, LogOut, ChevronRight, Edit } from 'lucide-react'
+import { User, Package, Heart, MapPin, Settings, LogOut, ChevronRight, Edit, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/context/language'
 import { useAuth } from '@/lib/context/auth'
 import { cn } from '@/lib/utils'
+import { ADMIN_EMAIL } from '@/lib/config/site'
 
 const menuItems = [
   { 
@@ -50,6 +50,7 @@ const menuItems = [
 export default function DashboardPage() {
   const { t, dir } = useLanguage()
   const { user, profile, signOut } = useAuth()
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
 
   // Demo profile data
   const demoProfile = {
@@ -149,6 +150,20 @@ export default function DashboardPage() {
                     <ChevronRight className={cn('h-5 w-5 text-muted-foreground', dir === 'rtl' && 'rotate-180')} />
                   </Link>
                 ))}
+                {isAdmin && (
+                  <Link
+                    href="/dashboard/admin"
+                    className="flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors border-t border-border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <ShieldCheck className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="font-medium">{t('Admin Dashboard', 'لوحة تحكم الأدمن')}</span>
+                    </div>
+                    <ChevronRight className={cn('h-5 w-5 text-muted-foreground', dir === 'rtl' && 'rotate-180')} />
+                  </Link>
+                )}
               </div>
 
               {/* Recent Orders Preview */}

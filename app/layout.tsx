@@ -81,7 +81,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${notoNaskhArabic.variable} bg-background`}>
-      <body className="font-sans antialiased min-h-screen flex flex-col">
+      <body className="font-sans antialiased min-h-screen flex flex-col w-full overflow-x-hidden">
         <LanguageProvider>
           <AuthProvider>
             <ScrollProgress />
@@ -89,7 +89,7 @@ export default function RootLayout({
               <PageLoader />
             </Suspense>
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 w-full">{children}</main>
             <Footer />
             <CartDrawer />
             <WishlistDrawer />
