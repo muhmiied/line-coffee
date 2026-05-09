@@ -669,8 +669,8 @@ function ProductsPageInner() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Banner */}
-      <div className="relative h-[40vh] min-h-[300px] flex items-center justify-center">
+      {/* Hero Banner — slides under the transparent header */}
+      <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24">
         <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-foreground/60" />
         <div className="relative z-10 text-center text-white px-4">

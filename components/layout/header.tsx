@@ -38,7 +38,6 @@ const navLinks = [
   { href: '/contact', labelEn: 'Contact', labelAr: 'تواصل معنا' },
 ]
 
-// Sample products for search - in production this would come from API
 const sampleProducts = [
   { id: '1', name_en: 'Turkish Coffee Classic', name_ar: 'قهوة تركية كلاسيك', slug: 'turkish-coffee-classic' },
   { id: '2', name_en: 'Turkish Coffee Dark', name_ar: 'قهوة تركية غامقة', slug: 'turkish-coffee-dark' },
@@ -72,31 +71,35 @@ export function Header() {
   const { openWishlist } = useWishlistStore()
   const { user, profile, signOut } = useAuth()
   const cartItemCount = isMounted ? getTotalItems() : 0
-  const topStateTextClass = '!text-white'
+
+  // Pages where header starts transparent and turns brown on scroll
+  const isTransparentTop =
+    pathname === '/' ||
+    pathname === '/products' ||
+    pathname.startsWith('/about') ||
+    pathname.startsWith('/products/')
+
+  // Show brown glass background: always on non-transparent pages, or when scrolled
+  const showBrown = !isTransparentTop || isScrolled
 
   const displayName = isMounted
     ? (profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || null)
     : null
 
-  // Fix hydration mismatch - only show cart count after mount
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
+    const handleScroll = () => setIsScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false)
   }, [pathname])
 
-  // Handle search
   useEffect(() => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
@@ -111,7 +114,6 @@ export function Header() {
     }
   }, [searchQuery])
 
-  // Close search dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -129,28 +131,39 @@ export function Header() {
     setSearchQuery('')
   }
 
-  const isHomePage = pathname === '/'
-  const logoSrc = isHomePage && !isScrolled ? '/brand/logo-white.svg' : '/brand/logo-dark.svg'
-
   return (
     <>
       <header
         className={cn(
-          'w-full transition-all duration-[400ms] ease-in-out text-white',
-          isHomePage
-            ? isScrolled
-              ? 'backdrop-blur-[16px] bg-[rgba(82,37,0,0.9)]'
-              : 'bg-transparent'
-            : 'bg-[#522500]'
+          'w-full transition-all duration-[400ms] ease-in-out text-white relative overflow-hidden',
+          !showBrown && 'bg-transparent',
+          showBrown && 'backdrop-blur-[18px]'
         )}
+        style={
+          showBrown
+            ? {
+                background:
+                  'linear-gradient(180deg, rgba(255,220,194,0.13) 0%, transparent 60%), rgba(82,37,0,0.92)',
+              }
+            : undefined
+        }
       >
-        <div className="container mx-auto px-4">
+        {/* Cream shimmer overlay — visible when brown */}
+        {showBrown && (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FFDCC2]/[0.07] to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#FFDCC2]/40 to-transparent pointer-events-none" />
+          </>
+        )}
+
+        <div className="container mx-auto px-4 relative z-10">
           <div className="flex items-center justify-between h-20 md:h-24 relative">
-            {/* Centered line under header - home only */}
-            {isHomePage && (
+            {/* Subtle bottom line on home transparent state */}
+            {!showBrown && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] md:w-[60%] h-[2px] bg-white/40 rounded-full" />
             )}
-            {/* Logo */}
+
+            {/* Logo — always white since bg is always dark when visible */}
             <Link href="/" className="flex items-center">
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
@@ -158,7 +171,7 @@ export function Header() {
                 className="relative h-[3.5rem] w-[12rem] md:h-[4rem] md:w-[14rem]"
               >
                 <Image
-                  src={logoSrc}
+                  src="/brand/logo-white.svg"
                   alt="Line Coffee"
                   fill
                   priority
@@ -176,16 +189,14 @@ export function Header() {
                   href={link.href}
                   className={cn(
                     'relative text-base md:text-lg font-serif font-medium transition-colors drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]',
-                    pathname === link.href
-                      ? 'text-[#FFDCC2]'
-                      : topStateTextClass
+                    pathname === link.href ? 'text-[#FFDCC2]' : 'text-white'
                   )}
                 >
                   {t(link.labelEn, link.labelAr)}
                   {pathname === link.href && (
                     <motion.div
                       layoutId="activeNav"
-                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#FFDCC2] rounded-full"
                     />
                   )}
                 </Link>
@@ -194,33 +205,25 @@ export function Header() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              {/* Language Dropdown */}
+              {/* Language */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={cn(
-                      'hidden md:flex items-center gap-1 px-2',
-                      topStateTextClass,
-                      'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                    )}
+                    className="hidden md:flex items-center gap-1 px-2 text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                   >
                     <span className="text-sm">{language === 'en' ? 'EN' : 'AR'}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>
-                    English
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('ar')}>
-                    عربي
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage('ar')}>عربي</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Search - Expandable */}
+              {/* Search */}
               <div ref={searchRef} className="relative hidden md:flex items-center">
                 <AnimatePresence>
                   {isSearchOpen && (
@@ -246,13 +249,12 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className={cn(topStateTextClass, 'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]')}
+                  className="text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                   aria-label={t('Search', 'بحث')}
                 >
                   {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
                 </Button>
 
-                {/* Search Results Dropdown */}
                 <AnimatePresence>
                   {isSearchOpen && (searchResults.length > 0 || searchQuery) && (
                     <motion.div
@@ -291,11 +293,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openWishlist}
-                className={cn(
-                  'hidden md:flex',
-                  topStateTextClass,
-                  'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                )}
+                className="hidden md:flex text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                 aria-label={t('Wishlist', 'المفضلة')}
               >
                 <Heart className="h-5 w-5" />
@@ -306,11 +304,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openCart}
-                className={cn(
-                  'relative',
-                  topStateTextClass,
-                  'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                )}
+                className="relative text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                 aria-label={t('Cart', 'السلة')}
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -318,25 +312,21 @@ export function Header() {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium"
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#FFDCC2] text-[#522500] text-xs flex items-center justify-center font-medium"
                   >
                     {cartItemCount > 99 ? '99+' : cartItemCount}
                   </motion.span>
                 )}
               </Button>
 
-              {/* User — logged in: name + dropdown | guest: icon → login */}
+              {/* User */}
               {isMounted && displayName ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn(
-                        'hidden md:flex items-center gap-1.5 px-2 max-w-[120px]',
-                        topStateTextClass,
-                        'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                      )}
+                      className="hidden md:flex items-center gap-1.5 px-2 max-w-[120px] text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                     >
                       <User className="h-4 w-4 shrink-0" />
                       <span className="text-sm truncate">{displayName}</span>
@@ -365,11 +355,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   asChild
-                  className={cn(
-                    'hidden md:flex',
-                    topStateTextClass,
-                    'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                  )}
+                  className="hidden md:flex text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                 >
                   <Link href="/auth/login" aria-label={t('Account', 'الحساب')}>
                     <User className="h-5 w-5" />
@@ -382,18 +368,10 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={cn(
-                  'md:hidden',
-                  topStateTextClass,
-                  'hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]'
-                )}
+                className="md:hidden text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
                 aria-label={t('Menu', 'القائمة')}
               >
-                {isMobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
+                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>
@@ -410,13 +388,11 @@ export function Header() {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 md:hidden"
           >
-            {/* Backdrop */}
             <div
               className="absolute inset-0 bg-background/80 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
 
-            {/* Menu Content */}
             <motion.nav
               initial={{ x: language === 'ar' ? -300 : 300 }}
               animate={{ x: 0 }}
@@ -468,9 +444,7 @@ export function Header() {
                         href={link.href}
                         className={cn(
                           'block text-lg font-medium py-2 transition-colors hover:text-primary',
-                          pathname === link.href
-                            ? 'text-primary'
-                            : 'text-foreground'
+                          pathname === link.href ? 'text-primary' : 'text-foreground'
                         )}
                       >
                         {t(link.labelEn, link.labelAr)}
@@ -479,10 +453,8 @@ export function Header() {
                   ))}
                 </div>
 
-                {/* Divider */}
                 <div className="h-px bg-border" />
 
-                {/* Additional Links */}
                 <div className="flex flex-col gap-4">
                   <Link
                     href="/auth/login"
@@ -492,10 +464,7 @@ export function Header() {
                     <span>{t('Sign In', 'تسجيل الدخول')}</span>
                   </Link>
                   <button
-                    onClick={() => {
-                      openWishlist()
-                      setIsMobileMenuOpen(false)
-                    }}
+                    onClick={() => { openWishlist(); setIsMobileMenuOpen(false) }}
                     className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
                   >
                     <Heart className="h-5 w-5" />
@@ -503,7 +472,6 @@ export function Header() {
                   </button>
                 </div>
 
-                {/* Language Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
@@ -512,12 +480,8 @@ export function Header() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-full">
-                    <DropdownMenuItem onClick={() => setLanguage('en')}>
-                      English
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage('ar')}>
-                      عربي
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ar')}>عربي</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -525,7 +489,6 @@ export function Header() {
           </motion.div>
         )}
       </AnimatePresence>
-
     </>
   )
 }

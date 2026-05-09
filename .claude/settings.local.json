@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git stash *)",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-backend\\\\src\\\\models\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-backend\\\\src\\\\routes\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-backend\\\\src\\\\middleware\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-backend\\\\src\\\\controllers\")",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-frontend\\\\src\\\\components\\\\layout\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-frontend\\\\src\\\\components\\\\products\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-frontend\\\\src\\\\components\\\\common\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-frontend\\\\src\\\\pages\\\\auth\")",
+      "Bash(mkdir -p \"D:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\line-coffee-frontend\\\\src\\\\pages\\\\dashboard\\\\admin\")",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(npx kill-port *)",
+      "Bash(npx vite *)",
+      "Bash(curl *)",
+      "Bash(git *)"
+    ]
+  }
+}

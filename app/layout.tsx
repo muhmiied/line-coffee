@@ -88,7 +88,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased min-h-screen flex flex-col w-full overflow-x-hidden">
+      <body className="font-sans antialiased min-h-screen flex flex-col w-full">
         <LanguageProvider>
           <AuthProvider>
             <ScrollProgress />
