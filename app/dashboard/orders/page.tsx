@@ -62,7 +62,7 @@ export default function DashboardOrdersPage() {
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="mb-6">
             <h1 className="font-serif text-3xl font-bold">{t('My Orders', 'طلباتي')}</h1>
             <p className="text-muted-foreground mt-2">

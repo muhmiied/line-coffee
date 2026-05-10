@@ -18,8 +18,8 @@
 
 :root {
   /* White base canvas */
-  --background: 0 0% 100%;
-  --foreground: 20 100% 8%;
+  --background: 00 00% 100%;
+  --foreground: 20 00% 0%;
 
   /* Card - White */
   --card: 0 0% 100%;
@@ -187,8 +187,8 @@
   }
 
   * {
-    @apply border-border outline-ring/50;
-  }
+  @apply outline-ring/50;
+}
   body {
     @apply bg-background text-foreground;
     scrollbar-gutter: stable;
@@ -427,4 +427,13 @@
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+html,
+body {
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }

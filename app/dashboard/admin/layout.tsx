@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/context/auth'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
+import { signOut as serverSignOut } from '@/lib/actions/auth.actions'
+
 import {
   LayoutDashboard,
   Package,
@@ -55,7 +57,7 @@ const pageTitles: Record<string, { en: string; ar: string }> = {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   const pathname = usePathname()
   const [avatarOpen, setAvatarOpen] = useState(false)
@@ -81,12 +83,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     : t('Dashboard', 'لوحة التحكم')
 
   const handleSignOut = async () => {
-    await signOut()
-    window.location.href = '/'
-  }
+  await serverSignOut()
+}
 
   return (
-    <div className="flex -mt-20 md:-mt-24 min-h-[100dvh] bg-[#0f0900]">
+    <div className="flex -mt-20 md:-mt-24 min-h-[100dvh] bg-background">
 
       {/* ── Sidebar ── */}
       <aside className="fixed left-0 top-0 h-[100dvh] w-[215px] bg-[#0a0500] flex flex-col z-50 select-none">
@@ -303,7 +304,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="flex-1 pt-16 bg-[#0f0900]">
+        <main className="flex-1 pt-16 bg-background">
           {children}
         </main>
       </div>
