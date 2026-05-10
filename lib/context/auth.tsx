@@ -76,11 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    if (!supabase) return
-    await supabase.auth.signOut()
-    setUser(null)
-    setProfile(null)
-  }
+  if (!supabase) return
+
+  await supabase.auth.signOut()
+
+  setUser(null)
+  setProfile(null)
+
+  window.location.href = '/'
+}
 
   return (
     <AuthContext.Provider value={{ user, profile, isLoading, isSupabaseConfigured, signOut, refreshProfile }}>
