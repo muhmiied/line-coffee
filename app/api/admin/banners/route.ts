@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
-async function guard() {
+async function guardAdmin() {
   const supabase = await createClient()
   if (!supabase) return null
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return null
-  return supabase
+  return createAdminClient()
 }
 
 export async function GET() {
-  const supabase = await guard()
-  if (!supabase) return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+  const admin = await guardAdmin()
+  if (!admin) return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('banners')
       .select('*')
       .order('sort_order', { ascending: true })
@@ -27,12 +28,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = await guard()
-  if (!supabase) return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+  const admin = await guardAdmin()
+  if (!admin) return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
 
   try {
     const body = await request.json()
-    const { data, error } = await supabase.from('banners').insert(body).select().single()
+    const { data, error } = await admin.from('banners').insert(body).select().single()
     if (error) throw error
     return NextResponse.json({ success: true, data })
   } catch (e: unknown) {

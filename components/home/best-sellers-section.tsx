@@ -1,118 +1,35 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { ProductCard } from '@/components/products/product-card'
 import { useLanguage } from '@/lib/context/language'
+import { createClient } from '@/lib/supabase/client'
 import type { Product } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const bestSellerProducts: Product[] = [
-  {
-    id: 'tc-medium-roast',
-    slug: 'turkish-coffee-medium-roast',
-    name_en: 'Turkish Coffee Medium Roast',
-    name_ar: 'قهوة تركية محوج وسط',
-    description_en: 'Classic Turkish coffee with medium roast',
-    description_ar: 'قهوة تركية كلاسيكية محوجة وسط',
-    category_id: 'turkish-coffee',
-    images: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800'],
-    origin: 'Turkey',
-    roast_level: 'medium',
-    flavor_notes: ['Rich', 'Balanced'],
-    is_featured: true,
-    is_best_seller: true,
-    is_new: false,
-    is_visible: true,
-    stock_quantity: 100,
-    created_at: '',
-    updated_at: '',
-    sizes: [
-      { id: 'tc-mr-250', product_id: 'tc-medium-roast', size: '250g', price: 125, compare_at_price: null, sku: null, is_available: true },
-      { id: 'tc-mr-500', product_id: 'tc-medium-roast', size: '500g', price: 240, compare_at_price: null, sku: null, is_available: true },
-      { id: 'tc-mr-1000', product_id: 'tc-medium-roast', size: '1kg', price: 460, compare_at_price: null, sku: null, is_available: true },
-    ],
-  },
-  {
-    id: 'cap-classic',
-    slug: 'cappuccino-classic',
-    name_en: 'Cappuccino Classic',
-    name_ar: 'كابتشينو كلاسيك',
-    description_en: 'Creamy classic cappuccino mix',
-    description_ar: 'كابتشينو كلاسيك كريمي',
-    category_id: 'cappuccino',
-    images: ['https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800'],
-    origin: 'Italy',
-    roast_level: 'medium',
-    flavor_notes: ['Creamy', 'Smooth'],
-    is_featured: true,
-    is_best_seller: true,
-    is_new: false,
-    is_visible: true,
-    stock_quantity: 120,
-    created_at: '',
-    updated_at: '',
-    sizes: [
-      { id: 'cap-c-250', product_id: 'cap-classic', size: '250g', price: 65, compare_at_price: null, sku: null, is_available: true },
-      { id: 'cap-c-500', product_id: 'cap-classic', size: '500g', price: 120, compare_at_price: null, sku: null, is_available: true },
-      { id: 'cap-c-1000', product_id: 'cap-classic', size: '1kg', price: 220, compare_at_price: null, sku: null, is_available: true },
-    ],
-  },
-  {
-    id: 'fc-hazelnut',
-    slug: 'flavored-coffee-hazelnut',
-    name_en: 'Hazelnut Coffee',
-    name_ar: 'قهوة بندق',
-    description_en: 'Delicious hazelnut flavored coffee',
-    description_ar: 'قهوة بنكهة البندق اللذيذة',
-    category_id: 'flavored-coffee',
-    images: ['https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800'],
-    origin: 'Egypt',
-    roast_level: 'medium',
-    flavor_notes: ['Hazelnut', 'Sweet'],
-    is_featured: true,
-    is_best_seller: true,
-    is_new: false,
-    is_visible: true,
-    stock_quantity: 100,
-    created_at: '',
-    updated_at: '',
-    sizes: [
-      { id: 'fc-hz-250', product_id: 'fc-hazelnut', size: '250g', price: 100, compare_at_price: null, sku: null, is_available: true },
-      { id: 'fc-hz-500', product_id: 'fc-hazelnut', size: '500g', price: 190, compare_at_price: null, sku: null, is_available: true },
-      { id: 'fc-hz-1000', product_id: 'fc-hazelnut', size: '1kg', price: 360, compare_at_price: null, sku: null, is_available: true },
-    ],
-  },
-  {
-    id: 'hc-classic',
-    slug: 'hot-chocolate-classic',
-    name_en: 'Hot Chocolate Classic',
-    name_ar: 'هوت شوكلت كلاسيك',
-    description_en: 'Rich and creamy hot chocolate',
-    description_ar: 'هوت شوكلت غني وكريمي',
-    category_id: 'hot-chocolate',
-    images: ['https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800'],
-    origin: 'Egypt',
-    roast_level: null,
-    flavor_notes: ['Chocolate', 'Creamy'],
-    is_featured: true,
-    is_best_seller: true,
-    is_new: false,
-    is_visible: true,
-    stock_quantity: 150,
-    created_at: '',
-    updated_at: '',
-    sizes: [
-      { id: 'hc-c-250', product_id: 'hc-classic', size: '250g', price: 60, compare_at_price: null, sku: null, is_available: true },
-      { id: 'hc-c-500', product_id: 'hc-classic', size: '500g', price: 110, compare_at_price: null, sku: null, is_available: true },
-      { id: 'hc-c-1000', product_id: 'hc-classic', size: '1kg', price: 200, compare_at_price: null, sku: null, is_available: true },
-    ],
-  },
-]
-
 export function BestSellersSection() {
   const { t, dir } = useLanguage()
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const supabase = createClient()
+      if (!supabase) { setIsLoading(false); return }
+      const { data } = await supabase
+        .from('products')
+        .select('*, sizes:product_sizes(*)')
+        .eq('is_best_seller', true)
+        .eq('is_visible', true)
+        .limit(4)
+      setProducts(data || [])
+      setIsLoading(false)
+    }
+    fetchProducts()
+  }, [])
 
   return (
     <section className="relative py-20 md:py-28 overflow-hidden bg-[#0d0600]">
@@ -180,17 +97,33 @@ export function BestSellersSection() {
         </div>
 
         {/* ── Products grid ── */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-        >
-          {bestSellerProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </motion.div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden bg-[#1e0b02]/80 animate-pulse">
+                <div className="aspect-[4/5] bg-[#2a1006]/50" />
+                <div className="p-4 space-y-3">
+                  <div className="h-3 bg-[#2a1006]/50 rounded-full w-1/3" />
+                  <div className="h-4 bg-[#2a1006]/50 rounded-full w-3/4" />
+                  <div className="h-3 bg-[#2a1006]/50 rounded-full w-1/2" />
+                  <div className="h-5 bg-[#2a1006]/50 rounded-full w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+          >
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </motion.div>
+        )}
 
       </div>
     </section>

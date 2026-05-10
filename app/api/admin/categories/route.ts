@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 function slugify(text: string) {
@@ -13,12 +14,15 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return NextResponse.json({ success: false }, { status: 403 })
 
-  const { data: cats } = await supabase
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+
+  const { data: cats } = await admin
     .from('categories')
     .select('id, name_ar, name_en, image_url, sort_order')
     .order('sort_order', { ascending: true })
 
-  const { data: products } = await supabase.from('products').select('category_id')
+  const { data: products } = await admin.from('products').select('category_id')
   const countMap: Record<string, number> = {}
   ;(products || []).forEach(p => {
     if (p.category_id) countMap[p.category_id] = (countMap[p.category_id] || 0) + 1
@@ -35,11 +39,14 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return NextResponse.json({ success: false }, { status: 403 })
 
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+
   const body = await request.json()
   const { name_ar, name_en, image_url, sort_order } = body
 
   const slug = slugify(name_en)
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('categories')
     .insert({ slug, name_ar, name_en, image_url: image_url || null, sort_order: sort_order ?? 0, is_visible: true })
     .select()

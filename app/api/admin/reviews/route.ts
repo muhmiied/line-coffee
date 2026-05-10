@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 export async function GET() {
@@ -9,7 +10,10 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return NextResponse.json({ success: false }, { status: 403 })
 
-  const { data } = await supabase
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+
+  const { data } = await admin
     .from('testimonials')
     .select('id, customer_name, content_ar, content_en, rating, is_visible, created_at')
     .order('created_at', { ascending: false })
@@ -24,8 +28,11 @@ export async function PATCH(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return NextResponse.json({ success: false }, { status: 403 })
 
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+
   const { id, is_visible } = await request.json()
-  const { error } = await supabase
+  const { error } = await admin
     .from('testimonials')
     .update({ is_visible })
     .eq('id', id)
@@ -41,8 +48,11 @@ export async function DELETE(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return NextResponse.json({ success: false }, { status: 403 })
 
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+
   const { id } = await request.json()
-  const { error } = await supabase.from('testimonials').delete().eq('id', id)
+  const { error } = await admin.from('testimonials').delete().eq('id', id)
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 400 })
   return NextResponse.json({ success: true })

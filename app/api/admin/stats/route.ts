@@ -1,19 +1,24 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 export async function GET() {
+  // Verify requesting user is admin via session cookie (ANON KEY)
   const supabase = await createClient()
   if (!supabase) {
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Use service role to bypass RLS for all data queries
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
   }
 
   // Date helpers
@@ -38,7 +43,7 @@ export async function GET() {
   }> = []
 
   try {
-    const { data } = await supabase
+    const { data } = await admin
       .from('orders')
       .select('id, order_number, status, total, created_at, user_id, shipping_address')
       .order('created_at', { ascending: false })
@@ -91,7 +96,7 @@ export async function GET() {
   // ── Products ────────────────────────────────────────────────────────────────
   let totalProducts = 0
   try {
-    const { count } = await supabase
+    const { count } = await admin
       .from('products')
       .select('*', { count: 'exact', head: true })
     totalProducts = count || 0
@@ -108,7 +113,7 @@ export async function GET() {
     sold: number
   }> = []
   try {
-    const { data: orderItems } = await supabase
+    const { data: orderItems } = await admin
       .from('order_items')
       .select('product_id, product_name, product_image, unit_price, quantity')
       .gte('created_at', thirtyDaysAgoISO)
@@ -143,26 +148,19 @@ export async function GET() {
   let returningThisMonth = 0
 
   try {
-    const { count } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-    totalCustomers = count || 0
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    totalCustomers = users?.length || 0
 
-    const { count: currentCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', thirtyDaysAgoISO)
+    const currentUsers = (users || []).filter(u => new Date(u.created_at) >= thirtyDaysAgo)
+    const prevUsers = (users || []).filter(u => {
+      const d = new Date(u.created_at)
+      return d >= sixtyDaysAgo && d < thirtyDaysAgo
+    })
 
-    const { count: prevCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', sixtyDaysAgoISO)
-      .lt('created_at', thirtyDaysAgoISO)
-
-    newThisMonth = currentCount || 0
-    returningThisMonth = Math.max(0, (totalCustomers || 0) - (currentCount || 0))
-    const cc = currentCount || 0
-    const pc = prevCount || 0
+    newThisMonth = currentUsers.length
+    returningThisMonth = Math.max(0, totalCustomers - newThisMonth)
+    const cc = currentUsers.length
+    const pc = prevUsers.length
     customersChange = cc === 0 && pc === 0 ? 0 : pc === 0 ? 100 : Math.round(((cc - pc) / pc) * 100)
   } catch {
     totalCustomers = 0
@@ -177,7 +175,7 @@ export async function GET() {
   }> = []
 
   try {
-    const { data: cats } = await supabase
+    const { data: cats } = await admin
       .from('categories')
       .select('id, name_ar, name_en, image_url')
       .order('sort_order', { ascending: true })
@@ -185,7 +183,7 @@ export async function GET() {
 
     if (cats && cats.length > 0) {
       const catIds = cats.map(c => c.id)
-      const { data: products } = await supabase
+      const { data: products } = await admin
         .from('products')
         .select('category_id')
         .in('category_id', catIds)
@@ -219,7 +217,7 @@ export async function GET() {
   }> = []
 
   try {
-    const { data } = await supabase
+    const { data } = await admin
       .from('testimonials')
       .select('id, customer_name, content_ar, content_en, rating, created_at')
       .eq('is_visible', true)

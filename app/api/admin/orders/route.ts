@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 export async function GET() {
@@ -8,15 +9,17 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: orders, error } = await supabase
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+  }
+
+  const { data: orders, error } = await admin
     .from('orders')
     .select('*, items:order_items(*)')
     .order('created_at', { ascending: false })
@@ -38,4 +41,3 @@ export async function GET() {
     },
   })
 }
-

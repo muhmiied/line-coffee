@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 function slugify(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, '')
+    .replace(/[^a-z0-9؀-ۿ\s-]/g, '')
     .replace(/\s+/g, '-')
 }
 
@@ -16,14 +17,17 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data, error } = await supabase
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+  }
+
+  const { data, error } = await admin
     .from('products')
     .select('*, sizes:product_sizes(*)')
     .order('created_at', { ascending: false })
@@ -41,11 +45,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+  }
+
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
   }
 
   const body = await request.json()
@@ -59,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   const slug = body.slug ? String(body.slug) : slugify(nameEn)
 
-  const { data: product, error } = await supabase
+  const { data: product, error } = await admin
     .from('products')
     .insert({
       slug,
@@ -86,7 +93,7 @@ export async function POST(request: NextRequest) {
   ].filter((size) => size.price > 0)
 
   if (sizeRows.length > 0) {
-    const { error: sizesError } = await supabase.from('product_sizes').insert(
+    const { error: sizesError } = await admin.from('product_sizes').insert(
       sizeRows.map((size) => ({
         product_id: product.id,
         size: size.size,
@@ -101,4 +108,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ success: true, data: product })
 }
-

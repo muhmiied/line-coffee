@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 const allowedStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
@@ -13,12 +14,14 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+  }
+
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
   }
 
   const body = await request.json()
@@ -29,7 +32,7 @@ export async function PATCH(
   }
 
   const { orderId } = await params
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('orders')
     .update({ status })
     .eq('id', orderId)
@@ -42,4 +45,3 @@ export async function PATCH(
 
   return NextResponse.json({ success: true, data })
 }
-

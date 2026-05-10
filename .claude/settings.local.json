@@ -29,7 +29,9 @@
       "Bash(Select-Object -Last 100)",
       "Bash(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Force)",
       "Bash(Select-Object Name, FullName)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts|css\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts|css\\)$\")",
+      "Bash(Get-ChildItem -Recurse -Path \"app/api\" -Include \"route.ts\", \"route.js\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

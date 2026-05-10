@@ -1,13 +1,6 @@
-/**
- * ===========================================
- * CHECKOUT API - واجهة الدفع (للضيوف والمستخدمين)
- * ===========================================
- * 
- * POST /api/checkout - إنشاء طلب جديد (يعمل بدون تسجيل دخول)
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
 
 function buildWhatsAppOrderMessage(payload: {
@@ -43,19 +36,21 @@ function buildWhatsAppOrderMessage(payload: {
 
 export async function POST(request: NextRequest) {
   try {
+    // Try to get the authenticated user (optional — guest checkout allowed)
     const supabase = await createClient()
-    
-    // التأكد من وجود Supabase
-    if (!supabase) {
+    const userId = supabase
+      ? (await supabase.auth.getUser()).data.user?.id ?? null
+      : null
+
+    // Use service role for all DB writes to bypass RLS (supports guest orders)
+    const admin = createAdminClient()
+    if (!admin) {
       return NextResponse.json(
         { success: false, error: 'Database service not configured' },
         { status: 503 }
       )
     }
-    
-    // محاولة جلب المستخدم (اختياري)
-    const { data: { user } } = await supabase.auth.getUser()
-    
+
     const body = await request.json()
     const {
       items,
@@ -67,27 +62,20 @@ export async function POST(request: NextRequest) {
       discount_code,
       discount_amount,
     } = body
-    
-    // التحقق من البيانات المطلوبة
+
     if (!items || items.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Cart is empty' },
-        { status: 400 }
-      )
+      return NextResponse.json({ success: false, error: 'Cart is empty' }, { status: 400 })
     }
-    
+
     if (!shipping_address || !shipping_address.first_name || !shipping_address.phone) {
-      return NextResponse.json(
-        { success: false, error: 'Shipping address is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ success: false, error: 'Shipping address is required' }, { status: 400 })
     }
-    
-    // إنشاء الطلب
-    const { data: order, error: orderError } = await supabase
+
+    // Create order
+    const { data: order, error: orderError } = await admin
       .from('orders')
       .insert({
-        user_id: user?.id || null,  // يمكن أن يكون null للضيوف
+        user_id: userId,
         customer_name: `${shipping_address.first_name || ''} ${shipping_address.last_name || ''}`.trim(),
         customer_email: shipping_address.email || null,
         customer_phone: shipping_address.phone || null,
@@ -103,20 +91,17 @@ export async function POST(request: NextRequest) {
         billing_address: shipping_address,
         payment_method: payment_method || 'cod',
         payment_status: 'pending',
-        status: 'pending'
+        status: 'pending',
       })
       .select()
       .single()
-    
+
     if (orderError) {
       console.error('Error creating order:', orderError)
-      return NextResponse.json(
-        { success: false, error: 'Failed to create order' },
-        { status: 500 }
-      )
+      return NextResponse.json({ success: false, error: 'Failed to create order' }, { status: 500 })
     }
-    
-    // إضافة عناصر الطلب
+
+    // Create order items
     const orderItems = items.map((item: {
       product_id: string
       product_name: string
@@ -133,32 +118,26 @@ export async function POST(request: NextRequest) {
       size: item.size,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      total_price: item.total_price
+      total_price: item.total_price,
     }))
-    
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems)
-    
+
+    const { error: itemsError } = await admin.from('order_items').insert(orderItems)
+
     if (itemsError) {
       console.error('Error creating order items:', itemsError)
-      // حذف الطلب في حالة فشل إضافة العناصر
-      await supabase.from('orders').delete().eq('id', order.id)
-      return NextResponse.json(
-        { success: false, error: 'Failed to create order items' },
-        { status: 500 }
-      )
+      await admin.from('orders').delete().eq('id', order.id)
+      return NextResponse.json({ success: false, error: 'Failed to create order items' }, { status: 500 })
     }
-    
-    // Increment discount uses counter
+
+    // Increment discount code usage counter
     if (discount_code) {
-      const { data: disc } = await supabase
+      const { data: disc } = await admin
         .from('discounts')
         .select('uses')
         .eq('code', discount_code)
         .single()
       if (disc) {
-        await supabase
+        await admin
           .from('discounts')
           .update({ uses: (disc.uses || 0) + 1 })
           .eq('code', discount_code)
@@ -166,19 +145,18 @@ export async function POST(request: NextRequest) {
     }
 
     const customerName = `${shipping_address.first_name || ''} ${shipping_address.last_name || ''}`.trim()
-    const customerAddress = [shipping_address.address, shipping_address.city]
-      .filter(Boolean)
-      .join(', ')
+    const customerAddress = [shipping_address.address, shipping_address.city].filter(Boolean).join(', ')
 
-    const whatsappMessage = buildWhatsAppOrderMessage({
-      orderNumber: order.order_number || order.id,
-      customerName,
-      customerPhone: shipping_address.phone || '-',
-      customerEmail: shipping_address.email,
-      address: customerAddress || '-',
-      items,
-      total: order.total,
-    }) + (discount_code ? `\n\nكود الخصم: ${discount_code} (خصم ${discount_amount} ج.م)` : '')
+    const whatsappMessage =
+      buildWhatsAppOrderMessage({
+        orderNumber: order.order_number || order.id,
+        customerName,
+        customerPhone: shipping_address.phone || '-',
+        customerEmail: shipping_address.email,
+        address: customerAddress || '-',
+        items,
+        total: order.total,
+      }) + (discount_code ? `\n\nكود الخصم: ${discount_code} (خصم ${discount_amount} ج.م)` : '')
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${encodeURIComponent(whatsappMessage)}`
 
@@ -188,18 +166,17 @@ export async function POST(request: NextRequest) {
         id: order.id,
         order_number: order.order_number,
         total: order.total,
-        status: order.status
+        status: order.status,
       },
       whatsapp_url: whatsappUrl,
-      message: 'Order created successfully'
+      message: 'Order created successfully',
     })
-    
   } catch (error) {
     console.error('Checkout API Error:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to process checkout' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to process checkout',
       },
       { status: 500 }
     )

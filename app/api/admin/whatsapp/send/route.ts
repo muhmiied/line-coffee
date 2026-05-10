@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 export async function POST(request: NextRequest) {
@@ -9,6 +10,9 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
 
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+
   const { phones, message } = await request.json()
 
   if (!phones?.length || !message) {
@@ -16,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Get CallMeBot credentials from site_settings
-  const { data: settings } = await supabase
+  const { data: settings } = await admin
     .from('site_settings')
     .select('key, value')
     .in('key', ['wa_phone', 'wa_apikey'])

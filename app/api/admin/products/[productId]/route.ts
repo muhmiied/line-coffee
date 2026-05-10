@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 export async function PATCH(
@@ -11,11 +12,14 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+  }
+
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
   }
 
   const { productId } = await params
@@ -31,7 +35,7 @@ export async function PATCH(
   if ('category_id' in body) patch.category_id = body.category_id
   if (body.images !== undefined) patch.images = body.images
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('products')
     .update(patch)
     .eq('id', productId)
@@ -48,7 +52,7 @@ export async function PATCH(
 
   for (const [size, price] of Object.entries(priceMap)) {
     if (price <= 0) continue
-    const { data: existing } = await supabase
+    const { data: existing } = await admin
       .from('product_sizes')
       .select('id')
       .eq('product_id', productId)
@@ -56,9 +60,9 @@ export async function PATCH(
       .maybeSingle()
 
     if (existing?.id) {
-      await supabase.from('product_sizes').update({ price }).eq('id', existing.id)
+      await admin.from('product_sizes').update({ price }).eq('id', existing.id)
     } else {
-      await supabase.from('product_sizes').insert({ product_id: productId, size, price, is_available: true })
+      await admin.from('product_sizes').insert({ product_id: productId, size, price, is_available: true })
     }
   }
 
@@ -74,19 +78,21 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: 'Database service not configured' }, { status: 503 })
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
+  const admin = createAdminClient()
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+  }
+
   const { productId } = await params
-  const { error } = await supabase.from('products').delete().eq('id', productId)
+  const { error } = await admin.from('products').delete().eq('id', productId)
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })
 }
-

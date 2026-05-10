@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils'
 export default function CheckoutPage() {
   const { t, language, dir } = useLanguage()
   const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, profile, isLoading: authLoading } = useAuth()
   const { items, getTotal, clearCart } = useCartStore()
 
   useEffect(() => {
@@ -41,6 +41,18 @@ export default function CheckoutPage() {
       router.replace('/auth/login?redirect=/checkout')
     }
   }, [authLoading, user, router])
+
+  // Autofill form from authenticated user's profile
+  useEffect(() => {
+    if (!user && !profile) return
+    setFormData(prev => ({
+      ...prev,
+      email: user?.email || prev.email,
+      firstName: profile?.first_name || prev.firstName,
+      lastName: profile?.last_name || prev.lastName,
+      phone: profile?.phone || prev.phone,
+    }))
+  }, [user, profile])
   const [isLoading, setIsLoading] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
