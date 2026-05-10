@@ -139,7 +139,7 @@ export function Header() {
     <>
       <header
         className={cn(
-          'w-full transition-all duration-[400ms] ease-in-out text-white relative overflow-hidden',
+          'w-full transition-all duration-[400ms] ease-in-out text-white relative',
           !showBrown && 'bg-transparent',
           showBrown && [
             'backdrop-blur-[22px] saturate-150',

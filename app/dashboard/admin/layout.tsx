@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -58,7 +58,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, signOut } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   const pathname = usePathname()
-  const router = useRouter()
   const [avatarOpen, setAvatarOpen] = useState(false)
 
   useEffect(() => {
@@ -197,7 +196,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 ml-[215px] min-h-[100dvh] flex flex-col">
 
         {/* Top bar */}
-        <header className="fixed top-0 right-0 left-[215px] h-16 bg-[#0a0500]/95 backdrop-blur-sm border-b border-[#c8941a]/8 z-40 flex items-center justify-between px-6">
+        <header className="fixed top-0 right-0 left-[215px] h-16 bg-[#0a0500]/95 backdrop-blur-sm border-b border-[#c8941a]/12 z-40 flex items-center justify-between px-6">
           {pathname === '/dashboard/admin' ? (
             <div>
               <h1 className="text-white font-bold text-base leading-none">
@@ -263,8 +262,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               {avatarOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setAvatarOpen(false)} />
-                  <div className="absolute left-0 top-full mt-2 w-48 bg-[#0a0500] border border-[#c8941a]/15 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="fixed inset-0 z-50" onClick={() => setAvatarOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#0a0500] border border-[#c8941a]/15 rounded-xl shadow-2xl z-[60] overflow-hidden">
                     <div className="px-4 py-3 border-b border-[#c8941a]/10">
                       <p className="text-white/80 text-xs font-semibold truncate">{displayName}</p>
                       <p className="text-white/30 text-[10px] truncate mt-0.5">{email}</p>

@@ -17,24 +17,24 @@
 */
 
 :root {
-  /* Cream/Peach Background - #FFDCC2 */
-  --background: 30 100% 91%;
+  /* White base canvas */
+  --background: 0 0% 100%;
   --foreground: 20 100% 8%;
-  
+
   /* Card - White */
   --card: 0 0% 100%;
   --card-foreground: 20 100% 8%;
-  
+
   /* Popover */
   --popover: 0 0% 100%;
   --popover-foreground: 20 100% 8%;
-  
+
   /* Primary - Dark Brown #522500 */
   --primary: 20 100% 16%;
   --primary-foreground: 30 100% 91%;
-  
-  /* Secondary - Lighter Cream */
-  --secondary: 30 60% 94%;
+
+  /* Secondary - Brand Cream #FFDCC2 */
+  --secondary: 30 100% 91%;
   --secondary-foreground: 20 100% 16%;
   
   /* Muted */
@@ -171,14 +171,19 @@
 }
 
 @layer base {
-  html, body {
+  html {
+    width: 100%;
+    max-width: 100%;
+    /* clip prevents horizontal scroll without creating a scroll container,
+       so Radix UI portal content (position:absolute on body) isn't hard-clipped */
+    overflow-x: clip;
+    scrollbar-gutter: stable;
+  }
+
+  body {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
-  }
-
-  html {
-    scrollbar-gutter: stable;
   }
 
   * {
