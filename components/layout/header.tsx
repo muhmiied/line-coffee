@@ -15,6 +15,8 @@ import {
   ChevronDown,
   Package,
   LogOut,
+  LayoutDashboard,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +31,7 @@ import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore } from '@/lib/store/wishlist'
 import { useAuth } from '@/lib/context/auth'
+import { ADMIN_EMAIL } from '@/lib/config/site'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
@@ -70,6 +73,7 @@ export function Header() {
   const { openCart, getTotalItems } = useCartStore()
   const { openWishlist } = useWishlistStore()
   const { user, profile, signOut } = useAuth()
+  const isAdmin = isMounted && user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
   const cartItemCount = isMounted ? getTotalItems() : 0
 
   // Pages where header starts transparent and turns brown on scroll
@@ -137,23 +141,34 @@ export function Header() {
         className={cn(
           'w-full transition-all duration-[400ms] ease-in-out text-white relative overflow-hidden',
           !showBrown && 'bg-transparent',
-          showBrown && 'backdrop-blur-[18px]'
+          showBrown && [
+            'backdrop-blur-[22px] saturate-150',
+            'border-b border-[#FFDCC2]/20',
+            'shadow-[0_4px_32px_rgba(82,37,0,0.22)]',
+          ]
         )}
         style={
           showBrown
             ? {
                 background:
-                  'linear-gradient(180deg, rgba(255,220,194,0.13) 0%, transparent 60%), rgba(82,37,0,0.92)',
+                  'linear-gradient(135deg, rgba(255,220,194,0.22) 0%, rgba(255,220,194,0.07) 50%, transparent 100%), rgba(82,37,0,0.90)',
               }
             : undefined
         }
       >
-        {/* Cream shimmer overlay — visible when brown */}
-        {showBrown && (
+        {/* Overlays */}
+        {showBrown ? (
           <>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FFDCC2]/[0.07] to-transparent pointer-events-none" />
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#FFDCC2]/40 to-transparent pointer-events-none" />
+            {/* Horizontal cream sweep */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FFDCC2]/[0.09] to-transparent pointer-events-none" />
+            {/* Top cream highlight line */}
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#FFDCC2]/55 to-transparent pointer-events-none" />
+            {/* Inner top shimmer */}
+            <div className="absolute top-0 inset-x-0 h-[45%] bg-gradient-to-b from-[#FFDCC2]/[0.07] to-transparent pointer-events-none" />
           </>
+        ) : (
+          /* Dark scrim on transparent header — keeps white logo readable even if hero image fails */
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent pointer-events-none" />
         )}
 
         <div className="container mx-auto px-4 relative z-10">
@@ -333,16 +348,33 @@ export function Header() {
                       <ChevronDown className="h-3 w-3 shrink-0" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard/orders" className="flex items-center gap-2 cursor-pointer">
-                        <Package className="h-4 w-4" />
-                        {t('My Orders', 'أوردراتي')}
-                      </Link>
-                    </DropdownMenuItem>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {isAdmin ? (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard/admin" className="flex items-center gap-2 cursor-pointer">
+                            <LayoutDashboard className="h-4 w-4" />
+                            {t('Dashboard', 'لوحة التحكم')}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/" className="flex items-center gap-2 cursor-pointer">
+                            <Globe className="h-4 w-4" />
+                            {t('Website', 'الموقع')}
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/orders" className="flex items-center gap-2 cursor-pointer">
+                          <Package className="h-4 w-4" />
+                          {t('My Orders', 'أوردراتي')}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => { signOut(); router.push('/') }}
+                      onClick={() => { signOut(); window.location.href = '/' }}
                       className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" />

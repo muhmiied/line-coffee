@@ -634,6 +634,15 @@ function ProductsPageInner() {
   const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'all')
   const [activeMixTab, setActiveMixTab] = useState<MixTab>('coffee-mix')
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(allProducts)
+  const [dbProducts, setDbProducts] = useState<Product[] | null>(null)
+
+  // Try to load products from database; fall back to hardcoded if DB is empty
+  useEffect(() => {
+    fetch('/api/products?limit=300')
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data?.length > 0) setDbProducts(d.data) })
+      .catch(() => {})
+  }, [])
 
   const currentCat = categories.find((c) => c.slug === activeCategory)
   const isCustomizeBlend = currentCat?.isCustomizeBlend
@@ -642,11 +651,18 @@ function ProductsPageInner() {
   const hasMixTabs = currentCat?.hasMixTabs
 
   useEffect(() => {
+    // Use database products when available, otherwise hardcoded
+    const sourceProducts = dbProducts ?? allProducts
+
     if (isCustomize) { setFilteredProducts([]); return }
-    let products = [...allProducts]
+    let products = [...sourceProducts]
 
     if (activeCategory !== 'all') {
-      products = products.filter((p) => p.category_id === activeCategory)
+      products = products.filter((p) => {
+        // Database products have a joined category object with slug
+        const catSlug = (p as any).category?.slug ?? p.category_id
+        return catSlug === activeCategory
+      })
     }
 
     if (hasMixTabs) {
@@ -659,7 +675,7 @@ function ProductsPageInner() {
     }
 
     setFilteredProducts(products)
-  }, [activeCategory, activeMixTab, searchQuery, isCustomize, hasMixTabs])
+  }, [activeCategory, activeMixTab, searchQuery, isCustomize, hasMixTabs, dbProducts])
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
@@ -670,7 +686,7 @@ function ProductsPageInner() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner — slides under the transparent header */}
-      <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24">
+      <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24 bg-[#1a0a00]">
         <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-foreground/60" />
         <div className="relative z-10 text-center text-white px-4">

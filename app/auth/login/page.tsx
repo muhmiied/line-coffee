@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,8 @@ import { ADMIN_EMAIL } from '@/lib/config/site'
 
 function LoginForm() {
   const { t, dir } = useLanguage()
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || null
+  const redirectTo = searchParams.get('next') || null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -35,8 +34,7 @@ function LoginForm() {
         toast.success(t('Login successful!', 'تم تسجيل الدخول بنجاح!'))
         const isAdmin = email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
         const dest = isAdmin ? '/dashboard/admin' : (redirectTo ?? '/')
-        router.push(dest)
-        router.refresh()
+        window.location.href = dest
       } else {
         toast.error(result.error || t('Login failed. Please try again.', 'فشل تسجيل الدخول. حاول مرة أخرى.'))
       }

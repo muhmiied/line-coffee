@@ -4,11 +4,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Instagram, Twitter, Facebook, Mail, Phone, MapPin } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export function Footer() {
   const { t } = useLanguage()
+  const pathname = usePathname()
+  if (pathname.startsWith('/dashboard/admin')) return null
 
   const footerLinks = {
     shop: [
@@ -21,6 +24,7 @@ export function Footer() {
     company: [
       { href: '/about', labelEn: 'About Us', labelAr: 'من نحن' },
       { href: '/contact', labelEn: 'Contact', labelAr: 'تواصل معنا' },
+      { href: '/blog', labelEn: 'Blog', labelAr: 'المدونة' },
       { href: '/about#story', labelEn: 'Our Story', labelAr: 'قصتنا' },
       { href: '/about#sourcing', labelEn: 'Sourcing', labelAr: 'المصادر' },
     ],
@@ -165,7 +169,7 @@ export function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div style={{ borderTop: '1px solid rgba(255, 220, 194, 0.1)' }}>
+      <div className="border-t border-[#FFDCC2]/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[#FFDCC2]/70">
             <p>

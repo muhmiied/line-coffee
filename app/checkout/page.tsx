@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { 
-  ShoppingBag, 
-  ArrowLeft, 
+import {
+  ShoppingBag,
+  ArrowLeft,
   ArrowRight,
   CreditCard,
   Truck,
@@ -16,7 +16,9 @@ import {
   User,
   Mail,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Tag,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,6 +47,12 @@ export default function CheckoutPage() {
   const [whatsAppUrl, setWhatsAppUrl] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
+  // Discount / promo code state
+  const [promoCode, setPromoCode] = useState('')
+  const [promoApplied, setPromoApplied] = useState<{ code: string; type: 'percentage' | 'fixed'; value: number; discount_amount: number } | null>(null)
+  const [promoLoading, setPromoLoading] = useState(false)
+  const [promoError, setPromoError] = useState('')
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -58,7 +66,39 @@ export default function CheckoutPage() {
 
   const subtotal = getTotal()
   const shipping = subtotal >= 200 ? 0 : 25
-  const total = subtotal + shipping
+  const discountAmount = promoApplied?.discount_amount || 0
+  const total = Math.max(0, subtotal + shipping - discountAmount)
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return
+    setPromoLoading(true)
+    setPromoError('')
+    try {
+      const res = await fetch(`/api/discounts/validate?code=${encodeURIComponent(promoCode.trim())}`)
+      const json = await res.json()
+      if (!json.valid) {
+        setPromoError(t(json.error || 'Invalid code', json.error || 'كود غير صحيح'))
+        setPromoApplied(null)
+        return
+      }
+      if (json.min_order && subtotal < json.min_order) {
+        setPromoError(t(`Minimum order is ${json.min_order} EGP`, `الحد الأدنى للطلب ${json.min_order} ج.م`))
+        setPromoApplied(null)
+        return
+      }
+      const discount_amount = json.type === 'percentage'
+        ? Math.round((subtotal * json.value) / 100)
+        : Math.min(json.value, subtotal)
+      setPromoApplied({ code: json.code, type: json.type, value: json.value, discount_amount })
+      setPromoError('')
+    } catch {
+      setPromoError(t('Failed to validate code', 'فشل التحقق من الكود'))
+    } finally {
+      setPromoLoading(false)
+    }
+  }
+
+  const removePromo = () => { setPromoApplied(null); setPromoCode(''); setPromoError('') }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -105,6 +145,8 @@ export default function CheckoutPage() {
           })),
           subtotal,
           shipping_cost: shipping,
+          discount_code: promoApplied?.code || null,
+          discount_amount: promoApplied?.discount_amount || 0,
           total,
           shipping_address: {
             first_name: formData.firstName,
@@ -452,6 +494,46 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Promo Code */}
+              <div className="border-t border-border pt-4 mb-4">
+                <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                  <Tag className="w-4 h-4 text-primary" />
+                  {t('Promo Code', 'كود الخصم')}
+                </p>
+                {promoApplied ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div>
+                      <p className="text-green-700 font-semibold text-sm font-mono">{promoApplied.code}</p>
+                      <p className="text-green-600 text-xs">
+                        {t(`Saving ${promoApplied.discount_amount} EGP`, `وفرت ${promoApplied.discount_amount} ج.م`)}
+                      </p>
+                    </div>
+                    <button type="button" onClick={removePromo} aria-label={t('Remove', 'إزالة')} className="text-green-600 hover:text-green-800 transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={promoCode}
+                      onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoError('') }}
+                      onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                      placeholder={t('Enter code', 'أدخل الكود')}
+                      className="flex-1 border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyPromo}
+                      disabled={promoLoading || !promoCode.trim()}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                    >
+                      {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('Apply', 'تطبيق')}
+                    </button>
+                  </div>
+                )}
+                {promoError && <p className="text-destructive text-xs mt-1">{promoError}</p>}
+              </div>
+
               {/* Totals */}
               <div className="border-t border-border pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -471,6 +553,12 @@ export default function CheckoutPage() {
                     )}
                   </span>
                 </div>
+                {promoApplied && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" />{promoApplied.code}</span>
+                    <span>- {promoApplied.discount_amount} {t('EGP', 'ج.م')}</span>
+                  </div>
+                )}
                 {subtotal < 200 && (
                   <p className="text-xs text-muted-foreground">
                     {t(

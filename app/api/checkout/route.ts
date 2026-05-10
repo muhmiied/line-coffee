@@ -57,13 +57,15 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     
     const body = await request.json()
-    const { 
-      items, 
-      subtotal, 
-      shipping_cost, 
-      total, 
-      shipping_address, 
-      payment_method 
+    const {
+      items,
+      subtotal,
+      shipping_cost,
+      total,
+      shipping_address,
+      payment_method,
+      discount_code,
+      discount_amount,
     } = body
     
     // التحقق من البيانات المطلوبة
@@ -94,6 +96,8 @@ export async function POST(request: NextRequest) {
         subtotal: subtotal || 0,
         shipping_cost: shipping_cost || 0,
         tax: 0,
+        discount_code: discount_code || null,
+        discount_amount: discount_amount || 0,
         total: total || subtotal || 0,
         shipping_address,
         billing_address: shipping_address,
@@ -146,6 +150,21 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // Increment discount uses counter
+    if (discount_code) {
+      const { data: disc } = await supabase
+        .from('discounts')
+        .select('uses')
+        .eq('code', discount_code)
+        .single()
+      if (disc) {
+        await supabase
+          .from('discounts')
+          .update({ uses: (disc.uses || 0) + 1 })
+          .eq('code', discount_code)
+      }
+    }
+
     const customerName = `${shipping_address.first_name || ''} ${shipping_address.last_name || ''}`.trim()
     const customerAddress = [shipping_address.address, shipping_address.city]
       .filter(Boolean)
@@ -159,7 +178,7 @@ export async function POST(request: NextRequest) {
       address: customerAddress || '-',
       items,
       total: order.total,
-    })
+    }) + (discount_code ? `\n\nكود الخصم: ${discount_code} (خصم ${discount_amount} ج.م)` : '')
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${encodeURIComponent(whatsappMessage)}`
 

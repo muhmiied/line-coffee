@@ -31,6 +31,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     ? Math.min(...sizes.map((s) => s.price))
     : 0
   const hasDiscount = sizes.some((s) => s.compare_at_price && s.compare_at_price > s.price)
+  const isSoldOut = product.stock_quantity === 0
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -84,19 +85,33 @@ export function ProductCard({ product, className }: ProductCardProps) {
               </div>
             )}
 
+            {/* Sold Out Overlay */}
+            {isSoldOut && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
+                <span className="bg-white/95 text-[#522500] font-bold text-sm px-4 py-1.5 rounded-full shadow-lg">
+                  {t('Sold Out', 'نفد المخزون')}
+                </span>
+              </div>
+            )}
+
             {/* Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {product.is_new && (
+            <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
+              {isSoldOut && (
+                <Badge className="bg-gray-800 text-white border-0">
+                  {t('Sold Out', 'نفد المخزون')}
+                </Badge>
+              )}
+              {!isSoldOut && product.is_new && (
                 <Badge variant="default" className="bg-accent text-accent-foreground">
                   {t('New', 'جديد')}
                 </Badge>
               )}
-              {product.is_best_seller && (
+              {!isSoldOut && product.is_best_seller && (
                 <Badge variant="secondary">
                   {t('Best Seller', 'الأكثر مبيعاً')}
                 </Badge>
               )}
-              {hasDiscount && (
+              {!isSoldOut && hasDiscount && (
                 <Badge variant="destructive">
                   {t('Sale', 'تخفيض')}
                 </Badge>
@@ -144,21 +159,23 @@ export function ProductCard({ product, className }: ProductCardProps) {
             </motion.div>
 
             {/* Quick Add Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
-              className="absolute bottom-3 left-3 right-3"
-            >
-              <Button
-                className="w-full shadow-lg"
-                size="sm"
-                onClick={handleQuickAdd}
-                style={{ backgroundColor: '#522500', color: '#FFDCC2' }}
+            {!isSoldOut && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
+                className="absolute bottom-3 left-3 right-3 z-20"
               >
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                {t('Quick Add', 'إضافة سريعة')}
-              </Button>
-            </motion.div>
+                <Button
+                  className="w-full shadow-lg"
+                  size="sm"
+                  onClick={handleQuickAdd}
+                  style={{ backgroundColor: '#522500', color: '#FFDCC2' }}
+                >
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  {t('Quick Add', 'إضافة سريعة')}
+                </Button>
+              </motion.div>
+            )}
           </div>
 
           {/* Content */}

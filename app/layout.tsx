@@ -13,6 +13,7 @@ import { WishlistDrawer } from '@/components/wishlist/wishlist-drawer'
 import { WhatsAppButton } from '@/components/ui/whatsapp-button'
 import { AIChatbot } from '@/components/ui/ai-chatbot'
 import { ScrollProgress } from '@/components/ui/scroll-progress'
+import { DiscountBanner } from '@/components/ui/discount-banner'
 
 import './globals.css'
 
@@ -96,12 +97,13 @@ export default function RootLayout({
               <PageLoader />
             </Suspense>
             <StickyTopBar />
-            <main className="flex-1 w-full">{children}</main>
+            <main className="flex-1 w-full pt-20 md:pt-24">{children}</main>
             <Footer />
             <CartDrawer />
             <WishlistDrawer />
             <WhatsAppButton />
             <AIChatbot />
+            <DiscountBanner />
             <Toaster position="top-center" richColors />
           </AuthProvider>
         </LanguageProvider>

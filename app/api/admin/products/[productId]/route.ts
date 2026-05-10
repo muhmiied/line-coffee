@@ -21,15 +21,19 @@ export async function PATCH(
   const { productId } = await params
   const body = await request.json()
 
+  const patch: Record<string, unknown> = {}
+  if (body.name_ar !== undefined) patch.name_ar = body.name_ar
+  if (body.name_en !== undefined) patch.name_en = body.name_en
+  if (body.description_ar !== undefined) patch.description_ar = body.description_ar || null
+  if (body.description_en !== undefined) patch.description_en = body.description_en || null
+  if (body.is_visible !== undefined) patch.is_visible = body.is_visible
+  if (body.stock_quantity !== undefined) patch.stock_quantity = Number(body.stock_quantity)
+  if ('category_id' in body) patch.category_id = body.category_id
+  if (body.images !== undefined) patch.images = body.images
+
   const { error } = await supabase
     .from('products')
-    .update({
-      name_ar: body.name_ar,
-      name_en: body.name_en,
-      description_ar: body.description_ar || null,
-      description_en: body.description_en || null,
-      is_visible: body.is_visible,
-    })
+    .update(patch)
     .eq('id', productId)
 
   if (error) {

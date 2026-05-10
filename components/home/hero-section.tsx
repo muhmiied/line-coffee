@@ -80,7 +80,7 @@ export function HeroSection() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100vh] flex items-center overflow-hidden -mt-20 md:-mt-24 pt-48 md:pt-56"
+      className="relative min-h-[100vh] flex items-center overflow-hidden -mt-20 md:-mt-24 pt-48 md:pt-56 bg-[#1a0a00]"
     >
       {/* Decorative coffee bean - bottom left */}
       <div className="pointer-events-none absolute bottom-6 left-6 z-20 text-white/35 drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">

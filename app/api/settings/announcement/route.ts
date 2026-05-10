@@ -15,18 +15,19 @@ export async function GET() {
     const { data, error } = await supabase
       .from('site_settings')
       .select('key, value')
-      .in('key', ['announcement_text', 'announcement_active'])
+      .in('key', ['announcement_text', 'announcement_active', 'wa_phone', 'wa_apikey'])
 
     if (error || !data || data.length === 0) {
       return NextResponse.json(DEFAULT_ANNOUNCEMENT)
     }
 
-    const textRow = data.find((r) => r.key === 'announcement_text')
-    const activeRow = data.find((r) => r.key === 'announcement_active')
+    const get = (k: string) => data.find(r => r.key === k)?.value ?? null
 
     return NextResponse.json({
-      text: textRow?.value ?? DEFAULT_ANNOUNCEMENT.text,
-      active: activeRow?.value === 'true',
+      text: get('announcement_text') ?? DEFAULT_ANNOUNCEMENT.text,
+      active: get('announcement_active') === 'true',
+      wa_phone: get('wa_phone') ?? '',
+      wa_apikey: get('wa_apikey') ?? '',
     })
   } catch {
     return NextResponse.json(DEFAULT_ANNOUNCEMENT)
@@ -48,12 +49,10 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const rows = []
 
-    if (typeof body.text === 'string') {
-      rows.push({ key: 'announcement_text', value: body.text })
-    }
-    if (typeof body.active === 'boolean') {
-      rows.push({ key: 'announcement_active', value: String(body.active) })
-    }
+    if (typeof body.text === 'string') rows.push({ key: 'announcement_text', value: body.text })
+    if (typeof body.active === 'boolean') rows.push({ key: 'announcement_active', value: String(body.active) })
+    if (typeof body.wa_phone === 'string') rows.push({ key: 'wa_phone', value: body.wa_phone })
+    if (typeof body.wa_apikey === 'string') rows.push({ key: 'wa_apikey', value: body.wa_apikey })
 
     if (rows.length > 0) {
       const { error } = await supabase

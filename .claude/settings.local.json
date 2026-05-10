@@ -23,7 +23,10 @@
       "Bash(npx kill-port *)",
       "Bash(npx vite *)",
       "Bash(curl *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(npx next *)",
+      "Bash(Get-Content \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\products\\\\page.tsx\")",
+      "Bash(Select-Object -Last 100)"
     ]
   }
 }

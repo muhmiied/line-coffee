@@ -18,7 +18,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#FFDCC2]">
       {/* Hero — slides under the transparent header */}
-      <div className="relative h-[55vh] min-h-[420px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24">
+      <div className="relative h-[55vh] min-h-[420px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24 bg-[#1a0a00]">
         <Image
           src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600"
           alt="About Line Coffee"
