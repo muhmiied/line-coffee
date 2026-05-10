@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = useMemo(() => createClient(), [])
+  const router = useRouter()
 
   const isSupabaseConfigured = supabase !== null
 
@@ -83,7 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   setUser(null)
   setProfile(null)
 
-  window.location.href = '/'
+  router.refresh()
+  router.push('/')
+
+  setTimeout(() => {
+    window.location.reload()
+  }, 100)
 }
 
   return (
