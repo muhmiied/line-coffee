@@ -118,10 +118,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
       <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
         {/* Images */}
-        <div className="space-y-4">
-          {/* Main Image */}
+        <div className="space-y-3">
+          {/* Main Image — cinematic 4:5 portrait */}
           <motion.div
-            className="relative aspect-square rounded-2xl overflow-hidden bg-muted"
+            className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#1e0b02]"
             layoutId={`product-image-${product.id}`}
           >
             <AnimatePresence mode="wait">
@@ -130,6 +130,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 className="absolute inset-0"
               >
                 {product.images?.[selectedImageIndex] ? (
@@ -137,45 +138,57 @@ export function ProductDetail({ product }: ProductDetailProps) {
                     src={product.images[selectedImageIndex]}
                     alt={name}
                     fill
-                    className="object-cover"
+                    className="object-cover object-center"
                     priority
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <ShoppingBag className="h-24 w-24 text-muted-foreground/30" />
+                    <ShoppingBag className="h-24 w-24 text-[#FFDCC2]/15" />
                   </div>
                 )}
               </motion.div>
             </AnimatePresence>
 
-            {/* Badges */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
+            {/* Cinematic overlay — same system as product card */}
+            <div className="absolute inset-0 pointer-events-none" aria-hidden>
+              <div className="absolute inset-x-0 bottom-0 h-[30%] bg-gradient-to-t from-[#0a0300]/75 via-[#0a0300]/25 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#522500]/15 to-transparent mix-blend-multiply" />
+            </div>
+
+            {/* Badges — top left */}
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5">
               {product.is_new && (
-                <Badge className="bg-accent text-accent-foreground">
+                <span className="text-[10px] tracking-[0.14em] uppercase font-bold px-2.5 py-1 rounded-full backdrop-blur-sm bg-[#FFDCC2]/90 text-[#522500]">
                   {t('New', 'جديد')}
-                </Badge>
+                </span>
               )}
               {product.is_best_seller && (
-                <Badge variant="secondary">{t('Best Seller', 'الأكثر مبيعاً')}</Badge>
+                <span className="text-[10px] tracking-[0.14em] uppercase font-bold px-2.5 py-1 rounded-full backdrop-blur-sm bg-[#522500]/88 text-[#FFDCC2]">
+                  {t('Best Seller', 'الأكثر مبيعاً')}
+                </span>
               )}
               {discount > 0 && (
-                <Badge variant="destructive">-{discount}%</Badge>
+                <span className="text-[10px] tracking-[0.14em] uppercase font-bold px-2.5 py-1 rounded-full backdrop-blur-sm bg-red-700/85 text-white">
+                  -{discount}%
+                </span>
               )}
             </div>
           </motion.div>
 
-          {/* Thumbnail Images */}
+          {/* Thumbnail strip */}
           {product.images && product.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2.5 overflow-x-auto pb-1">
               {product.images.map((image, index) => (
                 <button
                   key={index}
+                  type="button"
                   onClick={() => setSelectedImageIndex(index)}
+                  aria-label={`${t('View image', 'عرض الصورة')} ${index + 1}`}
                   className={cn(
-                    'relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border-2 transition-colors',
+                    'relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 bg-[#1e0b02]',
                     selectedImageIndex === index
-                      ? 'border-primary'
-                      : 'border-transparent hover:border-border'
+                      ? 'border-[#c8941a]/70 shadow-[0_0_0_2px_rgba(200,148,26,0.15)]'
+                      : 'border-[#522500]/20 hover:border-[#522500]/40 opacity-70 hover:opacity-100'
                   )}
                 >
                   <Image

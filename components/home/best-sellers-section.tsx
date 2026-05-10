@@ -2,14 +2,12 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, TrendingUp } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowRight } from 'lucide-react'
 import { ProductCard } from '@/components/products/product-card'
 import { useLanguage } from '@/lib/context/language'
 import type { Product } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-// Best seller products data
 const bestSellerProducts: Product[] = [
   {
     id: 'tc-medium-roast',
@@ -117,72 +115,83 @@ export function BestSellersSection() {
   const { t, dir } = useLanguage()
 
   return (
-    <section className="relative py-16 md:py-24 overflow-hidden">
-      {/* Glass/Crystal gradient background - cream tones */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#FFF8F3] via-[#FFDCC2]/40 to-[#FFF5ED]" />
-      <div className="absolute inset-0 bg-gradient-to-tl from-[#522500]/5 via-transparent to-[#522500]/3" />
-      <div className="absolute inset-0 backdrop-blur-[0.5px]" />
-      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white/20 to-transparent" />
-      {/* Crystal shine effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent" />
+    <section className="relative py-20 md:py-28 overflow-hidden bg-[#0d0600]">
+
+      {/* Ambient warm glow — center depth */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[360px] rounded-full bg-[#3d1800]/25 blur-[80px]" />
+      </div>
+
+      {/* Top edge fade into previous section */}
+      <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-[#0a0400]/60 to-transparent pointer-events-none" aria-hidden />
+      {/* Bottom edge fade into next section */}
+      <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-[#0a0400]/60 to-transparent pointer-events-none" aria-hidden />
+
       <div className="container mx-auto px-4 relative z-10">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
+
+        {/* ── Section header ── */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="flex items-center gap-2 text-primary font-medium mb-2"
+              className="flex items-center gap-3 mb-3"
             >
-              <TrendingUp className="h-4 w-4" />
-              {t('Top Picks', 'الأكثر اختياراً')}
+              <div className="h-px w-8 bg-[#c8941a]/55" />
+              <span className="text-[11px] tracking-[0.22em] uppercase font-semibold text-[#c8941a]/75">
+                {t('Top Picks', 'الأكثر اختياراً')}
+              </span>
             </motion.div>
+
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="font-serif text-3xl md:text-4xl font-bold text-balance"
+              transition={{ delay: 0.05 }}
+              className="font-serif text-3xl md:text-4xl font-bold text-[#FFDCC2]"
             >
               {t('Best Sellers', 'الأكثر مبيعاً')}
             </motion.h2>
           </div>
+
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
           >
-            <Button variant="outline" asChild className="group">
-              <Link href="/products?filter=best-seller">
-                {t('View All Best Sellers', 'عرض الأكثر مبيعاً')}
-                <ArrowRight
-                  className={cn(
-                    'h-4 w-4 transition-transform group-hover:translate-x-1',
-                    dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
-                  )}
-                />
-              </Link>
-            </Button>
+            <Link
+              href="/products?filter=best-seller"
+              className={cn(
+                'inline-flex items-center gap-2 text-sm font-medium',
+                'text-[#FFDCC2]/45 hover:text-[#FFDCC2]/80 transition-colors duration-200 group',
+              )}
+            >
+              {t('View All Best Sellers', 'عرض الأكثر مبيعاً')}
+              <ArrowRight
+                className={cn(
+                  'h-4 w-4 transition-transform group-hover:translate-x-1',
+                  dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
+                )}
+              />
+            </Link>
           </motion.div>
         </div>
 
-        {/* Products Grid */}
+        {/* ── Products grid ── */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          variants={{
-            visible: {
-              transition: { staggerChildren: 0.1 },
-            },
-          }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
         >
           {bestSellerProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </motion.div>
+
       </div>
     </section>
   )

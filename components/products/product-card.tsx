@@ -4,13 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { ShoppingBag, Heart, Eye, Star } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { ShoppingBag, Heart, Star } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore } from '@/lib/store/wishlist'
-import type { Product, ProductSize } from '@/lib/types'
+import type { Product } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -19,27 +17,50 @@ interface ProductCardProps {
   className?: string
 }
 
+// Full Tailwind class strings — must be literal so the JIT scanner picks them up
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  'turkish-coffee':  'from-[#1c0a00] to-[#3a1600]',
+  'espresso':        'from-[#0e0500] to-[#2b0f00]',
+  'flavored-coffee': 'from-[#1a0c00] to-[#3c1b00]',
+  'cappuccino':      'from-[#231200] to-[#4b2900]',
+  'coffee-mix':      'from-[#110800] to-[#2e1500]',
+  'hot-chocolate':   'from-[#1b0700] to-[#3c1300]',
+}
+
+function CinematicPlaceholder({ categoryId }: { categoryId: string }) {
+  const grad = CATEGORY_GRADIENTS[categoryId] ?? 'from-[#1a0800] to-[#3e1900]'
+  return (
+    <div className={cn('absolute inset-0 bg-gradient-to-br flex items-center justify-center', grad)}>
+      <div className="w-20 h-20 rounded-full bg-[#FFDCC2]/[4%] flex items-center justify-center ring-1 ring-[#FFDCC2]/[7%]">
+        <ShoppingBag className="h-8 w-8 text-[#FFDCC2]/[18%]" />
+      </div>
+      {/* Warm radial glow at bottom — purely decorative */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-56 h-28 rounded-full bg-[#522500]/28 blur-2xl pointer-events-none" />
+    </div>
+  )
+}
+
 export function ProductCard({ product, className }: ProductCardProps) {
   const { t, language } = useLanguage()
   const { addItem } = useCartStore()
   const wishlistStore = useWishlistStore()
-  const [isHovered, setIsHovered] = useState(false)
+  const [wishlistPending, setWishlistPending] = useState(false)
 
   const name = language === 'ar' ? product.name_ar : product.name_en
-  const sizes = product.sizes || []
-  const lowestPrice = sizes.length > 0
-    ? Math.min(...sizes.map((s) => s.price))
-    : 0
+  const sizes = product.sizes ?? []
+  const lowestPrice = sizes.length > 0 ? Math.min(...sizes.map((s) => s.price)) : 0
   const hasDiscount = sizes.some((s) => s.compare_at_price && s.compare_at_price > s.price)
+  const comparePrice = hasDiscount
+    ? (sizes.find((s) => s.compare_at_price)?.compare_at_price ?? null)
+    : null
   const isSoldOut = product.stock_quantity === 0
+  const inWishlist = wishlistStore.isInWishlist(product.id)
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-
-    const defaultSize = sizes.find((s) => s.size === '250g') || sizes[0]
+    const defaultSize = sizes.find((s) => s.size === '250g') ?? sizes[0]
     if (!defaultSize) return
-
     addItem({
       id: `${product.id}-${defaultSize.size}`,
       product_id: product.id,
@@ -48,175 +69,192 @@ export function ProductCard({ product, className }: ProductCardProps) {
       size: defaultSize.size as '250g' | '500g' | '1kg',
       price: defaultSize.price,
       quantity: 1,
-      image: product.images?.[0] || '',
+      image: product.images?.[0] ?? '',
     })
-
     toast.success(t('Added to cart', 'تمت الإضافة للسلة'), {
       description: `${name} (${defaultSize.size})`,
     })
   }
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setWishlistPending(true)
+    setTimeout(() => setWishlistPending(false), 300)
+    wishlistStore.toggleItem({
+      productId: product.id,
+      name_en: product.name_en,
+      name_ar: product.name_ar,
+      slug: product.slug,
+      image: product.images?.[0] ?? '',
+      price: lowestPrice,
+    })
+    toast.success(
+      inWishlist
+        ? t('Removed from wishlist', 'تمت الإزالة من المفضلة')
+        : t('Added to wishlist', 'تمت الإضافة للمفضلة')
+    )
   }
 
   return (
     <motion.div
-      variants={cardVariants}
+      variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0 } }}
+      transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
       className={cn('group', className)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/products/${product.slug}`}>
-        <div className="relative bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
-          {/* Image */}
-          <div className="relative aspect-square overflow-hidden bg-muted">
+      <Link href={`/products/${product.slug}`} className="block">
+
+        {/* ── Card shell ─────────────────────────────────────────── */}
+        <div
+          className={cn(
+            'relative overflow-hidden rounded-2xl',
+            'bg-gradient-to-b from-[#1e0b02] to-[#140701]',
+            'border border-[#522500]/[22%]',
+            'shadow-[0_4px_24px_rgba(0,0,0,0.18)]',
+            'transition-all duration-500 ease-out',
+            'group-hover:border-[#c8941a]/[32%]',
+            'group-hover:shadow-[0_22px_60px_rgba(200,148,26,0.16)]',
+          )}
+        >
+
+          {/* ── Image zone ─────────────────────────────────────────── */}
+          <div className="relative aspect-[4/5] overflow-hidden">
+
             {product.images?.[0] ? (
               <Image
                 src={product.images[0]}
                 alt={name}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
+                className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.07]"
               />
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
-              </div>
+              <CinematicPlaceholder categoryId={product.category_id ?? ''} />
             )}
 
-            {/* Sold Out Overlay */}
+            {/* Cinematic overlay system — unifies inconsistent photo lighting */}
+            <div className="absolute inset-0 pointer-events-none" aria-hidden>
+              {/* Bottom vignette: text legibility over any photo */}
+              <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-[#0a0300]/90 via-[#0a0300]/40 to-transparent" />
+              {/* Warm brown tone cast: corrects cold/blue-shifted photos */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#522500]/22 to-transparent mix-blend-multiply" />
+            </div>
+
+            {/* Sold-Out overlay */}
             {isSoldOut && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                <span className="bg-white/95 text-[#522500] font-bold text-sm px-4 py-1.5 rounded-full shadow-lg">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/55">
+                <span className="text-[10px] tracking-[0.18em] uppercase font-bold px-4 py-1.5 rounded-full bg-[#FFDCC2]/92 text-[#522500] shadow-md">
                   {t('Sold Out', 'نفد المخزون')}
                 </span>
               </div>
             )}
 
-            {/* Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
-              {isSoldOut && (
-                <Badge className="bg-gray-800 text-white border-0">
-                  {t('Sold Out', 'نفد المخزون')}
-                </Badge>
-              )}
-              {!isSoldOut && product.is_new && (
-                <Badge variant="default" className="bg-accent text-accent-foreground">
-                  {t('New', 'جديد')}
-                </Badge>
-              )}
-              {!isSoldOut && product.is_best_seller && (
-                <Badge variant="secondary">
-                  {t('Best Seller', 'الأكثر مبيعاً')}
-                </Badge>
-              )}
-              {!isSoldOut && hasDiscount && (
-                <Badge variant="destructive">
-                  {t('Sale', 'تخفيض')}
-                </Badge>
-              )}
-            </div>
+            {/* Badges — top left */}
+            {!isSoldOut && (product.is_new || product.is_best_seller || hasDiscount) && (
+              <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+                {product.is_new && (
+                  <span className="text-[10px] tracking-[0.14em] uppercase font-bold px-2.5 py-1 rounded-full backdrop-blur-sm bg-[#FFDCC2]/90 text-[#522500]">
+                    {t('New', 'جديد')}
+                  </span>
+                )}
+                {product.is_best_seller && (
+                  <span className="text-[10px] tracking-[0.14em] uppercase font-bold px-2.5 py-1 rounded-full backdrop-blur-sm bg-[#522500]/88 text-[#FFDCC2]">
+                    {t('Best Seller', 'الأكثر مبيعاً')}
+                  </span>
+                )}
+                {hasDiscount && (
+                  <span className="text-[10px] tracking-[0.14em] uppercase font-bold px-2.5 py-1 rounded-full backdrop-blur-sm bg-red-700/85 text-white">
+                    {t('Sale', 'تخفيض')}
+                  </span>
+                )}
+              </div>
+            )}
 
-            {/* Quick Actions */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              className="absolute top-3 right-3 flex flex-col gap-2"
+            {/* Wishlist — fades in on hover, top right */}
+            <button
+              type="button"
+              aria-label={t('Wishlist', 'المفضلة')}
+              onClick={handleWishlist}
+              className={cn(
+                'absolute top-3 right-3 z-10',
+                'h-8 w-8 rounded-full flex items-center justify-center',
+                'bg-white/90 backdrop-blur-sm shadow-md',
+                'opacity-0 group-hover:opacity-100',
+                'scale-[0.84] group-hover:scale-100',
+                'transition-all duration-200 ease-out',
+                wishlistPending && 'scale-110',
+              )}
             >
-              <Button
-                size="icon"
-                variant="secondary"
-                className="h-8 w-8 rounded-full shadow-md"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  const inWl = wishlistStore.isInWishlist(product.id)
-                  wishlistStore.toggleItem({
-                    productId: product.id,
-                    name_en: product.name_en,
-                    name_ar: product.name_ar,
-                    slug: product.slug,
-                    image: product.images?.[0] || '',
-                    price: lowestPrice,
-                  })
-                  toast.success(inWl ? t('Removed from wishlist', 'تمت الإزالة من المفضلة') : t('Added to wishlist', 'تمت الإضافة للمفضلة'))
-                }}
-              >
-                <Heart className={cn('h-4 w-4', wishlistStore.isInWishlist(product.id) && 'fill-destructive text-destructive')} />
-              </Button>
-              <Button
-                size="icon"
-                variant="secondary"
-                className="h-8 w-8 rounded-full shadow-md"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                }}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </motion.div>
+              <Heart
+                className={cn(
+                  'h-3.5 w-3.5 transition-colors duration-150',
+                  inWishlist ? 'fill-[#522500] text-[#522500]' : 'text-[#522500]/60',
+                )}
+              />
+            </button>
 
-            {/* Quick Add Button */}
+            {/* Quick Add — slides up from bottom on hover */}
             {!isSoldOut && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
-                className="absolute bottom-3 left-3 right-3 z-20"
+              <div
+                className={cn(
+                  'absolute bottom-0 inset-x-0 p-3 z-10',
+                  'translate-y-3 opacity-0',
+                  'group-hover:translate-y-0 group-hover:opacity-100',
+                  'transition-all duration-300 ease-out',
+                )}
               >
-                <Button
-                  className="w-full shadow-lg"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={handleQuickAdd}
-                  style={{ backgroundColor: '#522500', color: '#FFDCC2' }}
+                  className="w-full text-sm font-semibold py-2.5 rounded-xl bg-[#FFDCC2]/95 text-[#522500] flex items-center justify-center gap-2 backdrop-blur-sm hover:bg-[#FFDCC2] transition-colors"
                 >
-                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  <ShoppingBag className="h-4 w-4" />
                   {t('Quick Add', 'إضافة سريعة')}
-                </Button>
-              </motion.div>
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Content */}
-          <div className="p-4">
+          {/* ── Info zone ──────────────────────────────────────────── */}
+          <div className="px-4 pb-5 pt-3.5 space-y-2">
+
             {/* Origin */}
             {product.origin && (
-              <p className="text-xs text-muted-foreground mb-1">
+              <p className="text-[10px] tracking-[0.18em] uppercase font-medium text-[#FFDCC2]/30">
                 {product.origin}
               </p>
             )}
 
             {/* Name */}
-            <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1 mb-2">
+            <h3 className="font-serif text-[15px] leading-snug font-semibold line-clamp-2 text-[#FFDCC2]/80 group-hover:text-[#FFDCC2] transition-colors duration-300">
               {name}
             </h3>
 
-            {/* Roast Level & Rating */}
-            <div className="flex items-center justify-between mb-3">
+            {/* Roast pill + rating */}
+            <div className="flex items-center gap-2">
               {product.roast_level && (
-                <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground capitalize">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize bg-[#FFDCC2]/[7%] text-[#FFDCC2]/40">
                   {product.roast_level}
                 </span>
               )}
-              <div className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-                <span className="text-xs font-medium">4.8</span>
+              <div className="flex items-center gap-0.5 ml-auto">
+                <Star className="h-3 w-3 fill-[#c8941a] text-[#c8941a]" />
+                <span className="text-[11px] font-medium text-[#c8941a]/55">4.8</span>
               </div>
             </div>
 
             {/* Price */}
-            <div className="flex items-baseline gap-2">
-              <span className="font-semibold text-lg text-primary">
-                {lowestPrice} {t('EGP', 'ج.م')}
-              </span>
-              {hasDiscount && sizes[0]?.compare_at_price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  {sizes[0].compare_at_price} {t('EGP', 'ج.م')}
+            <div className="flex items-baseline gap-1.5 pt-0.5">
+              <span className="text-lg font-bold text-[#c8941a]">{lowestPrice}</span>
+              <span className="text-xs font-medium text-[#c8941a]/50">{t('EGP', 'ج.م')}</span>
+              {comparePrice && (
+                <span className="text-xs line-through ml-0.5 text-[#FFDCC2]/20">
+                  {comparePrice}
                 </span>
               )}
             </div>
           </div>
+
         </div>
       </Link>
     </motion.div>
