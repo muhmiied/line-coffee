@@ -374,7 +374,7 @@ export function Header() {
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={signOut}
+                      onSelect={() => void signOut()}
                       className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" />
