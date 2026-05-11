@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display, Noto_Naskh_Arabic } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { Suspense } from 'react'
@@ -31,11 +32,18 @@ const playfair = Playfair_Display({
   weight: ['400', '500', '600', '700', '800', '900'],
 })
 
-const notoNaskhArabic = Noto_Naskh_Arabic({
-  subsets: ['arabic'],
-  variable: '--font-arabic',
+const vlax = localFont({
+  src: [
+    {
+      path: '../public/fonts/vlax.otf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-vlax',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  preload: true,
+  fallback: ['sans-serif'],
 })
 
 export const metadata: Metadata = {
@@ -84,7 +92,7 @@ export default async function RootLayout({
   const authState = await getInitialAuthState()
 
   return (
-    <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${notoNaskhArabic.variable} bg-background`}>
+    <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${vlax.variable} bg-background`}>
       <head>
         <script
           dangerouslySetInnerHTML={{

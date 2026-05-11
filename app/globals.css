@@ -3,11 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-  font-family: 'Valax';
-  src: local('Valax'), local('valax');
-  font-display: swap;
-}
 
 /* Line Coffee Brand Colors
    Primary: #522500 (Dark Brown)
@@ -124,7 +119,7 @@
   --font-sans: 'Playfair Display', 'Playfair Display Fallback', serif;
   --font-serif: 'Playfair Display', 'Playfair Display Fallback', serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
-  --font-arabic: 'Valax', 'Noto Naskh Arabic', 'Cairo', 'Cairo Fallback', sans-serif;
+  --font-arabic: var(--font-vlax), 'Geeza Pro', 'Arial Unicode MS', sans-serif;
   
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -380,6 +375,7 @@
 .marquee {
   display: flex;
   overflow: hidden;
+  -webkit-user-select: none;
   user-select: none;
 }
 
