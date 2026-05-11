@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,19 +14,35 @@ import { cn } from '@/lib/utils'
 import type { Product } from '@/lib/types'
 import { toast } from 'sonner'
 
-// ─── Categories ────────────────────────────────────────────────────────────────
-const categories = [
-  { slug: 'all',              nameEn: 'All Products',       nameAr: 'جميع المنتجات' },
-  { slug: 'turkish-coffee',   nameEn: 'Turkish Coffee',     nameAr: 'قهوة تركي' },
-  { slug: 'espresso',         nameEn: 'Espresso',           nameAr: 'إسبريسو' },
-  { slug: 'customize-blend',  nameEn: 'Customize Blend',    nameAr: 'كستمايز التوليفة', isCustomizeBlend: true },
-  { slug: 'flavored-coffee',  nameEn: 'Flavored Coffee',    nameAr: 'قهوة نكهات' },
-  { slug: 'coffee-mix',       nameEn: 'Coffee Mix',         nameAr: 'كوفي ميكس', hasMixTabs: true },
-  { slug: 'customize-flavor', nameEn: 'Customize Flavor',   nameAr: 'كستمايز الفلافور', isCustomizeFlavor: true },
-]
+// ─── Types ─────────────────────────────────────────────────────────────────────
+type DbCategory = {
+  id: string
+  slug: string
+  name_en: string
+  name_ar: string
+  image_url: string | null
+}
+
+type SidebarCategory = {
+  slug: string
+  nameEn: string
+  nameAr: string
+  hasMixTabs?: boolean
+  isCustomizeBlend?: boolean
+  isCustomizeFlavor?: boolean
+}
+
+// ─── Static special sidebar entries (not stored in DB) ─────────────────────────
+const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr: 'جميع المنتجات' }
+const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'كستمايز التوليفة', isCustomizeBlend: true }
+const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'كستمايز الفلافور', isCustomizeFlavor: true }
+
+// Slugs shown as sub-tabs inside the "coffee-mix" category (not in main sidebar list)
+const MIX_SUBTAB_SLUGS = new Set(['cappuccino', 'hot-chocolate'])
+// All slugs that belong to the coffee-mix group
+const MIX_GROUP_SLUGS = new Set(['coffee-mix', 'cappuccino', 'hot-chocolate'])
 
 // ─── Flavors ────────────────────────────────────────────────────────────────────
-// 19 flavors for flavored-coffee
 const coffeeFlavors = [
   { id: 'hazelnut',   nameEn: 'Hazelnut',     nameAr: 'بندق' },
   { id: 'caramel',    nameEn: 'Caramel',      nameAr: 'كراميل' },
@@ -49,7 +65,6 @@ const coffeeFlavors = [
   { id: 'orange',     nameEn: 'Orange',       nameAr: 'برتقال' },
 ]
 
-// 11 flavors for coffee-mix / cappuccino / hot-chocolate
 const mixFlavors = [
   { id: 'hazelnut',   nameEn: 'Hazelnut',   nameAr: 'بندق' },
   { id: 'caramel',    nameEn: 'Caramel',    nameAr: 'كراميل' },
@@ -64,7 +79,6 @@ const mixFlavors = [
   { id: 'coconut',    nameEn: 'Coconut',    nameAr: 'جوز الهند' },
 ]
 
-// Customize-flavor flavor list (30 options)
 const customFlavorOptions = [
   { id: 'hazelnut',     nameAr: 'بندق' },
   { id: 'hazelnut-p',   nameAr: 'بندق قطع' },
@@ -174,7 +188,7 @@ function mkProduct(
   }
 }
 
-// ─── All Products ──────────────────────────────────────────────────────────────
+// ─── Fallback hardcoded products (used when DB returns no products) ─────────────
 const IMG_TC   = 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800'
 const IMG_ESP  = 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800'
 const IMG_FC   = 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800'
@@ -183,7 +197,6 @@ const IMG_CM   = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w
 const IMG_HC   = 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800'
 
 const allProducts: Product[] = [
-  // Turkish Coffee – 4 blends
   mkProduct('tc-1','turkish-morning-strength','Morning Strength','قوة الصباح',
     'Strong robusta with light sweetness, high caffeine',
     'روبوستا قوي مع حلاوة خفيفة — كافيين عالي، مناسب لبداية يومك',
@@ -201,7 +214,6 @@ const allProducts: Product[] = [
     'أرابيكا 90% — specialty coffee حقيقية، فلورال وفاكهي',
     'turkish-coffee',[230,440,840],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral'] }),
 
-  // Espresso – 4 blends
   mkProduct('esp-1','espresso-economy-crema','Economy Crema','الكريمة الاقتصادية',
     'Excellent crema and high strength, ideal for large volumes',
     'كريمة ممتازة وقوة عالية — للكميات الكبيرة والماكينات المكتبية',
@@ -219,7 +231,6 @@ const allProducts: Product[] = [
     'أرابيكا 90%، كريمة ذهبية — للفنادق 5 نجوم',
     'espresso',[255,490,940],{ images:[IMG_ESP], flavor_notes:['Premium','Arabica'] }),
 
-  // Flavored Coffee – 19 flavors
   ...coffeeFlavors.map((f, i) => mkProduct(
     `fc-${f.id}`, `flavored-coffee-${f.id}`,
     `${f.nameEn} Coffee`, `قهوة ${f.nameAr}`,
@@ -228,10 +239,9 @@ const allProducts: Product[] = [
     { images:[IMG_FC], is_featured: i < 3, is_best_seller: i < 5, flavor_notes:[f.nameEn] }
   )),
 
-  // Coffee Mix – original + 11 flavors
   mkProduct('cm-original','coffee-mix-original','Coffee Mix Original','كوفي ميكس أوريجنال',
     'Classic 3-in-1 coffee mix','كوفي ميكس كلاسيك 3 في 1',
-    'coffee-mix',[55,100,180],{ images:[IMG_CM], subcategory:'coffee-mix', is_featured:true, is_best_seller:true } as any),
+    'coffee-mix',[55,100,180],{ images:[IMG_CM], is_featured:true, is_best_seller:true } as any),
   ...mixFlavors.map((f, i) => mkProduct(
     `cm-${f.id}`, `coffee-mix-${f.id}`,
     `${f.nameEn} Coffee Mix`, `كوفي ميكس ${f.nameAr}`,
@@ -240,7 +250,6 @@ const allProducts: Product[] = [
     { images:[IMG_CM], subcategory:'coffee-mix', is_featured: i < 2, flavor_notes:[f.nameEn] } as any
   )),
 
-  // Cappuccino – original + 11 flavors
   mkProduct('cap-original','cappuccino-original','Cappuccino Original','كابتشينو أوريجنال',
     'Classic creamy cappuccino','كابتشينو كلاسيك كريمي',
     'coffee-mix',[65,120,220],{ images:[IMG_CAP], subcategory:'cappuccino', is_featured:true, is_best_seller:true } as any),
@@ -252,7 +261,6 @@ const allProducts: Product[] = [
     { images:[IMG_CAP], subcategory:'cappuccino', is_featured: i < 2, flavor_notes:[f.nameEn] } as any
   )),
 
-  // Hot Chocolate – original + 11 flavors
   mkProduct('hc-original','hot-chocolate-original','Hot Chocolate Original','هوت شوكلت أوريجنال',
     'Rich and creamy hot chocolate','هوت شوكلت غني وكريمي',
     'coffee-mix',[60,110,200],{ images:[IMG_HC], subcategory:'hot-chocolate', is_featured:true, is_best_seller:true } as any),
@@ -360,7 +368,7 @@ function CustomizeBlend() {
             <h3 className="font-semibold mb-4">{t('Select base:', 'اختر القاعدة:')}</h3>
             <div className="grid sm:grid-cols-2 gap-4">
               {blendBases.map((b) => (
-                <button key={b.id} onClick={() => { setBaseId(b.id); setStep(2) }}
+                <button type="button" key={b.id} onClick={() => { setBaseId(b.id); setStep(2) }}
                   className={cn('p-5 rounded-xl border-2 text-right transition-all hover:border-primary', baseId === b.id ? 'border-primary bg-primary/5' : 'border-border')}>
                   <h4 className="font-bold text-lg mb-1">{language === 'ar' ? b.nameAr : b.nameEn}</h4>
                   <p className="text-xs text-muted-foreground">{b.descAr}</p>
@@ -378,12 +386,12 @@ function CustomizeBlend() {
               <Button variant="ghost" size="sm" onClick={() => { setStep(1); setWantCustom(null) }}>{t('Back','رجوع')}</Button>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <button onClick={() => { setWantCustom(false); setStep(3) }}
+              <button type="button" onClick={() => { setWantCustom(false); setStep(3) }}
                 className="p-5 rounded-xl border-2 border-border hover:border-primary transition-all text-right">
                 <p className="font-bold mb-1">{t('No, show me ready blends', 'لأ، ورّيني التوليفات الجاهزة')}</p>
                 <p className="text-xs text-muted-foreground">{t('Choose from our expert blends', 'اختر من توليفاتنا المجربة')}</p>
               </button>
-              <button onClick={() => { setWantCustom(true); setStep(3) }}
+              <button type="button" onClick={() => { setWantCustom(true); setStep(3) }}
                 className="p-5 rounded-xl border-2 border-border hover:border-primary transition-all text-right">
                 <p className="font-bold mb-1">{t('Yes, I\'ll choose beans & ratios', 'أيوه، أنا هاختار الحبوب والنسب')}</p>
                 <p className="text-xs text-muted-foreground">{t('Full control over your blend', 'تحكم كامل في خلطتك')}</p>
@@ -399,13 +407,13 @@ function CustomizeBlend() {
                 {selectedPreset && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm">
                     {language === 'ar' ? selectedPreset.nameAr : selectedPreset.nameEn}
-                    <button onClick={() => setSelectedPresetId(null)}><X className="w-3 h-3" /></button>
+                    <button type="button" aria-label={t('Remove preset', 'إزالة التوليفة')} onClick={() => setSelectedPresetId(null)}><X className="w-3 h-3" /></button>
                   </span>
                 )}
                 {selectedBeans.map((b) => (
                   <span key={b.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm">
                     {language === 'ar' ? b.nameAr : b.nameEn}{b.percent ? ` ${b.percent}%` : ''}
-                    <button onClick={() => toggleBean(b)}><X className="w-3 h-3" /></button>
+                    <button type="button" aria-label={t('Remove bean', 'إزالة الحبة')} onClick={() => toggleBean(b)}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>
@@ -415,7 +423,7 @@ function CustomizeBlend() {
             {!wantCustom ? (
               <div className="grid md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
                 {availablePresets.map((p) => (
-                  <button key={p.id} onClick={() => setSelectedPresetId(p.id)}
+                  <button type="button" key={p.id} onClick={() => setSelectedPresetId(p.id)}
                     className={cn('text-right p-4 rounded-lg border transition-all', selectedPresetId === p.id ? 'border-primary bg-primary/5' : 'border-border')}>
                     <p className="font-bold">{language === 'ar' ? p.nameAr : p.nameEn}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{p.tierAr}</p>
@@ -436,7 +444,7 @@ function CustomizeBlend() {
                         return (
                           <div key={bean.id} className="p-2 border border-border rounded-lg">
                             <div className="flex items-center justify-between gap-2">
-                              <button onClick={() => { toggleBean(bean); setSelectedPresetId(null) }}
+                              <button type="button" onClick={() => { toggleBean(bean); setSelectedPresetId(null) }}
                                 className={cn('text-right flex-1 px-2 py-1 rounded-md transition-all', sel ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
                                 {language === 'ar' ? bean.nameAr : bean.nameEn}
                               </button>
@@ -456,12 +464,11 @@ function CustomizeBlend() {
               </div>
             )}
 
-            {/* Size & price */}
             <div className="mt-6 pt-6 border-t border-border">
               <h4 className="font-medium mb-3">{t('Size:', 'الحجم:')}</h4>
               <div className="flex gap-2 mb-6">
                 {(['250g','500g','1kg'] as const).map((s) => (
-                  <button key={s} onClick={() => setSelectedSize(s)}
+                  <button type="button" key={s} onClick={() => setSelectedSize(s)}
                     className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-all', selectedSize === s ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
                     {s}
                   </button>
@@ -546,7 +553,7 @@ function CustomizeFlavor() {
             <h3 className="font-semibold mb-4">{t('Select base:', 'اختر القاعدة:')}</h3>
             <div className="grid sm:grid-cols-3 gap-4">
               {flavorBaseOptions.map((b) => (
-                <button key={b.id} onClick={() => { setSelectedBase(b); setStep(2) }}
+                <button type="button" key={b.id} onClick={() => { setSelectedBase(b); setStep(2) }}
                   className={cn('p-4 rounded-xl border-2 text-right transition-all hover:border-primary', selectedBase?.id === b.id ? 'border-primary bg-primary/5' : 'border-border')}>
                   <h4 className="font-bold">{language === 'ar' ? b.nameAr : b.nameEn}</h4>
                   <p className="text-sm text-primary font-medium mt-2">{t(`From ${b.price250} EGP`, `من ${b.price250} ج.م`)}</p>
@@ -564,7 +571,7 @@ function CustomizeFlavor() {
                 {selectedFlavors.map((f) => (
                   <span key={f.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm">
                     {f.nameAr}
-                    <button onClick={() => toggleFlavor(f)}><X className="w-3 h-3" /></button>
+                    <button type="button" aria-label={t('Remove flavor', 'إزالة النكهة')} onClick={() => toggleFlavor(f)}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
                 <span className="text-xs text-muted-foreground">({selectedFlavors.length}/3)</span>
@@ -577,7 +584,7 @@ function CustomizeFlavor() {
                 const isSel = selectedFlavors.find((x) => x.id === f.id)
                 const isDisabled = !isSel && selectedFlavors.length >= 3
                 return (
-                  <button key={f.id} onClick={() => !isDisabled && toggleFlavor(f)} disabled={isDisabled}
+                  <button type="button" key={f.id} onClick={() => !isDisabled && toggleFlavor(f)} disabled={isDisabled}
                     className={cn('px-3 py-1.5 rounded-full text-sm transition-all',
                       isSel ? 'bg-primary text-primary-foreground' :
                       isDisabled ? 'bg-secondary/50 text-muted-foreground cursor-not-allowed' :
@@ -592,7 +599,7 @@ function CustomizeFlavor() {
             <div className="mt-6 pt-6 border-t border-border">
               <div className="flex gap-2 mb-6">
                 {(['250g','500g','1kg'] as const).map((s) => (
-                  <button key={s} onClick={() => setSelectedSize(s)}
+                  <button type="button" key={s} onClick={() => setSelectedSize(s)}
                     className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-all', selectedSize === s ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
                     {s}
                   </button>
@@ -635,8 +642,17 @@ function ProductsPageInner() {
   const [activeMixTab, setActiveMixTab] = useState<MixTab>('coffee-mix')
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(allProducts)
   const [dbProducts, setDbProducts] = useState<Product[] | null>(null)
+  const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
 
-  // Try to load products from database; fall back to hardcoded if DB is empty
+  // Fetch categories from DB
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data?.length > 0) setDbCategories(d.data) })
+      .catch(() => {})
+  }, [])
+
+  // Fetch products from DB; fall back to hardcoded if DB is empty
   useEffect(() => {
     fetch('/api/products?limit=300')
       .then(r => r.json())
@@ -644,29 +660,59 @@ function ProductsPageInner() {
       .catch(() => {})
   }, [])
 
-  const currentCat = categories.find((c) => c.slug === activeCategory)
+  // Build sidebar categories from DB, injecting special UI entries
+  const sidebarCategories = useMemo<SidebarCategory[]>(() => {
+    const mainCats = dbCategories
+      .filter(c => !MIX_SUBTAB_SLUGS.has(c.slug))
+      .map(c => ({
+        slug: c.slug,
+        nameEn: c.name_en,
+        nameAr: c.name_ar,
+        hasMixTabs: c.slug === 'coffee-mix',
+      }))
+
+    return [
+      ALL_ENTRY,
+      ...mainCats,
+      CUSTOMIZE_BLEND_ENTRY,
+      CUSTOMIZE_FLAVOR_ENTRY,
+    ]
+  }, [dbCategories])
+
+  const currentCat = sidebarCategories.find((c) => c.slug === activeCategory)
   const isCustomizeBlend = currentCat?.isCustomizeBlend
   const isCustomizeFlavor = currentCat?.isCustomizeFlavor
   const isCustomize = isCustomizeBlend || isCustomizeFlavor
   const hasMixTabs = currentCat?.hasMixTabs
 
   useEffect(() => {
-    // Use database products when available, otherwise hardcoded
     const sourceProducts = dbProducts ?? allProducts
 
     if (isCustomize) { setFilteredProducts([]); return }
     let products = [...sourceProducts]
 
     if (activeCategory !== 'all') {
-      products = products.filter((p) => {
-        // Database products have a joined category object with slug
-        const catSlug = (p as any).category?.slug ?? p.category_id
-        return catSlug === activeCategory
-      })
+      if (hasMixTabs) {
+        // Include products from all mix-group slugs so sub-tab filtering works
+        products = products.filter((p) => {
+          const catSlug = (p as any).category?.slug ?? p.category_id
+          return MIX_GROUP_SLUGS.has(catSlug)
+        })
+      } else {
+        products = products.filter((p) => {
+          const catSlug = (p as any).category?.slug ?? p.category_id
+          return catSlug === activeCategory
+        })
+      }
     }
 
     if (hasMixTabs) {
-      products = products.filter((p) => (p as any).subcategory === activeMixTab)
+      products = products.filter((p) => {
+        // DB products: match by their category slug; hardcoded: match by subcategory
+        const catSlug = (p as any).category?.slug
+        const subcat = (p as any).subcategory
+        return catSlug === activeMixTab || subcat === activeMixTab
+      })
     }
 
     if (searchQuery.trim()) {
@@ -675,7 +721,7 @@ function ProductsPageInner() {
     }
 
     setFilteredProducts(products)
-  }, [activeCategory, activeMixTab, searchQuery, isCustomize, hasMixTabs, dbProducts])
+  }, [activeCategory, activeMixTab, searchQuery, isCustomize, hasMixTabs, dbProducts, dbCategories])
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
@@ -685,7 +731,7 @@ function ProductsPageInner() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Banner — slides under the transparent header */}
+      {/* Hero Banner */}
       <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24 bg-[#1a0a00]">
         <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-foreground/60" />
@@ -708,15 +754,15 @@ function ProductsPageInner() {
             <div className="sticky top-28 bg-card/80 backdrop-blur-sm rounded-2xl p-4 border border-border/50 shadow-sm">
               <h2 className="font-serif text-lg font-semibold mb-4 px-2">{t('Categories', 'الفئات')}</h2>
               <nav className="space-y-1">
-                {categories.map((cat) => (
-                  <button key={cat.slug} onClick={() => handleCategoryChange(cat.slug)}
+                {sidebarCategories.map((cat) => (
+                  <button type="button" key={cat.slug} onClick={() => handleCategoryChange(cat.slug)}
                     className={cn(
                       'w-full text-left px-4 py-3 rounded-xl transition-all duration-200 text-sm flex items-center gap-2',
                       activeCategory === cat.slug ? 'bg-[#522500] text-white font-medium shadow-md scale-[1.02]' : 'text-foreground/80 hover:bg-secondary hover:text-foreground hover:scale-[1.01]',
                       (cat.isCustomizeBlend || cat.isCustomizeFlavor) && 'border-2 border-dashed border-primary/30'
                     )}>
                     {(cat.isCustomizeBlend || cat.isCustomizeFlavor) && <Sparkles className="w-4 h-4 shrink-0" />}
-                    {t(cat.nameEn, cat.nameAr)}
+                    {language === 'ar' ? cat.nameAr : cat.nameEn}
                     {activeCategory === cat.slug && <ChevronRight className="w-4 h-4 ml-auto" />}
                   </button>
                 ))}
@@ -744,7 +790,7 @@ function ProductsPageInner() {
                 {hasMixTabs && (
                   <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
                     {mixTabs.map((tab) => (
-                      <button key={tab.id} onClick={() => setActiveMixTab(tab.id)}
+                      <button type="button" key={tab.id} onClick={() => setActiveMixTab(tab.id)}
                         className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0',
                           activeMixTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
                         {t(tab.labelEn, tab.labelAr)}
