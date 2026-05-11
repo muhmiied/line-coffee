@@ -29,7 +29,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('products')
-    .select('*, sizes:product_sizes(*)')
+    .select('*, sizes:product_sizes(*), category:categories(id,slug,name_ar,name_en)')
     .order('created_at', { ascending: false })
 
   if (error) {

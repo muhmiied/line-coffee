@@ -31,6 +31,9 @@ export async function PATCH(
   if (body.description_ar !== undefined) patch.description_ar = body.description_ar || null
   if (body.description_en !== undefined) patch.description_en = body.description_en || null
   if (body.is_visible !== undefined) patch.is_visible = body.is_visible
+  if (body.is_featured !== undefined) patch.is_featured = body.is_featured
+  if (body.is_best_seller !== undefined) patch.is_best_seller = body.is_best_seller
+  if (body.is_new !== undefined) patch.is_new = body.is_new
   if (body.stock_quantity !== undefined) patch.stock_quantity = Number(body.stock_quantity)
   if ('category_id' in body) patch.category_id = body.category_id
   if (body.images !== undefined) patch.images = body.images

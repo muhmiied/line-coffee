@@ -1,511 +1,654 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ShoppingBag, Plus, Pencil, Trash2, Eye, EyeOff,
-  AlertTriangle, Search, RefreshCw, X, Check,
+  ShoppingBag, Plus, Pencil, Trash2, Search, RefreshCw,
+  X, Coffee, Eye, EyeOff, Star, Package,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useLanguage } from '@/lib/context/language'
 
-type Size = { id?: string; size: string; price: number; is_available: boolean }
+type Size = { id: string; size: string; price: number; is_available: boolean }
+type CategoryRef = { id: string; slug: string; name_ar: string; name_en: string }
+
 type Product = {
   id: string
+  slug: string
   name_ar: string
   name_en: string
-  description_ar?: string | null
-  description_en?: string | null
+  description_ar: string | null
+  description_en: string | null
+  category_id: string | null
+  category: CategoryRef | null
+  images: string[]
   is_visible: boolean
+  is_featured: boolean
+  is_best_seller: boolean
+  is_new: boolean
   stock_quantity: number
-  sizes?: Size[]
-  category_id?: string | null
-  images?: string[]
+  sizes: Size[]
 }
 
-const EMPTY_FORM = {
-  name_ar: '', name_en: '',
-  description_ar: '', description_en: '',
+type Category = { id: string; slug: string; name_ar: string; name_en: string }
+
+type ProductForm = {
+  name_ar: string
+  name_en: string
+  description_ar: string
+  description_en: string
+  category_id: string
+  image: string
+  price_250: string
+  price_500: string
+  price_1000: string
+  stock_quantity: string
+  is_visible: boolean
+  is_featured: boolean
+  is_best_seller: boolean
+  is_new: boolean
+}
+
+const EMPTY_FORM: ProductForm = {
+  name_ar: '', name_en: '', description_ar: '', description_en: '',
+  category_id: '', image: '',
   price_250: '', price_500: '', price_1000: '',
-  stock_quantity: '50',
-  image_url: '',
-  is_visible: true,
+  stock_quantity: '0',
+  is_visible: true, is_featured: false, is_best_seller: false, is_new: false,
 }
 
-function StockBadge({ qty }: { qty: number }) {
-  if (qty === 0)
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium border border-red-200">نفد المخزون</span>
-  if (qty < 10)
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium border border-orange-200">مخزون منخفض ({qty})</span>
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium border border-green-200">{qty} متوفر</span>
-}
+const TOGGLES: Array<{
+  key: 'is_visible' | 'is_featured' | 'is_best_seller' | 'is_new'
+  en: string; ar: string; descEn: string; descAr: string
+}> = [
+  { key: 'is_visible',     en: 'Visible on site', ar: 'ظاهر في الموقع',   descEn: 'Show this product to customers',  descAr: 'يظهر هذا المنتج للعملاء' },
+  { key: 'is_featured',    en: 'Featured',         ar: 'منتج مميز',         descEn: 'Show in featured section',        descAr: 'يظهر في قسم المميزين' },
+  { key: 'is_best_seller', en: 'Best Seller',      ar: 'الأكثر مبيعاً',    descEn: 'Mark as best seller',             descAr: 'وضع علامة الأكثر مبيعاً' },
+  { key: 'is_new',         en: 'New Arrival',      ar: 'وصل حديثاً',       descEn: 'Show as new product',             descAr: 'إظهاره كمنتج جديد' },
+]
 
-export default function AdminProductsPage() {
+export default function ProductsPage() {
+  const { t } = useLanguage()
   const [products, setProducts] = useState<Product[]>([])
   const [filtered, setFiltered] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [filterStock, setFilterStock] = useState<'all' | 'out' | 'low' | 'ok'>('all')
-
-  // Add/Edit modal
+  const [catFilter, setCatFilter] = useState('')
+  const [visFilter, setVisFilter] = useState<'all' | 'visible' | 'hidden'>('all')
   const [showModal, setShowModal] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [form, setForm] = useState({ ...EMPTY_FORM })
+  const [editing, setEditing] = useState<Product | null>(null)
+  const [form, setForm] = useState<ProductForm>({ ...EMPTY_FORM })
   const [saving, setSaving] = useState(false)
-
-  // Inline stock edit
-  const [editingStock, setEditingStock] = useState<string | null>(null)
-  const [stockVal, setStockVal] = useState('')
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [toggling, setToggling] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/products', { cache: 'no-store' })
-      const data = await res.json()
-      setProducts(data?.data || [])
+      const [prodRes, catRes] = await Promise.all([
+        fetch('/api/admin/products', { cache: 'no-store' }),
+        fetch('/api/admin/categories', { cache: 'no-store' }),
+      ])
+      const prodJson = await prodRes.json()
+      const catJson = await catRes.json()
+      setProducts(prodJson.data || [])
+      setCategories(catJson.data || [])
     } catch {
-      toast.error('فشل تحميل المنتجات')
+      toast.error(t('Failed to load products', 'فشل تحميل المنتجات'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    let list = [...products]
-    if (filterStock === 'out') list = list.filter((p) => p.stock_quantity === 0)
-    else if (filterStock === 'low') list = list.filter((p) => p.stock_quantity > 0 && p.stock_quantity < 10)
-    else if (filterStock === 'ok') list = list.filter((p) => p.stock_quantity >= 10)
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      list = list.filter((p) => p.name_ar?.includes(q) || p.name_en?.toLowerCase().includes(q))
-    }
-    setFiltered(list)
-  }, [products, search, filterStock])
+    let result = products
+    const q = search.toLowerCase()
+    if (q) result = result.filter(p => p.name_ar.includes(q) || p.name_en.toLowerCase().includes(q))
+    if (catFilter) result = result.filter(p => p.category_id === catFilter)
+    if (visFilter === 'visible') result = result.filter(p => p.is_visible)
+    if (visFilter === 'hidden') result = result.filter(p => !p.is_visible)
+    setFiltered(result)
+  }, [search, catFilter, visFilter, products])
 
   const openAdd = () => {
-    setEditingProduct(null)
+    setEditing(null)
     setForm({ ...EMPTY_FORM })
     setShowModal(true)
   }
 
   const openEdit = (p: Product) => {
-    setEditingProduct(p)
+    setEditing(p)
     setForm({
-      name_ar: p.name_ar || '',
-      name_en: p.name_en || '',
+      name_ar: p.name_ar,
+      name_en: p.name_en,
       description_ar: p.description_ar || '',
       description_en: p.description_en || '',
-      price_250: String(p.sizes?.find((s) => s.size === '250g')?.price || ''),
-      price_500: String(p.sizes?.find((s) => s.size === '500g')?.price || ''),
-      price_1000: String(p.sizes?.find((s) => s.size === '1kg')?.price || ''),
-      stock_quantity: String(p.stock_quantity ?? 0),
-      image_url: p.images?.[0] || '',
+      category_id: p.category_id || '',
+      image: p.images?.[0] || '',
+      price_250: String(p.sizes.find(s => s.size === '250g')?.price ?? ''),
+      price_500: String(p.sizes.find(s => s.size === '500g')?.price ?? ''),
+      price_1000: String(p.sizes.find(s => s.size === '1kg')?.price ?? ''),
+      stock_quantity: String(p.stock_quantity),
       is_visible: p.is_visible,
+      is_featured: p.is_featured,
+      is_best_seller: p.is_best_seller,
+      is_new: p.is_new,
     })
     setShowModal(true)
   }
 
   const save = async () => {
     if (!form.name_ar.trim() || !form.name_en.trim()) {
-      toast.error('الاسم بالعربي والإنجليزي مطلوب')
+      toast.error(t('Name in both languages is required', 'الاسم بكلتا اللغتين مطلوب'))
       return
     }
     setSaving(true)
     try {
-      const body = {
+      const payload = {
         name_ar: form.name_ar.trim(),
         name_en: form.name_en.trim(),
         description_ar: form.description_ar.trim() || null,
         description_en: form.description_en.trim() || null,
-        price_250: Number(form.price_250 || 0),
-        price_500: Number(form.price_500 || 0),
-        price_1000: Number(form.price_1000 || 0),
+        category_id: form.category_id || null,
+        images: form.image.trim() ? [form.image.trim()] : [],
+        price_250: form.price_250 ? Number(form.price_250) : 0,
+        price_500: form.price_500 ? Number(form.price_500) : 0,
+        price_1000: form.price_1000 ? Number(form.price_1000) : 0,
         stock_quantity: Number(form.stock_quantity || 0),
-        images: form.image_url.trim() ? [form.image_url.trim()] : [],
         is_visible: form.is_visible,
+        is_featured: form.is_featured,
+        is_best_seller: form.is_best_seller,
+        is_new: form.is_new,
       }
-
-      let res: Response
-      if (editingProduct) {
-        res = await fetch(`/api/admin/products/${editingProduct.id}`, {
-          method: 'PATCH',
+      const res = await fetch(
+        editing ? `/api/admin/products/${editing.id}` : '/api/admin/products',
+        {
+          method: editing ? 'PATCH' : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-      } else {
-        res = await fetch('/api/admin/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-      }
-
-      if (res.ok) {
-        toast.success(editingProduct ? 'تم تعديل المنتج' : 'تم إضافة المنتج')
-        setShowModal(false)
-        await load()
-      } else {
-        const err = await res.json()
-        toast.error(err?.error || 'فشل الحفظ')
-      }
-    } catch {
-      toast.error('فشل الحفظ')
+          body: JSON.stringify(payload),
+        },
+      )
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      toast.success(editing ? t('Product updated', 'تم تحديث المنتج') : t('Product added', 'تمت إضافة المنتج'))
+      setShowModal(false)
+      load()
+    } catch (e: unknown) {
+      toast.error((e as Error).message || t('Failed to save', 'فشل الحفظ'))
     } finally {
       setSaving(false)
     }
   }
 
-  const deleteProduct = async (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف "${name}"؟`)) return
+  const toggleVisible = async (p: Product) => {
+    setToggling(p.id + '_v')
     try {
-      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast.success('تم حذف المنتج')
-        await load()
-      } else {
-        toast.error('فشل الحذف')
-      }
+      const res = await fetch(`/api/admin/products/${p.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_visible: !p.is_visible }),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, is_visible: !x.is_visible } : x))
+      toast.success(!p.is_visible ? t('Product visible', 'المنتج مرئي الآن') : t('Product hidden', 'تم إخفاء المنتج'))
     } catch {
-      toast.error('فشل الحذف')
+      toast.error(t('Failed to update', 'فشل التحديث'))
+    } finally {
+      setToggling(null)
     }
   }
 
-  const toggleVisibility = async (p: Product) => {
+  const toggleFeatured = async (p: Product) => {
+    setToggling(p.id + '_f')
     try {
       const res = await fetch(`/api/admin/products/${p.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name_ar: p.name_ar, name_en: p.name_en,
-          description_ar: p.description_ar, description_en: p.description_en,
-          is_visible: !p.is_visible,
-          stock_quantity: p.stock_quantity,
-          price_250: p.sizes?.find((s) => s.size === '250g')?.price || 0,
-          price_500: p.sizes?.find((s) => s.size === '500g')?.price || 0,
-          price_1000: p.sizes?.find((s) => s.size === '1kg')?.price || 0,
-        }),
+        body: JSON.stringify({ is_featured: !p.is_featured }),
       })
-      if (res.ok) {
-        setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, is_visible: !p.is_visible } : x))
-        toast.success(p.is_visible ? 'تم إخفاء المنتج' : 'تم إظهار المنتج')
-      }
-    } catch { toast.error('فشل التحديث') }
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, is_featured: !x.is_featured } : x))
+      toast.success(!p.is_featured ? t('Marked as featured', 'تم وضع علامة مميز') : t('Removed from featured', 'تمت إزالة المميز'))
+    } catch {
+      toast.error(t('Failed to update', 'فشل التحديث'))
+    } finally {
+      setToggling(null)
+    }
   }
 
-  const saveStock = async (p: Product) => {
-    const qty = Number(stockVal)
-    if (isNaN(qty) || qty < 0) { toast.error('كمية غير صالحة'); return }
+  const del = async (id: string) => {
+    setDeleting(id)
     try {
-      const res = await fetch(`/api/admin/products/${p.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name_ar: p.name_ar, name_en: p.name_en,
-          description_ar: p.description_ar, description_en: p.description_en,
-          is_visible: p.is_visible,
-          stock_quantity: qty,
-          price_250: p.sizes?.find((s) => s.size === '250g')?.price || 0,
-          price_500: p.sizes?.find((s) => s.size === '500g')?.price || 0,
-          price_1000: p.sizes?.find((s) => s.size === '1kg')?.price || 0,
-        }),
-      })
-      if (res.ok) {
-        setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, stock_quantity: qty } : x))
-        setEditingStock(null)
-        toast.success('تم تحديث المخزون')
-      } else toast.error('فشل التحديث')
-    } catch { toast.error('فشل التحديث') }
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      toast.success(t('Product deleted', 'تم حذف المنتج'))
+      setProducts(p => p.filter(x => x.id !== id))
+    } catch (e: unknown) {
+      toast.error((e as Error).message || t('Failed to delete', 'فشل الحذف'))
+    } finally {
+      setDeleting(null)
+    }
   }
 
-  const outCount = products.filter((p) => p.stock_quantity === 0).length
-  const lowCount = products.filter((p) => p.stock_quantity > 0 && p.stock_quantity < 10).length
+  const minPrice = (sizes: Size[]) =>
+    sizes?.length ? Math.min(...sizes.map(s => s.price)) : null
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-[#0f0900] p-6">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a0a00] flex items-center gap-2">
-            <ShoppingBag className="h-6 w-6 text-[#522500]" /> المنتجات والمخزون
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {products.length} منتج · <span className="text-red-600">{outCount} نفد</span> · <span className="text-orange-600">{lowCount} منخفض</span>
-          </p>
+          <h2 className="text-white font-bold text-lg">{t('Products', 'المنتجات')}</h2>
+          <p className="text-white/30 text-xs mt-0.5">{products.length} {t('products total', 'منتج إجمالاً')}</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={load} className="flex items-center gap-2 text-sm text-[#522500] bg-white border border-[#e8ddd5] px-4 py-2 rounded-xl hover:bg-[#faf7f4] transition-colors">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => load()}
+            aria-label={t('Refresh', 'تحديث')}
+            className="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 transition-all"
+          >
             <RefreshCw className="h-4 w-4" />
           </button>
-          <button onClick={openAdd} className="flex items-center gap-2 text-sm bg-[#522500] text-[#FFDCC2] px-4 py-2 rounded-xl hover:bg-[#3d1a00] transition-colors font-medium">
-            <Plus className="h-4 w-4" /> إضافة منتج
+          <button
+            type="button"
+            onClick={openAdd}
+            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            {t('Add Product', 'إضافة منتج')}
           </button>
         </div>
       </div>
 
-      {/* Alert for out of stock */}
-      {outCount > 0 && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          <span><strong>{outCount}</strong> منتج نفد من المخزون — سيظهر للعملاء كـ "نفد المخزون"</span>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={t('Search products...', 'بحث في المنتجات...')}
+            className="w-56 bg-[#180d04] border border-[#c8941a]/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white/70 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+          />
+        </div>
+        <select
+          value={catFilter}
+          onChange={e => setCatFilter(e.target.value)}
+          aria-label={t('Filter by category', 'تصفية حسب الفئة')}
+          className="bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2.5 text-sm text-white/60 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+        >
+          <option value="">{t('All categories', 'جميع الفئات')}</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.name_ar}</option>
+          ))}
+        </select>
+        <div className="flex bg-[#180d04] border border-[#c8941a]/10 rounded-xl overflow-hidden">
+          {(['all', 'visible', 'hidden'] as const).map(v => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVisFilter(v)}
+              className={`px-3 py-2.5 text-sm transition-all ${visFilter === v ? 'bg-[#c8941a]/20 text-[#c8941a]' : 'text-white/35 hover:text-white/60'}`}
+            >
+              {v === 'all' ? t('All', 'الكل') : v === 'visible' ? t('Visible', 'مرئي') : t('Hidden', 'مخفي')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid */}
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-[#180d04] rounded-2xl h-56 border border-[#c8941a]/5" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24">
+          <div className="h-16 w-16 rounded-2xl bg-[#c8941a]/10 border border-[#c8941a]/20 flex items-center justify-center mb-4">
+            <ShoppingBag className="h-7 w-7 text-[#c8941a]" />
+          </div>
+          <p className="text-white/40 text-sm">{t('No products found', 'لا توجد منتجات')}</p>
+          <button type="button" onClick={openAdd} className="mt-4 text-[#c8941a] text-sm hover:opacity-70 transition-opacity">
+            + {t('Add your first product', 'أضف أول منتج')}
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {filtered.map(product => {
+            const price = minPrice(product.sizes)
+            return (
+              <div
+                key={product.id}
+                className={`group bg-[#180d04] border rounded-2xl overflow-hidden transition-all ${
+                  product.is_visible
+                    ? 'border-[#c8941a]/10 hover:border-[#c8941a]/30'
+                    : 'border-white/[0.04] opacity-60 hover:opacity-80'
+                }`}
+              >
+                {/* Image */}
+                <div className="relative h-36 bg-[#0f0900]">
+                  {product.images?.[0] ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name_ar}
+                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Coffee className="h-8 w-8 text-[#c8941a]/20" />
+                    </div>
+                  )}
+
+                  {/* Status badges */}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    {!product.is_visible && (
+                      <div className="flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-lg px-1.5 py-0.5">
+                        <EyeOff className="h-2.5 w-2.5 text-white/40" />
+                        <span className="text-[9px] text-white/40">{t('Hidden', 'مخفي')}</span>
+                      </div>
+                    )}
+                    {product.is_featured && (
+                      <div className="flex items-center gap-1 bg-[#c8941a]/85 backdrop-blur-sm rounded-lg px-1.5 py-0.5">
+                        <Star className="h-2.5 w-2.5 text-black" />
+                        <span className="text-[9px] text-black font-semibold">{t('Featured', 'مميز')}</span>
+                      </div>
+                    )}
+                    {product.is_new && (
+                      <div className="bg-emerald-500/75 backdrop-blur-sm rounded-lg px-1.5 py-0.5">
+                        <span className="text-[9px] text-white font-semibold">{t('New', 'جديد')}</span>
+                      </div>
+                    )}
+                    {product.is_best_seller && (
+                      <div className="bg-blue-500/70 backdrop-blur-sm rounded-lg px-1.5 py-0.5">
+                        <span className="text-[9px] text-white font-semibold">{t('Best Seller', 'الأكثر مبيعاً')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions overlay */}
+                  <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(product)}
+                      aria-label={t('Edit', 'تعديل')}
+                      className="h-8 w-8 rounded-lg bg-[#c8941a] flex items-center justify-center hover:bg-[#b8840f] transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-black" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleVisible(product)}
+                      disabled={toggling === product.id + '_v'}
+                      aria-label={product.is_visible ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
+                      className="h-8 w-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors disabled:opacity-40"
+                    >
+                      {toggling === product.id + '_v' ? (
+                        <div className="h-3.5 w-3.5 border border-white border-t-transparent rounded-full animate-spin" />
+                      ) : product.is_visible ? (
+                        <EyeOff className="h-3.5 w-3.5 text-white" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5 text-white" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleFeatured(product)}
+                      disabled={toggling === product.id + '_f'}
+                      aria-label={product.is_featured ? t('Unfeature', 'إزالة التمييز') : t('Feature', 'تمييز')}
+                      className={`h-8 w-8 rounded-lg border flex items-center justify-center transition-colors disabled:opacity-40 ${
+                        product.is_featured
+                          ? 'bg-[#c8941a]/30 border-[#c8941a]/50 hover:bg-[#c8941a]/50'
+                          : 'bg-white/10 border-white/20 hover:bg-white/20'
+                      }`}
+                    >
+                      {toggling === product.id + '_f' ? (
+                        <div className="h-3.5 w-3.5 border border-[#c8941a] border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Star className={`h-3.5 w-3.5 ${product.is_featured ? 'text-[#c8941a]' : 'text-white'}`} />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => del(product.id)}
+                      disabled={deleting === product.id}
+                      aria-label={t('Delete', 'حذف')}
+                      className="h-8 w-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center hover:bg-red-500/40 transition-colors disabled:opacity-40"
+                    >
+                      {deleting === product.id ? (
+                        <div className="h-3.5 w-3.5 border border-red-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="px-3 py-2.5">
+                  <p className="text-white/80 text-sm font-semibold truncate">{product.name_ar}</p>
+                  <p className="text-white/35 text-[11px] truncate">{product.name_en}</p>
+                  {product.category && (
+                    <p className="text-[#c8941a]/40 text-[9px] font-mono truncate mt-0.5">{product.category.name_ar}</p>
+                  )}
+                  <div className="flex items-center justify-between mt-1.5">
+                    {price !== null ? (
+                      <p className="text-[#c8941a] text-xs font-semibold">
+                        {t('from', 'من')} {price} {t('EGP', 'ج.م')}
+                      </p>
+                    ) : (
+                      <p className="text-white/20 text-xs">{t('No price', 'بدون سعر')}</p>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Package className="h-3 w-3 text-white/20" />
+                      <span className="text-white/25 text-[10px]">{product.stock_quantity}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="بحث في المنتجات..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-[#e8ddd5] rounded-xl py-2.5 pr-10 pl-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
-          />
-        </div>
-        {(['all', 'out', 'low', 'ok'] as const).map((f) => (
-          <button key={f} onClick={() => setFilterStock(f)}
-            className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${filterStock === f ? 'bg-[#522500] text-[#FFDCC2] border-[#522500]' : 'bg-white text-gray-600 border-[#e8ddd5]'}`}>
-            {f === 'all' ? 'الكل' : f === 'out' ? 'نفد المخزون' : f === 'low' ? 'مخزون منخفض' : 'متوفر'}
-          </button>
-        ))}
-      </div>
+      {/* ── Add / Edit Modal ── */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="relative w-full max-w-lg bg-[#0f0900] border border-[#c8941a]/20 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
 
-      {/* Products Table */}
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="h-8 w-8 border-2 border-[#522500] border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-[#e8ddd5] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#f0e8e0] bg-[#faf7f4]">
-                  <th className="text-right px-5 py-3.5 font-semibold text-gray-600 text-xs">المنتج</th>
-                  <th className="text-right px-4 py-3.5 font-semibold text-gray-600 text-xs">السعر (250g)</th>
-                  <th className="text-right px-4 py-3.5 font-semibold text-gray-600 text-xs">المخزون</th>
-                  <th className="text-right px-4 py-3.5 font-semibold text-gray-600 text-xs">الحالة</th>
-                  <th className="text-right px-4 py-3.5 font-semibold text-gray-600 text-xs">الظهور</th>
-                  <th className="px-4 py-3.5"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f0e8e0]">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-400 text-sm">
-                      لا توجد منتجات
-                    </td>
-                  </tr>
-                ) : filtered.map((p, i) => (
-                  <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                    className="hover:bg-[#faf7f4] transition-colors">
-                    {/* Name + Image */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-[#f5f0eb] border border-[#e8ddd5] overflow-hidden shrink-0">
-                          {p.images?.[0] ? (
-                            <img src={p.images[0]} alt={p.name_ar} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-[#c8b89a]">
-                              <ShoppingBag className="h-4 w-4" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#1a0a00]">{p.name_ar}</p>
-                          <p className="text-xs text-gray-400">{p.name_en}</p>
-                        </div>
-                      </div>
-                    </td>
-                    {/* Price */}
-                    <td className="px-4 py-4 text-[#522500] font-semibold">
-                      {p.sizes?.find((s) => s.size === '250g')?.price
-                        ? `${p.sizes?.find((s) => s.size === '250g')?.price} ج.م`
-                        : '—'}
-                    </td>
-                    {/* Stock inline edit */}
-                    <td className="px-4 py-4">
-                      {editingStock === p.id ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min={0}
-                            value={stockVal}
-                            onChange={(e) => setStockVal(e.target.value)}
-                            className="w-20 border border-[#e8ddd5] rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
-                            autoFocus
-                            onKeyDown={(e) => { if (e.key === 'Enter') saveStock(p); if (e.key === 'Escape') setEditingStock(null) }}
-                          />
-                          <button onClick={() => saveStock(p)} className="text-green-600 hover:text-green-700"><Check className="h-4 w-4" /></button>
-                          <button onClick={() => setEditingStock(null)} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => { setEditingStock(p.id); setStockVal(String(p.stock_quantity)) }}
-                          className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-                        >
-                          <StockBadge qty={p.stock_quantity} />
-                          <Pencil className="h-3 w-3 text-gray-300" />
-                        </button>
-                      )}
-                    </td>
-                    {/* Status */}
-                    <td className="px-4 py-4">
-                      {p.stock_quantity === 0
-                        ? <span className="text-xs text-red-600 font-medium">Sold Out</span>
-                        : <span className="text-xs text-green-600 font-medium">In Stock</span>}
-                    </td>
-                    {/* Visibility */}
-                    <td className="px-4 py-4">
-                      <button onClick={() => toggleVisibility(p)} title={p.is_visible ? 'إخفاء' : 'إظهار'}
-                        className={`p-1.5 rounded-lg transition-colors ${p.is_visible ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}>
-                        {p.is_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                      </button>
-                    </td>
-                    {/* Actions */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(p)}
-                          className="p-1.5 text-gray-400 hover:text-[#522500] hover:bg-[#FFDCC2]/30 rounded-lg transition-colors">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => deleteProduct(p.id, p.name_ar)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05] shrink-0">
+              <h3 className="text-white font-bold text-sm">
+                {editing ? t('Edit Product', 'تعديل المنتج') : t('New Product', 'منتج جديد')}
+              </h3>
+              <button
+                type="button"
+                aria-label={t('Close', 'إغلاق')}
+                onClick={() => setShowModal(false)}
+                className="text-white/30 hover:text-white/60 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
+              {/* Names */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Name', 'الاسم بالعربية')} *</label>
+                  <input
+                    value={form.name_ar}
+                    onChange={e => setForm(p => ({ ...p, name_ar: e.target.value }))}
+                    dir="rtl"
+                    placeholder="قهوة تركية"
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('English Name', 'الاسم بالإنجليزية')} *</label>
+                  <input
+                    value={form.name_en}
+                    onChange={e => setForm(p => ({ ...p, name_en: e.target.value }))}
+                    placeholder="Turkish Coffee"
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Descriptions */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Description', 'الوصف بالعربية')}</label>
+                  <textarea
+                    value={form.description_ar}
+                    onChange={e => setForm(p => ({ ...p, description_ar: e.target.value }))}
+                    rows={2}
+                    dir="rtl"
+                    placeholder={t('Optional', 'اختياري')}
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('English Description', 'الوصف بالإنجليزية')}</label>
+                  <textarea
+                    value={form.description_en}
+                    onChange={e => setForm(p => ({ ...p, description_en: e.target.value }))}
+                    rows={2}
+                    placeholder={t('Optional', 'اختياري')}
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Category + Stock */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('Category', 'الفئة')}</label>
+                  <select
+                    value={form.category_id}
+                    onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}
+                    aria-label={t('Category', 'الفئة')}
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                  >
+                    <option value="">{t('Uncategorized', 'بدون فئة')}</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name_ar}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('Stock Quantity', 'الكمية المتوفرة')}</label>
+                  <input
+                    type="number"
+                    value={form.stock_quantity}
+                    onChange={e => setForm(p => ({ ...p, stock_quantity: e.target.value }))}
+                    min={0}
+                    placeholder="0"
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Image URL */}
+              <div>
+                <label className="block text-white/40 text-xs mb-1.5">{t('Image URL', 'رابط الصورة')}</label>
+                <div className="flex gap-3 items-center">
+                  <input
+                    value={form.image}
+                    onChange={e => setForm(p => ({ ...p, image: e.target.value }))}
+                    placeholder="https://..."
+                    className="flex-1 bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                  />
+                  {form.image && (
+                    <div className="h-10 w-10 rounded-lg border border-[#c8941a]/20 overflow-hidden shrink-0">
+                      <img
+                        src={form.image}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Prices */}
+              <div>
+                <label className="block text-white/40 text-xs mb-1.5">{t('Prices (EGP)', 'الأسعار (ج.م)')}</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {([
+                    { label: '250g', field: 'price_250' },
+                    { label: '500g', field: 'price_500' },
+                    { label: '1 kg',  field: 'price_1000' },
+                  ] as const).map(({ label, field }) => (
+                    <div key={field}>
+                      <label className="block text-white/25 text-[10px] mb-1">{label}</label>
+                      <input
+                        type="number"
+                        value={form[field]}
+                        onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
+                        min={0}
+                        placeholder="0"
+                        className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Toggles */}
+              <div className="space-y-2">
+                {TOGGLES.map(({ key, en, ar, descEn, descAr }) => (
+                  <div key={key} className="flex items-center justify-between p-3 bg-[#180d04] border border-[#c8941a]/10 rounded-xl">
+                    <div>
+                      <p className="text-white/70 text-sm font-medium">{t(en, ar)}</p>
+                      <p className="text-white/25 text-xs mt-0.5">{t(descEn, descAr)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={t(en, ar)}
+                      onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${form[key] ? 'bg-[#c8941a]' : 'bg-white/10'}`}
+                    >
+                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.05] shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded-xl text-white/40 hover:text-white/60 text-sm transition-colors"
+              >
+                {t('Cancel', 'إلغاء')}
+              </button>
+              <button
+                type="button"
+                onClick={save}
+                disabled={saving}
+                className="px-5 py-2 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all disabled:opacity-50"
+              >
+                {saving
+                  ? t('Saving...', 'جارٍ الحفظ...')
+                  : editing
+                  ? t('Save Changes', 'حفظ التغييرات')
+                  : t('Add Product', 'إضافة المنتج')}
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* ── Add/Edit Modal ── */}
-      <AnimatePresence>
-        {showModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
-              onClick={() => setShowModal(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8ddd5]">
-                  <h2 className="font-bold text-[#1a0a00]">{editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h2>
-                  <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                {/* Modal Body */}
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">الاسم بالعربي *</label>
-                      <input value={form.name_ar} onChange={(e) => setForm((f) => ({ ...f, name_ar: e.target.value }))}
-                        className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30" placeholder="مثال: قهوة تركية" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">الاسم بالإنجليزي *</label>
-                      <input value={form.name_en} onChange={(e) => setForm((f) => ({ ...f, name_en: e.target.value }))}
-                        className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30" placeholder="Turkish Coffee" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">وصف بالعربي</label>
-                      <textarea value={form.description_ar} onChange={(e) => setForm((f) => ({ ...f, description_ar: e.target.value }))}
-                        rows={2} className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30 resize-none" placeholder="وصف المنتج..." />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">وصف بالإنجليزي</label>
-                      <textarea value={form.description_en} onChange={(e) => setForm((f) => ({ ...f, description_en: e.target.value }))}
-                        rows={2} className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30 resize-none" placeholder="Product description..." />
-                    </div>
-                  </div>
-
-                  {/* Prices */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-2 block">الأسعار (ج.م)</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[{ label: '250g', key: 'price_250' }, { label: '500g', key: 'price_500' }, { label: '1 كجم', key: 'price_1000' }].map(({ label, key }) => (
-                        <div key={key}>
-                          <label className="text-xs text-gray-400 mb-1 block">{label}</label>
-                          <input type="number" min={0}
-                            value={form[key as keyof typeof form] as string}
-                            onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                            className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30" placeholder="0" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Image URL */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">رابط صورة المنتج</label>
-                    <div className="flex gap-3 items-start">
-                      <input
-                        type="url"
-                        value={form.image_url}
-                        onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
-                        className="flex-1 border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
-                        placeholder="https://..."
-                      />
-                      {form.image_url && (
-                        <div className="h-10 w-10 rounded-lg border border-[#e8ddd5] overflow-hidden shrink-0">
-                          <img src={form.image_url} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stock */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">الكمية في المخزون</label>
-                    <input type="number" min={0}
-                      value={form.stock_quantity}
-                      onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value }))}
-                      className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30" />
-                    <p className="text-xs text-gray-400 mt-1">إذا كانت الكمية 0 سيظهر المنتج كـ "نفد المخزون" في الموقع</p>
-                  </div>
-
-                  {/* Visibility */}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={form.is_visible}
-                      onChange={(e) => setForm((f) => ({ ...f, is_visible: e.target.checked }))}
-                      className="w-4 h-4 accent-[#522500]" />
-                    <span className="text-sm font-medium text-gray-700">ظاهر في الموقع</span>
-                  </label>
-                </div>
-
-                {/* Modal Footer */}
-                <div className="flex gap-3 px-6 py-4 border-t border-[#e8ddd5]">
-                  <button onClick={save} disabled={saving}
-                    className="flex-1 bg-[#522500] text-[#FFDCC2] py-2.5 rounded-xl font-medium text-sm hover:bg-[#3d1a00] transition-colors disabled:opacity-60">
-                    {saving ? 'جاري الحفظ...' : (editingProduct ? 'حفظ التعديلات' : 'إضافة المنتج')}
-                  </button>
-                  <button onClick={() => setShowModal(false)}
-                    className="px-5 bg-[#f5f0eb] text-gray-600 py-2.5 rounded-xl font-medium text-sm hover:bg-[#e8ddd5] transition-colors">
-                    إلغاء
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
