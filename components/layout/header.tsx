@@ -73,7 +73,7 @@ export function Header() {
   const { openCart, getTotalItems } = useCartStore()
   const { openWishlist } = useWishlistStore()
   const { user, profile, signOut } = useAuth()
-  const isAdmin = isMounted && user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
   const cartItemCount = isMounted ? getTotalItems() : 0
 
   // Pages where header starts transparent and turns brown on scroll
@@ -86,9 +86,8 @@ export function Header() {
   // Show brown glass background: always on non-transparent pages, or when scrolled
   const showBrown = !isTransparentTop || isScrolled
 
-  const displayName = isMounted
-    ? (profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || null)
-    : null
+  const displayName =
+    profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || null
 
   useEffect(() => {
     setIsMounted(true)
@@ -335,7 +334,7 @@ export function Header() {
               </Button>
 
               {/* User */}
-              {isMounted && displayName ? (
+              {displayName ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -488,13 +487,40 @@ export function Header() {
                 <div className="h-px bg-border" />
 
                 <div className="flex flex-col gap-4">
-                  <Link
-                    href="/auth/login"
-                    className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
-                  >
-                    <User className="h-5 w-5" />
-                    <span>{t('Sign In', 'تسجيل الدخول')}</span>
-                  </Link>
+                  {displayName ? (
+                    <>
+                      <Link
+                        href={isAdmin ? '/dashboard/admin' : '/dashboard/orders'}
+                        className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                      >
+                        {isAdmin ? (
+                          <LayoutDashboard className="h-5 w-5" />
+                        ) : (
+                          <Package className="h-5 w-5" />
+                        )}
+                        <span>
+                          {isAdmin
+                            ? t('Dashboard', 'لوحة التحكم')
+                            : t('My Orders', 'أوردراتي')}
+                        </span>
+                      </Link>
+                      <button
+                        onClick={() => { setIsMobileMenuOpen(false); void signOut() }}
+                        className="flex items-center gap-3 text-destructive hover:text-destructive transition-colors"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        <span>{t('Sign Out', 'تسجيل خروج')}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                    >
+                      <User className="h-5 w-5" />
+                      <span>{t('Sign In', 'تسجيل الدخول')}</span>
+                    </Link>
+                  )}
                   <button
                     onClick={() => { openWishlist(); setIsMobileMenuOpen(false) }}
                     className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"

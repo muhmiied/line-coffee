@@ -10,10 +10,7 @@
 export {
   signUp,
   signIn,
-  signOut,
-  getCurrentUser,
   updateProfile,
   forgotPassword,
   resetPassword,
-  checkAuth
 } from './auth.actions'

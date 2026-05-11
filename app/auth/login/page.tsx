@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,15 +13,31 @@ import { signIn } from '@/lib/actions/auth.actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ADMIN_EMAIL } from '@/lib/config/site'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect'
 
 function LoginForm() {
-  const { t, dir } = useLanguage()
+  const { t, dir, language } = useLanguage()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('next') || null
+  const message = searchParams.get('message')
+  const router = useRouter()
+  const redirectTo = sanitizeRedirectPath(
+    searchParams.get('next') ?? searchParams.get('redirect'),
+    '/',
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (message === 'check-email') {
+      toast.info(
+        language === 'ar'
+          ? 'يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك.'
+          : 'Please check your email to confirm your account.',
+      )
+    }
+  }, [language, message])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,9 +48,10 @@ function LoginForm() {
       
       if (result.success) {
         toast.success(t('Login successful!', 'تم تسجيل الدخول بنجاح!'))
-        const isAdmin = email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
-        const dest = isAdmin ? '/dashboard/admin' : (redirectTo ?? '/')
-        window.location.href = dest
+        const isAdmin = result.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+        const dest = redirectTo === '/' && isAdmin ? '/dashboard/admin' : redirectTo
+        router.replace(dest)
+        router.refresh()
       } else {
         toast.error(result.error || t('Login failed. Please try again.', 'فشل تسجيل الدخول. حاول مرة أخرى.'))
       }

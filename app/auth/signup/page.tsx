@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/lib/context/language'
 import { useAuth } from '@/lib/context/auth'
-import { createClient } from '@/lib/supabase/client'
+import { signUp } from '@/lib/actions/auth.actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -19,7 +19,6 @@ export default function SignupPage() {
   const { t, dir } = useLanguage()
   const { isSupabaseConfigured } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -57,54 +56,47 @@ export default function SignupPage() {
 
     setIsLoading(true)
 
-    // Simulate signup for demo
     if (!isSupabaseConfigured) {
       toast.info(t('Demo mode - Supabase not configured', 'وضع تجريبي - Supabase غير مُعَد'))
-      setTimeout(() => {
-        setIsLoading(false)
-        toast.success(t('Account created successfully!', 'تم إنشاء الحساب بنجاح!'))
-        router.push('/dashboard')
-      }, 1000)
+      setIsLoading(false)
       return
     }
 
     try {
-      if (!supabase) {
-        throw new Error('Supabase not configured')
-      }
-
-      const { error } = await supabase.auth.signUp({
+      const result = await signUp({
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName.trim(),
-            last_name: formData.lastName.trim(),
-            phone: formData.phone.trim(),
-            whatsapp: formData.whatsapp.trim(),
-            address: formData.address.trim(),
-            location_link: formData.locationLink.trim() || null,
-          },
-        },
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        address: formData.address,
+        locationLink: formData.locationLink,
       })
 
-      if (error) {
+      if (!result.success) {
         if (
-          /already registered|already exists|duplicate/i.test(error.message)
+          /already registered|already exists|duplicate/i.test(result.error || '')
         ) {
           toast.error(t('This email is already registered.', 'هذا البريد الإلكتروني مسجل بالفعل.'))
           return
         }
-        throw error
+        throw new Error(result.error)
       }
 
-      toast.success(
-        t(
-          'Account created successfully! Please check your email to confirm your account.',
-          'تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.'
+      if (result.requiresEmailConfirmation) {
+        toast.success(
+          t(
+            'Account created successfully! Please check your email to confirm your account.',
+            'تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.'
+          )
         )
-      )
-      router.push('/auth/login')
+        router.push('/auth/login?message=check-email')
+      } else {
+        toast.success(t('Account created successfully!', 'تم إنشاء الحساب بنجاح!'))
+        router.replace('/dashboard')
+        router.refresh()
+      }
     } catch {
       toast.error(t('Signup failed. Email may already be in use.', 'فشل التسجيل. البريد الإلكتروني قد يكون مستخدماً.'))
     } finally {

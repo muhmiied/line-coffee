@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { Suspense } from 'react'
 import { LanguageProvider } from '@/lib/context/language'
 import { AuthProvider } from '@/lib/context/auth'
+import { getInitialAuthState } from '@/lib/auth/session'
 import { StickyTopBar } from '@/components/layout/sticky-top-bar'
 import { Footer } from '@/components/layout/footer'
 import { PageLoader } from '@/components/layout/page-loader'
@@ -75,11 +76,13 @@ export const viewport: Viewport = {
   maximumScale: 5,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const authState = await getInitialAuthState()
+
   return (
     <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${notoNaskhArabic.variable} bg-background`}>
       <head>
@@ -91,7 +94,11 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased min-h-screen flex flex-col w-full">
         <LanguageProvider>
-          <AuthProvider>
+          <AuthProvider
+            initialUser={authState.user}
+            initialProfile={authState.profile}
+            isSupabaseConfigured={authState.isSupabaseConfigured}
+          >
             <ScrollProgress />
             <Suspense fallback={null}>
               <PageLoader />
