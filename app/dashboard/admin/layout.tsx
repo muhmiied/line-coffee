@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/context/auth'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
-import { signOut as serverSignOut } from '@/lib/actions/auth.actions'
 
 import {
   LayoutDashboard,
@@ -57,7 +56,7 @@ const pageTitles: Record<string, { en: string; ar: string }> = {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   const pathname = usePathname()
   const [avatarOpen, setAvatarOpen] = useState(false)
@@ -82,9 +81,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ? t(pageTitles[pathname].en, pageTitles[pathname].ar)
     : t('Dashboard', 'لوحة التحكم')
 
-  const handleSignOut = async () => {
-  await serverSignOut()
-}
+  const handleSignOut = () => signOut()
 
   return (
     <div className="flex -mt-20 md:-mt-24 min-h-[100dvh] bg-background">

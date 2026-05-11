@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setUser(session?.user ?? null)
         if (session?.user) {
           await fetchProfile(session.user.id)
@@ -76,15 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
-  if (!supabase) return
-
-  await supabase.auth.signOut()
-
-  setUser(null)
-  setProfile(null)
-
-  window.location.href = '/'
-}
+    setUser(null)
+    setProfile(null)
+    window.location.href = '/auth/signout'
+  }
   return (
     <AuthContext.Provider value={{ user, profile, isLoading, isSupabaseConfigured, signOut, refreshProfile }}>
       {children}

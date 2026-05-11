@@ -31,7 +31,8 @@
       "Bash(Select-Object Name, FullName)",
       "Bash(grep -E \"\\\\.\\(tsx|ts|css\\)$\")",
       "Bash(Get-ChildItem -Recurse -Path \"app/api\" -Include \"route.ts\", \"route.js\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Filter \"middleware*\")"
     ]
   }
 }
