@@ -47,17 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    // Get initial session
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
+    // Get initial user — validated against server, not local cache
+    const initUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user ?? null)
+      if (user) {
+        await fetchProfile(user.id)
       }
       setIsLoading(false)
     }
 
-    getSession()
+    initUser()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -76,9 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    setUser(null)
-    setProfile(null)
-    window.location.href = '/auth/signout'
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
+    window.location.href = '/'
   }
   return (
     <AuthContext.Provider value={{ user, profile, isLoading, isSupabaseConfigured, signOut, refreshProfile }}>
