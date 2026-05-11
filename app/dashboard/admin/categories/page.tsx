@@ -1,16 +1,18 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Tag, Plus, Pencil, Trash2, Search, RefreshCw, X, Coffee, Package, Check } from 'lucide-react'
+import { Tag, Plus, Pencil, Trash2, Search, RefreshCw, X, Coffee, Package, Check, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
 type Category = {
   id: string
+  slug: string
   name_ar: string
   name_en: string
   image_url: string | null
   sort_order: number
+  is_visible: boolean
   productCount: number
 }
 
@@ -22,8 +24,8 @@ type ProductItem = {
   images?: string[]
 }
 
-const EMPTY: Omit<Category, 'id' | 'productCount'> = {
-  name_ar: '', name_en: '', image_url: '', sort_order: 0,
+const EMPTY: Omit<Category, 'id' | 'slug' | 'productCount'> = {
+  name_ar: '', name_en: '', image_url: '', sort_order: 0, is_visible: true,
 }
 
 export default function CategoriesPage() {
@@ -37,6 +39,7 @@ export default function CategoriesPage() {
   const [form, setForm] = useState({ ...EMPTY })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [toggling, setToggling] = useState<string | null>(null)
 
   // Product management state
   const [manageCat, setManageCat] = useState<Category | null>(null)
@@ -68,7 +71,13 @@ export default function CategoriesPage() {
   const openAdd = () => { setEditing(null); setForm({ ...EMPTY }); setShowModal(true) }
   const openEdit = (cat: Category) => {
     setEditing(cat)
-    setForm({ name_ar: cat.name_ar, name_en: cat.name_en, image_url: cat.image_url || '', sort_order: cat.sort_order })
+    setForm({
+      name_ar: cat.name_ar,
+      name_en: cat.name_en,
+      image_url: cat.image_url || '',
+      sort_order: cat.sort_order,
+      is_visible: cat.is_visible,
+    })
     setShowModal(true)
   }
 
@@ -95,6 +104,25 @@ export default function CategoriesPage() {
       toast.error((e as Error).message || t('Failed to save', 'فشل الحفظ'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const toggleVisible = async (cat: Category) => {
+    setToggling(cat.id)
+    try {
+      const res = await fetch(`/api/admin/categories/${cat.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_visible: !cat.is_visible }),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setCats(prev => prev.map(c => c.id === cat.id ? { ...c, is_visible: !c.is_visible } : c))
+      toast.success(!cat.is_visible ? t('Category activated', 'تم تفعيل الفئة') : t('Category hidden', 'تم إخفاء الفئة'))
+    } catch {
+      toast.error(t('Failed to update', 'فشل التحديث'))
+    } finally {
+      setToggling(null)
     }
   }
 
@@ -138,7 +166,6 @@ export default function CategoriesPage() {
       })
       if (!res.ok) throw new Error()
       setAllProducts(prev => prev.map(p => p.id === productId ? { ...p, category_id: catId } : p))
-      // Update productCount in cats
       setCats(prev => prev.map(c => {
         if (c.id === catId) return { ...c, productCount: c.productCount + 1 }
         const wasIn = allProducts.find(p => p.id === productId)?.category_id === c.id
@@ -222,7 +249,14 @@ export default function CategoriesPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map(cat => (
-            <div key={cat.id} className="group bg-[#180d04] border border-[#c8941a]/10 rounded-2xl overflow-hidden hover:border-[#c8941a]/30 transition-all">
+            <div
+              key={cat.id}
+              className={`group bg-[#180d04] border rounded-2xl overflow-hidden transition-all ${
+                cat.is_visible
+                  ? 'border-[#c8941a]/10 hover:border-[#c8941a]/30'
+                  : 'border-white/[0.04] opacity-60 hover:opacity-80'
+              }`}
+            >
               {/* Image */}
               <div className="relative h-36 bg-[#0f0900]">
                 {cat.image_url ? (
@@ -232,6 +266,15 @@ export default function CategoriesPage() {
                     <Coffee className="h-8 w-8 text-[#c8941a]/20" />
                   </div>
                 )}
+
+                {/* Hidden badge */}
+                {!cat.is_visible && (
+                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-0.5 flex items-center gap-1">
+                    <EyeOff className="h-3 w-3 text-white/40" />
+                    <span className="text-[10px] text-white/40">{t('Hidden', 'مخفي')}</span>
+                  </div>
+                )}
+
                 {/* Actions overlay */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
@@ -241,6 +284,21 @@ export default function CategoriesPage() {
                     className="h-8 w-8 rounded-lg bg-[#c8941a] flex items-center justify-center hover:bg-[#b8840f] transition-colors"
                   >
                     <Pencil className="h-3.5 w-3.5 text-black" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleVisible(cat)}
+                    disabled={toggling === cat.id}
+                    aria-label={cat.is_visible ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
+                    className="h-8 w-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors disabled:opacity-40"
+                  >
+                    {toggling === cat.id ? (
+                      <div className="h-3.5 w-3.5 border border-white border-t-transparent rounded-full animate-spin" />
+                    ) : cat.is_visible ? (
+                      <EyeOff className="h-3.5 w-3.5 text-white" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5 text-white" />
+                    )}
                   </button>
                   <button
                     type="button"
@@ -260,15 +318,18 @@ export default function CategoriesPage() {
                     <Trash2 className="h-3.5 w-3.5 text-red-400" />
                   </button>
                 </div>
+
                 {/* Sort badge */}
                 <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-lg px-2 py-0.5 text-[10px] text-white/50">
                   #{cat.sort_order}
                 </div>
               </div>
+
               {/* Info */}
               <div className="px-3 py-2.5">
                 <p className="text-white/80 text-sm font-semibold truncate">{cat.name_ar}</p>
                 <p className="text-white/35 text-[11px] truncate">{cat.name_en}</p>
+                <p className="text-[#c8941a]/40 text-[9px] font-mono truncate mt-0.5">{cat.slug}</p>
                 <button
                   type="button"
                   onClick={() => openManage(cat)}
@@ -314,6 +375,14 @@ export default function CategoriesPage() {
                   className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
                   placeholder="e.g. Turkish Coffee"
                 />
+                {editing && (
+                  <p className="text-white/20 text-[10px] mt-1 font-mono">slug: {editing.slug}</p>
+                )}
+                {!editing && form.name_en && (
+                  <p className="text-white/20 text-[10px] mt-1 font-mono">
+                    slug: {form.name_en.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-white/40 text-xs mb-1.5">{t('Image URL', 'رابط الصورة')}</label>
@@ -342,6 +411,20 @@ export default function CategoriesPage() {
                   min={0}
                 />
               </div>
+              <div className="flex items-center justify-between p-3 bg-[#180d04] border border-[#c8941a]/10 rounded-xl">
+                <div>
+                  <p className="text-white/70 text-sm font-medium">{t('Visible on site', 'ظاهر في الموقع')}</p>
+                  <p className="text-white/25 text-xs mt-0.5">{t('Hidden categories are not shown to customers', 'الفئات المخفية لا تظهر للعملاء')}</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={form.is_visible ? t('Hide category', 'إخفاء الفئة') : t('Show category', 'إظهار الفئة')}
+                  onClick={() => setForm(p => ({ ...p, is_visible: !p.is_visible }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${form.is_visible ? 'bg-[#c8941a]' : 'bg-white/10'}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.is_visible ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.05]">
               <button
@@ -369,7 +452,6 @@ export default function CategoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setManageCat(null)} />
           <div className="relative w-full max-w-lg bg-[#0f0900] border border-[#c8941a]/20 rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05] shrink-0">
               <div>
                 <h3 className="text-white font-bold text-sm">{t('Manage Products', 'إدارة منتجات الفئة')}</h3>
@@ -387,7 +469,6 @@ export default function CategoriesPage() {
                 </div>
               ) : (
                 <>
-                  {/* Products currently in this category */}
                   <div>
                     <p className="text-white/50 text-xs font-semibold mb-2 uppercase tracking-wider">
                       {t('In this category', 'منتجات هذه الفئة')} ({inCat.length})
@@ -432,7 +513,6 @@ export default function CategoriesPage() {
                     )}
                   </div>
 
-                  {/* Add products */}
                   <div>
                     <p className="text-white/50 text-xs font-semibold mb-2 uppercase tracking-wider">
                       {t('Add products', 'إضافة منتجات')}

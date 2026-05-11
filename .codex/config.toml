@@ -1,0 +1,15 @@
+[mcp_servers.figma]
+args = [
+    "-y",
+    "figma-developer-mcp",
+    "--stdio",
+]
+command = "npx"
+env_vars = ["FIGMA_API_KEY"]
+
+[mcp_servers.puppeteer]
+args = [
+    "-y",
+    "@modelcontextprotocol/server-puppeteer",
+]
+command = "npx"

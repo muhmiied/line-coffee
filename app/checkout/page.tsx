@@ -38,7 +38,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace('/auth/login?redirect=/checkout')
+      router.replace('/auth/login?next=/checkout')
     }
   }, [authLoading, user, router])
 

@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display, Noto_Naskh_Arabic } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { Suspense } from 'react'
 import { LanguageProvider } from '@/lib/context/language'
 import { AuthProvider } from '@/lib/context/auth'
+import { getInitialAuthState } from '@/lib/auth/session'
 import { StickyTopBar } from '@/components/layout/sticky-top-bar'
 import { Footer } from '@/components/layout/footer'
 import { PageLoader } from '@/components/layout/page-loader'
@@ -30,11 +32,18 @@ const playfair = Playfair_Display({
   weight: ['400', '500', '600', '700', '800', '900'],
 })
 
-const notoNaskhArabic = Noto_Naskh_Arabic({
-  subsets: ['arabic'],
-  variable: '--font-arabic',
+const vlax = localFont({
+  src: [
+    {
+      path: '../public/fonts/vlax.otf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-vlax',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  preload: true,
+  fallback: ['sans-serif'],
 })
 
 export const metadata: Metadata = {
@@ -75,13 +84,15 @@ export const viewport: Viewport = {
   maximumScale: 5,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const authState = await getInitialAuthState()
+
   return (
-    <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${notoNaskhArabic.variable} bg-background`}>
+    <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${vlax.variable} bg-background`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -91,7 +102,11 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased min-h-screen flex flex-col w-full">
         <LanguageProvider>
-          <AuthProvider>
+          <AuthProvider
+            initialUser={authState.user}
+            initialProfile={authState.profile}
+            isSupabaseConfigured={authState.isSupabaseConfigured}
+          >
             <ScrollProgress />
             <Suspense fallback={null}>
               <PageLoader />
