@@ -45,7 +45,11 @@
       "Bash(find \"/c/Windows/Fonts\" -maxdepth 1 \\\\\\( -iname \"*vlax*\" -o -iname \"*valax*\" -o -iname \"*vla*\" \\\\\\) 2>/dev/null; echo \"---\"; find \"/c/Users/Mohamed Sayed/AppData/Local/Microsoft/Windows/Fonts\" -maxdepth 1 \\\\\\( -iname \"*vlax*\" -o -iname \"*valax*\" \\\\\\) 2>/dev/null; echo \"---\"; find \"d:/Graphic\" -maxdepth 4 \\\\\\( -iname \"*vlax*\" -o -iname \"*valax*\" -o -iname \"*.woff*\" -o -iname \"*.otf\" -o -iname \"*.ttf\" \\\\\\) 2>/dev/null | grep -v \"LINE COFFEE\" | head -30)",
       "Read(//d/Graphic/**)",
       "Bash(mkdir -p \"d:/Graphic/LINE COFFEE/New folder/LINE COFFEE 1/public/fonts\" && cp \"/c/Users/Mohamed Sayed/AppData/Local/Microsoft/Windows/Fonts/VLAX-01.otf\" \"d:/Graphic/LINE COFFEE/New folder/LINE COFFEE 1/public/fonts/vlax.otf\" && echo \"copied\" && ls -lh \"d:/Graphic/LINE COFFEE/New folder/LINE COFFEE 1/public/fonts/\")",
-      "Bash(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Directory)"
+      "Bash(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Directory)",
+      "Bash(Select-Object -Property FullName)",
+      "Bash(ConvertTo-Json)",
+      "Bash(Out-String)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Recurse -Force | Where-Object { -not $_.FullName.Contains\\('.next'\\) -and -not $_.FullName.Contains\\('node_modules'\\) } | Select-Object -Property FullName | ConvertTo-Json)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mohamed Sayed\\AppData\\Local\\Microsoft\\Windows\\Fonts"
