@@ -49,7 +49,12 @@
       "Bash(Select-Object -Property FullName)",
       "Bash(ConvertTo-Json)",
       "Bash(Out-String)",
-      "PowerShell(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Recurse -Force | Where-Object { -not $_.FullName.Contains\\('.next'\\) -and -not $_.FullName.Contains\\('node_modules'\\) } | Select-Object -Property FullName | ConvertTo-Json)"
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Recurse -Force | Where-Object { -not $_.FullName.Contains\\('.next'\\) -and -not $_.FullName.Contains\\('node_modules'\\) } | Select-Object -Property FullName | ConvertTo-Json)",
+      "Bash(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\api\\\\orders\\\\track\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\track\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\api\\\\orders\\\\track\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\track\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mohamed Sayed\\AppData\\Local\\Microsoft\\Windows\\Fonts"
