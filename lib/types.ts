@@ -55,6 +55,9 @@ export interface Profile {
   phone: string | null
   avatar_url: string | null
   preferred_language: 'en' | 'ar'
+  address: string | null
+  city: string | null
+  notes: string | null
   created_at: string
   updated_at: string
 }

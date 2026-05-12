@@ -1,9 +1,9 @@
 'use client'
 
+import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/context/auth'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
@@ -25,34 +25,40 @@ import {
   Bell,
   ChevronDown,
   Globe,
+  Coffee,
+  Sparkles,
 } from 'lucide-react'
 
 const nav = [
-  { href: '/dashboard/admin',            labelEn: 'Dashboard',   labelAr: 'نظرة عامة',       icon: LayoutDashboard, exact: true },
-  { href: '/dashboard/admin/orders',     labelEn: 'Orders',      labelAr: 'الطلبات',          icon: Package },
-  { href: '/dashboard/admin/products',   labelEn: 'Products',    labelAr: 'المنتجات',         icon: ShoppingBag },
-  { href: '/dashboard/admin/categories', labelEn: 'Categories',  labelAr: 'الفئات',           icon: Tag },
-  { href: '/dashboard/admin/customers',  labelEn: 'Customers',   labelAr: 'العملاء',          icon: Users },
-  { href: '/dashboard/admin/analytics',  labelEn: 'Analytics',   labelAr: 'التحليلات',        icon: BarChart2 },
-  { href: '/dashboard/admin/reviews',    labelEn: 'Reviews',     labelAr: 'المراجعات',        icon: Star },
-  { href: '/dashboard/admin/discounts',  labelEn: 'Discounts',   labelAr: 'الخصومات',         icon: Percent },
-  { href: '/dashboard/admin/blog',       labelEn: 'Blog',        labelAr: 'المدونة',          icon: FileText },
-  { href: '/dashboard/admin/banners',    labelEn: 'Banners',     labelAr: 'البانرات',         icon: ImageIcon },
-  { href: '/dashboard/admin/settings',   labelEn: 'Settings',    labelAr: 'الإعدادات',        icon: Settings },
+  { href: '/dashboard/admin',              labelEn: 'Dashboard',     labelAr: 'نظرة عامة',       icon: LayoutDashboard, exact: true },
+  { href: '/dashboard/admin/orders',       labelEn: 'Orders',        labelAr: 'الطلبات',          icon: Package },
+  { href: '/dashboard/admin/products',     labelEn: 'Products',      labelAr: 'المنتجات',         icon: ShoppingBag },
+  { href: '/dashboard/admin/categories',   labelEn: 'Categories',    labelAr: 'الفئات',           icon: Tag },
+  { href: '/dashboard/admin/coffee-beans', labelEn: 'Coffee Beans',  labelAr: 'أنواع القهوة',     icon: Coffee },
+  { href: '/dashboard/admin/flavors',      labelEn: 'Flavors',       labelAr: 'النكهات',          icon: Sparkles },
+  { href: '/dashboard/admin/customers',    labelEn: 'Customers',     labelAr: 'العملاء',          icon: Users },
+  { href: '/dashboard/admin/analytics',    labelEn: 'Analytics',     labelAr: 'التحليلات',        icon: BarChart2 },
+  { href: '/dashboard/admin/reviews',      labelEn: 'Reviews',       labelAr: 'المراجعات',        icon: Star },
+  { href: '/dashboard/admin/discounts',    labelEn: 'Discounts',     labelAr: 'الخصومات',         icon: Percent },
+  { href: '/dashboard/admin/blog',         labelEn: 'Blog',          labelAr: 'المدونة',          icon: FileText },
+  { href: '/dashboard/admin/banners',      labelEn: 'Banners',       labelAr: 'البانرات',         icon: ImageIcon },
+  { href: '/dashboard/admin/settings',     labelEn: 'Settings',      labelAr: 'الإعدادات',        icon: Settings },
 ]
 
 const pageTitles: Record<string, { en: string; ar: string }> = {
-  '/dashboard/admin':            { en: 'Overview',    ar: 'نظرة عامة' },
-  '/dashboard/admin/orders':     { en: 'Orders',      ar: 'الطلبات' },
-  '/dashboard/admin/products':   { en: 'Products',    ar: 'المنتجات' },
-  '/dashboard/admin/categories': { en: 'Categories',  ar: 'الفئات' },
-  '/dashboard/admin/customers':  { en: 'Customers',   ar: 'العملاء' },
-  '/dashboard/admin/analytics':  { en: 'Analytics',   ar: 'التحليلات' },
-  '/dashboard/admin/reviews':    { en: 'Reviews',     ar: 'المراجعات' },
-  '/dashboard/admin/discounts':  { en: 'Discounts',   ar: 'الخصومات' },
-  '/dashboard/admin/blog':       { en: 'Blog',        ar: 'المدونة' },
-  '/dashboard/admin/banners':    { en: 'Banners',     ar: 'البانرات' },
-  '/dashboard/admin/settings':   { en: 'Settings',    ar: 'الإعدادات' },
+  '/dashboard/admin':              { en: 'Overview',      ar: 'نظرة عامة' },
+  '/dashboard/admin/orders':       { en: 'Orders',        ar: 'الطلبات' },
+  '/dashboard/admin/products':     { en: 'Products',      ar: 'المنتجات' },
+  '/dashboard/admin/categories':   { en: 'Categories',    ar: 'الفئات' },
+  '/dashboard/admin/coffee-beans': { en: 'Coffee Beans',  ar: 'أنواع القهوة' },
+  '/dashboard/admin/flavors':      { en: 'Flavors',       ar: 'النكهات' },
+  '/dashboard/admin/customers':    { en: 'Customers',     ar: 'العملاء' },
+  '/dashboard/admin/analytics':    { en: 'Analytics',     ar: 'التحليلات' },
+  '/dashboard/admin/reviews':      { en: 'Reviews',       ar: 'المراجعات' },
+  '/dashboard/admin/discounts':    { en: 'Discounts',     ar: 'الخصومات' },
+  '/dashboard/admin/blog':         { en: 'Blog',          ar: 'المدونة' },
+  '/dashboard/admin/banners':      { en: 'Banners',       ar: 'البانرات' },
+  '/dashboard/admin/settings':     { en: 'Settings',      ar: 'الإعدادات' },
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -60,6 +66,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { language, setLanguage, t } = useLanguage()
   const pathname = usePathname()
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [pendingOrders, setPendingOrders] = useState(0)
+
+  // Fetch pending order count for notification badge
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/orders', { cache: 'no-store' })
+      const json = await res.json()
+      const orders: Array<{ status: string }> = json?.data?.orders || []
+      setPendingOrders(orders.filter(o => o.status === 'pending').length)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchPendingCount()
+    // Re-check every 60 seconds
+    const interval = setInterval(fetchPendingCount, 60_000)
+    return () => clearInterval(interval)
+  }, [fetchPendingCount])
 
   useEffect(() => {
     document.documentElement.style.backgroundColor = '#0f0900'
@@ -71,17 +97,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [])
 
   const displayName =
-    user?.user_metadata?.first_name ||
-    user?.email?.split('@')[0] ||
-    'Admin'
+    user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'
   const initial = displayName.charAt(0).toUpperCase()
   const email = user?.email || ''
 
   const pageTitle = pageTitles[pathname]
     ? t(pageTitles[pathname].en, pageTitles[pathname].ar)
     : t('Dashboard', 'لوحة التحكم')
-
-  const handleSignOut = () => signOut()
 
   return (
     <div className="flex -mt-20 md:-mt-24 min-h-[100dvh] bg-background">
@@ -130,6 +152,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const active = item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href)
+            const isOrders = item.href === '/dashboard/admin/orders'
             return (
               <Link
                 key={item.href}
@@ -141,8 +164,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     : 'text-white/35 hover:text-white/70 hover:bg-white/[0.04]'
                 )}
               >
-                <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-[#c8941a]' : 'text-white/25 group-hover:text-white/55')} />
-                {t(item.labelEn, item.labelAr)}
+                <item.icon
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    active ? 'text-[#c8941a]' : 'text-white/25 group-hover:text-white/55'
+                  )}
+                />
+                <span className="flex-1">{t(item.labelEn, item.labelAr)}</span>
+                {isOrders && pendingOrders > 0 && (
+                  <span className="ml-auto h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {pendingOrders > 99 ? '99+' : pendingOrders}
+                  </span>
+                )}
               </Link>
             )
           })}
@@ -181,7 +214,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <button
             type="button"
-            onClick={handleSignOut}
+            onClick={() => signOut()}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all"
           >
             <LogOut className="h-4 w-4 shrink-0" />
@@ -205,7 +238,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </p>
             </div>
           ) : (
-            <h1 className="text-white/90 font-bold text-base">{pageTitle}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-white/90 font-bold text-base">{pageTitle}</h1>
+              {pathname === '/dashboard/admin/orders' && pendingOrders > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold">
+                  {pendingOrders} {t('pending', 'معلق')}
+                </span>
+              )}
+            </div>
           )}
 
           <div className="flex items-center gap-2">
@@ -228,14 +268,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {language === 'ar' ? 'EN' : 'AR'}
             </button>
 
-            {/* Bell */}
-            <button
-              type="button"
+            {/* Bell with badge */}
+            <Link
+              href="/dashboard/admin/orders"
               aria-label={t('Notifications', 'الإشعارات')}
-              className="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 hover:border-[#c8941a]/20 transition-all"
+              className="relative h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 hover:border-[#c8941a]/20 transition-all"
             >
               <Bell className="h-4 w-4" />
-            </button>
+              {pendingOrders > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {pendingOrders > 9 ? '9+' : pendingOrders}
+                </span>
+              )}
+            </Link>
 
             {/* Settings */}
             <Link
@@ -286,7 +331,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <div className="h-px bg-[#c8941a]/10 my-1" />
                       <button
                         type="button"
-                        onClick={handleSignOut}
+                        onClick={() => signOut()}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 text-xs transition-all"
                       >
                         <LogOut className="h-3.5 w-3.5" />
