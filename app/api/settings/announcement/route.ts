@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 const DEFAULT_ANNOUNCEMENT = {
@@ -9,10 +10,10 @@ const DEFAULT_ANNOUNCEMENT = {
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    if (!supabase) return NextResponse.json(DEFAULT_ANNOUNCEMENT)
+    const admin = createAdminClient()
+    if (!admin) return NextResponse.json(DEFAULT_ANNOUNCEMENT)
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('site_settings')
       .select('key, value')
       .in('key', ['announcement_text', 'announcement_active', 'wa_phone', 'wa_apikey'])
@@ -46,6 +47,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
+    const admin = createAdminClient()
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
+    }
+
     const body = await request.json()
     const rows = []
 
@@ -55,7 +61,7 @@ export async function PATCH(request: NextRequest) {
     if (typeof body.wa_apikey === 'string') rows.push({ key: 'wa_apikey', value: body.wa_apikey })
 
     if (rows.length > 0) {
-      const { error } = await supabase
+      const { error } = await admin
         .from('site_settings')
         .upsert(rows, { onConflict: 'key' })
 

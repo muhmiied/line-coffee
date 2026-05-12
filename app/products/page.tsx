@@ -12,6 +12,10 @@ import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/lib/types'
+import {
+  DEFAULT_CUSTOM_BLEND_BEANS,
+  type CoffeeBeanOption,
+} from '@/lib/config/customization'
 import { toast } from 'sonner'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -44,8 +48,8 @@ const FALLBACK_DB_CATEGORIES: DbCategory[] = [
 
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
 const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr: 'جميع المنتجات' }
-const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'كستمايز التوليفة', isCustomizeBlend: true }
-const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'كستمايز الفلافور', isCustomizeFlavor: true }
+const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'اختر توليفتك', isCustomizeBlend: true }
+const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'اختر نكهتك', isCustomizeFlavor: true }
 
 // Slugs shown as sub-tabs inside the "coffee-mix" category (not in main sidebar list)
 const MIX_SUBTAB_SLUGS = new Set(['cappuccino', 'hot-chocolate'])
@@ -121,43 +125,6 @@ const customFlavorOptions = [
   { id: 'grape-shisha', nameAr: 'شيشة عنب' },
   { id: 'hot-cider',    nameAr: 'هوت سيدر' },
 ]
-
-// ─── Bean Catalog ──────────────────────────────────────────────────────────────
-const beanCatalog = {
-  arabica: [
-    { id: 'brazilian',    nameAr: 'برازيلي',              nameEn: 'Brazilian',        descAr: 'ناعم وحلو، شوكولاتة خفيفة، مرارة منخفضة' },
-    { id: 'colombian',    nameAr: 'كولومبي',              nameEn: 'Colombian',        descAr: 'متوازن، كراميل وفاكهة خفيفة، مناسب لأغلب الأذواق' },
-    { id: 'ethiopian',    nameAr: 'حبشي (إثيوبي)',        nameEn: 'Ethiopian',        descAr: 'فلورال وفاكهي، حموضة خفيفة، specialty coffee' },
-    { id: 'guatemalan',   nameAr: 'جواتيمالا',            nameEn: 'Guatemalan',       descAr: 'شوكولاتة داكنة، جسم متوسط، مميز' },
-    { id: 'yemeni',       nameAr: 'يمني',                 nameEn: 'Yemeni',           descAr: 'تراثي وعطري، نكهة فريدة' },
-    { id: 'peruvian',     nameAr: 'بيرو',                 nameEn: 'Peruvian',         descAr: 'ناعم ونظيف، حموضة خفيفة' },
-    { id: 'costa-rican',  nameAr: 'كوستاريكا',            nameEn: 'Costa Rican',      descAr: 'فاكهي ومشرق، حموضة حيوية' },
-    { id: 'mexican',      nameAr: 'ميكسيكي',              nameEn: 'Mexican',          descAr: 'خفيف وناعم، مناسب للشرب اليومي' },
-  ],
-  robusta: [
-    { id: 'indonesian',   nameAr: 'إندونيسي',             nameEn: 'Indonesian',       descAr: 'قوي وثقيل، كافيين عالي' },
-    { id: 'indonesian-xl',nameAr: 'إندونيسي XL',          nameEn: 'Indonesian XL',    descAr: 'الأقوى، جسم كامل جداً' },
-    { id: 'indian',       nameAr: 'هندي',                 nameEn: 'Indian',           descAr: 'متوازن وقوي، مناسب كـ base' },
-    { id: 'indian-p',     nameAr: 'هندي بلانتيشن',        nameEn: 'Indian Plantation', descAr: 'ناعم نسبياً مقارنة بباقي الروبوستا' },
-    { id: 'vietnamese',   nameAr: 'فيتنامي',              nameEn: 'Vietnamese',       descAr: 'الأقوى، مرارة عالية، كريمة ممتازة' },
-  ],
-}
-
-// ─── Preset blends ─────────────────────────────────────────────────────────────
-const presetBlends = {
-  'turkish-base': [
-    { id: 'tc-morning',  nameAr: 'قوة الصباح',         nameEn: 'Morning Strength',    price250: 125, price500: 240, price1000: 460, tierAr: 'اقتصادي', compositionAr: 'إندونيسي 40% + برازيلي 35% + فيتنامي 25%', descAr: 'روبوستا قوي مع حلاوة خفيفة، كافيين عالي، مناسب لبداية يومك' },
-    { id: 'tc-balance',  nameAr: 'التوازن المثالي',    nameEn: 'Perfect Balance',     price250: 170, price500: 320, price1000: 600, tierAr: 'وسط',     compositionAr: 'كولومبي 25% + حبشي 25% + إندونيسي 50%',           descAr: 'فلورال خفيف مع ثقل الروبوستا، مناسب للفنادق والكافيهات' },
-    { id: 'tc-clean',    nameAr: 'النظافة المحترفة',   nameEn: 'Professional Clean',  price250: 200, price500: 380, price1000: 720, tierAr: 'وسط+',    compositionAr: 'برازيلي 40% + هندي بلانتيشن 25% + إندونيسي 20% + فيتنامي 15%', descAr: 'أرابيكا 65% نظيف ومتسق، شوكولاتة واضحة' },
-    { id: 'tc-premium',  nameAr: 'البريميوم',          nameEn: 'Premium',             price250: 230, price500: 440, price1000: 840, tierAr: 'بريميوم',  compositionAr: 'حبشي 45% + كولومبي 30% + هندي بلانتيشن 15% + إندونيسي 10%',   descAr: 'أرابيكا 90%، specialty coffee حقيقية، فلورال وفاكهي' },
-  ],
-  'espresso-base': [
-    { id: 'esp-crema',   nameAr: 'الكريمة الاقتصادية', nameEn: 'Economy Crema',       price250: 135, price500: 260, price1000: 500, tierAr: 'اقتصادي', compositionAr: 'فيتنامي 45% + برازيلي 35% + إندونيسي 20%',                    descAr: 'كريمة ممتازة وقوة عالية، للكميات الكبيرة والماكينات المكتبية' },
-    { id: 'esp-italian', nameAr: 'الكلاسيك الإيطالي',  nameEn: 'Classic Italian',     price250: 200, price500: 380, price1000: 720, tierAr: 'وسط',     compositionAr: 'برازيلي 35% + فيتنامي 30% + هندي بلانتيشن 20% + إندونيسي 15%', descAr: 'شوكولاتة وكراميل، كريمة غنية، للكابتشينو واللاتيه' },
-    { id: 'esp-floral',  nameAr: 'الفلورال الـ Specialty', nameEn: 'Specialty Floral', price250: 210, price500: 400, price1000: 760, tierAr: 'وسط+',    compositionAr: 'حبشي 50% + جواتيمالا 25% + برازيلي 25%',                       descAr: 'فلورال وفاكهي، للشوت المباشر' },
-    { id: 'esp-vip',     nameAr: 'بريميوم VIP',        nameEn: 'Premium VIP',         price250: 255, price500: 490, price1000: 940, tierAr: 'بريميوم',  compositionAr: 'كولومبي 40% + حبشي 30% + هندي بلانتيشن 20% + إندونيسي 10%',   descAr: 'أرابيكا 90%، للفنادق 5 نجوم' },
-  ],
-}
 
 // ─── Helper to build a Product object ─────────────────────────────────────────
 function mkProduct(
@@ -285,9 +252,10 @@ const allProducts: Product[] = [
 
 // ─── Flavor base options for customize-flavor ──────────────────────────────────
 const flavorBaseOptions = [
-  { id: 'coffee-mix',     nameEn: 'Coffee Mix',     nameAr: 'كوفي ميكس',    price250: 55,  price500: 100, price1000: 180 },
-  { id: 'cappuccino',     nameEn: 'Cappuccino',     nameAr: 'كابتشينو',     price250: 65,  price500: 120, price1000: 220 },
-  { id: 'hot-chocolate',  nameEn: 'Hot Chocolate',  nameAr: 'هوت شوكلت',   price250: 60,  price500: 110, price1000: 200 },
+  { id: 'coffee',         nameEn: 'Coffee',         nameAr: 'بن',           price250: 100, price500: 190, price1000: 360, image: IMG_FC },
+  { id: 'coffee-mix',     nameEn: 'Coffee Mix',     nameAr: 'كوفي ميكس',    price250: 55,  price500: 100, price1000: 180, image: IMG_CM },
+  { id: 'cappuccino',     nameEn: 'Cappuccino',     nameAr: 'كابتشينو',     price250: 65,  price500: 120, price1000: 220, image: IMG_CAP },
+  { id: 'hot-chocolate',  nameEn: 'Hot Chocolate',  nameAr: 'هوت شوكلت',   price250: 60,  price500: 110, price1000: 200, image: IMG_HC },
 ]
 
 // ─── Customize Blend Component ─────────────────────────────────────────────────
@@ -296,9 +264,11 @@ function CustomizeBlend() {
   const { addItem } = useCartStore()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [baseId, setBaseId] = useState<'turkish-base' | 'espresso-base' | null>(null)
-  const [wantCustom, setWantCustom] = useState<boolean | null>(null)
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
-  const [selectedBeans, setSelectedBeans] = useState<Array<{ id: string; nameAr: string; nameEn: string; percent: string }>>([])
+  const [blendMode, setBlendMode] = useState<'types' | 'ratios' | null>(null)
+  const [beanOptions, setBeanOptions] = useState<CoffeeBeanOption[]>(
+    DEFAULT_CUSTOM_BLEND_BEANS.filter((bean) => bean.isVisible),
+  )
+  const [selectedBeans, setSelectedBeans] = useState<Array<CoffeeBeanOption & { percent: string }>>([])
   const [selectedSize, setSelectedSize] = useState<'250g' | '500g' | '1kg'>('250g')
 
   const blendBases = [
@@ -306,58 +276,101 @@ function CustomizeBlend() {
     { id: 'espresso-base' as const, nameAr: 'إسبريسو', nameEn: 'Espresso', descAr: 'قاعدة مناسبة لماكينات الإسبريسو مع كريمة ممتازة', price250: 135 },
   ]
 
-  const availablePresets = baseId ? presetBlends[baseId] : []
-  const selectedPreset = availablePresets.find((p) => p.id === selectedPresetId) ?? null
+  const groupedBeans = useMemo(() => {
+    return beanOptions.reduce<Record<string, CoffeeBeanOption[]>>((groups, bean) => {
+      groups[bean.family] = groups[bean.family] ? [...groups[bean.family], bean] : [bean]
+      return groups
+    }, {})
+  }, [beanOptions])
+
+  const ratioTotal = selectedBeans.reduce((sum, bean) => sum + Number(bean.percent || 0), 0)
+
+  useEffect(() => {
+    fetch('/api/customization-options', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        const beans = d?.data?.beans
+        if (Array.isArray(beans) && beans.length > 0) setBeanOptions(beans)
+      })
+      .catch(() => {})
+  }, [])
 
   const getPrice = () => {
     if (!baseId) return 0
-    if (selectedPreset) {
-      return selectedSize === '250g' ? selectedPreset.price250 : selectedSize === '500g' ? selectedPreset.price500 : selectedPreset.price1000
-    }
     const basePrices = { 'turkish-base': [125, 240, 460], 'espresso-base': [135, 260, 500] }
     const idx = selectedSize === '250g' ? 0 : selectedSize === '500g' ? 1 : 2
     return basePrices[baseId][idx]
   }
 
-  const toggleBean = (bean: { id: string; nameAr: string; nameEn: string }) => {
+  const toggleBean = (bean: CoffeeBeanOption) => {
     const exists = selectedBeans.find((b) => b.id === bean.id)
     if (exists) { setSelectedBeans(selectedBeans.filter((b) => b.id !== bean.id)); return }
-    if (selectedBeans.length >= 4) return
     setSelectedBeans([...selectedBeans, { ...bean, percent: '' }])
-    setSelectedPresetId(null)
   }
 
   const updateBeanPercent = (id: string, val: string) =>
     setSelectedBeans((prev) => prev.map((b) => (b.id === id ? { ...b, percent: val } : b)))
 
   const handleAdd = () => {
-    if (!baseId) return
-    if (wantCustom && selectedBeans.length === 0) return
-    if (!wantCustom && !selectedPreset) return
+    if (!baseId || !blendMode || selectedBeans.length === 0) return
 
-    const percents = selectedBeans.map((b) => Number(b.percent || 0)).filter((v) => v > 0)
-    if (wantCustom && percents.length > 0 && percents.reduce((a, b) => a + b, 0) !== 100) {
-      toast.error('يجب أن يكون مجموع النسب 100%')
-      return
+    if (blendMode === 'ratios') {
+      const hasMissingPercent = selectedBeans.some((bean) => Number(bean.percent || 0) <= 0)
+      if (hasMissingPercent) {
+        toast.error('اكتب نسبة لكل نوع بن')
+        return
+      }
+
+      if (Math.round(ratioTotal * 100) / 100 !== 100) {
+        toast.error('مجموع النسب لازم يكون 100%')
+        return
+      }
     }
 
-    const baseName = language === 'ar' ? blendBases.find((b) => b.id === baseId)!.nameAr : blendBases.find((b) => b.id === baseId)!.nameEn
-    const blendPart = selectedPreset
-      ? (language === 'ar' ? selectedPreset.nameAr : selectedPreset.nameEn)
-      : selectedBeans.map((b) => `${language === 'ar' ? b.nameAr : b.nameEn}${b.percent ? ` ${b.percent}%` : ''}`).join(' + ')
+    const selectedBase = blendBases.find((b) => b.id === baseId)
+    if (!selectedBase) return
+
+    const baseName = language === 'ar' ? selectedBase.nameAr : selectedBase.nameEn
+    const blendPart = selectedBeans
+      .map((b) => {
+        const beanName = language === 'ar' ? b.nameAr : b.nameEn
+        return blendMode === 'ratios' ? `${beanName} ${b.percent}%` : beanName
+      })
+      .join(' + ')
+    const blendKey = selectedBeans
+      .map((bean) => `${bean.id}${blendMode === 'ratios' ? `-${bean.percent}` : ''}`)
+      .join('-')
 
     addItem({
-      id: `blend-${baseId}-${selectedPresetId ?? selectedBeans.map((b) => b.id).join('-')}-${selectedSize}`,
+      id: `blend-${baseId}-${blendMode}-${blendKey}-${selectedSize}`,
       product_id: `blend-${baseId}`,
       name_en: `Custom ${baseName} - ${blendPart}`,
       name_ar: `${baseName} مخصص - ${blendPart}`,
       size: selectedSize,
       price: getPrice(),
       quantity: 1,
-      image: IMG_TC,
+      image: baseId === 'espresso-base' ? IMG_ESP : IMG_TC,
     })
     toast.success(t('Added to cart!', 'تمت الإضافة للسلة!'))
-    setStep(1); setBaseId(null); setWantCustom(null); setSelectedPresetId(null); setSelectedBeans([]); setSelectedSize('250g')
+    setStep(1); setBaseId(null); setBlendMode(null); setSelectedBeans([]); setSelectedSize('250g')
+  }
+
+  const resetToModeStep = () => {
+    setStep(2)
+    setBlendMode(null)
+    setSelectedBeans([])
+  }
+
+  const familyLabel = (family: string) => {
+    if (family === 'arabica') return t('Arabica', 'أرابيكا')
+    if (family === 'robusta') return t('Robusta', 'روبوستا')
+    return t('Other', 'أنواع أخرى')
+  }
+
+  const selectMode = (mode: 'types' | 'ratios') => {
+    setBlendMode(mode)
+    setSelectedBeans([])
+    setStep(3)
   }
 
   return (
@@ -367,8 +380,8 @@ function CustomizeBlend() {
           <Sparkles className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h2 className="font-serif text-xl md:text-2xl font-bold">{t('Customize Your Blend', 'صمم خلطة البن')}</h2>
-          <p className="text-sm text-muted-foreground">{t('Choose base and blend', 'اختر القاعدة والتوليفة')}</p>
+          <h2 className="font-serif text-xl md:text-2xl font-bold">{t('Customize Your Blend', 'اختر توليفتك')}</h2>
+          <p className="text-sm text-muted-foreground">{t('Choose coffee types or set exact ratios', 'اختار أنواع البن فقط أو حدد نسب كل نوع')}</p>
         </div>
       </div>
 
@@ -392,19 +405,19 @@ function CustomizeBlend() {
         {step === 2 && (
           <motion.div key="s2" initial={{ opacity:0,x:20 }} animate={{ opacity:1,x:0 }} exit={{ opacity:0,x:-20 }}>
             <div className="flex items-center justify-between mb-6">
-              <span className="font-medium">{t('Do you want to specify ratios yourself?', 'تحدد النسب بنفسك؟')}</span>
-              <Button variant="ghost" size="sm" onClick={() => { setStep(1); setWantCustom(null) }}>{t('Back','رجوع')}</Button>
+              <span className="font-medium">{t('How would you like to build it?', 'تحب تبني التوليفة إزاي؟')}</span>
+              <Button variant="ghost" size="sm" onClick={() => { setStep(1); setBlendMode(null) }}>{t('Back','رجوع')}</Button>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <button type="button" onClick={() => { setWantCustom(false); setStep(3) }}
+              <button type="button" onClick={() => selectMode('types')}
                 className="p-5 rounded-xl border-2 border-border hover:border-primary transition-all text-right">
-                <p className="font-bold mb-1">{t('No, show me ready blends', 'لأ، ورّيني التوليفات الجاهزة')}</p>
-                <p className="text-xs text-muted-foreground">{t('Choose from our expert blends', 'اختر من توليفاتنا المجربة')}</p>
+                <p className="font-bold mb-1">{t('Choose types only', 'اختيار الأنواع فقط')}</p>
+                <p className="text-xs text-muted-foreground">{t('Pick the beans without setting percentages', 'اختار أنواع البن اللي تحبها بدون نسب')}</p>
               </button>
-              <button type="button" onClick={() => { setWantCustom(true); setStep(3) }}
+              <button type="button" onClick={() => selectMode('ratios')}
                 className="p-5 rounded-xl border-2 border-border hover:border-primary transition-all text-right">
-                <p className="font-bold mb-1">{t('Yes, I\'ll choose beans & ratios', 'أيوه، أنا هاختار الحبوب والنسب')}</p>
-                <p className="text-xs text-muted-foreground">{t('Full control over your blend', 'تحكم كامل في خلطتك')}</p>
+                <p className="font-bold mb-1">{t('Choose types with ratios', 'اختيار الأنواع بالنسب')}</p>
+                <p className="text-xs text-muted-foreground">{t('Set a percentage for every selected bean', 'حدد نسبة كل نوع داخل التوليفة')}</p>
               </button>
             </div>
           </motion.div>
@@ -414,65 +427,54 @@ function CustomizeBlend() {
           <motion.div key="s3" initial={{ opacity:0,x:20 }} animate={{ opacity:1,x:0 }} exit={{ opacity:0,x:-20 }}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex flex-wrap gap-2 items-center">
-                {selectedPreset && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm">
-                    {language === 'ar' ? selectedPreset.nameAr : selectedPreset.nameEn}
-                    <button type="button" aria-label={t('Remove preset', 'إزالة التوليفة')} onClick={() => setSelectedPresetId(null)}><X className="w-3 h-3" /></button>
-                  </span>
-                )}
                 {selectedBeans.map((b) => (
                   <span key={b.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm">
-                    {language === 'ar' ? b.nameAr : b.nameEn}{b.percent ? ` ${b.percent}%` : ''}
-                    <button type="button" aria-label={t('Remove bean', 'إزالة الحبة')} onClick={() => toggleBean(b)}><X className="w-3 h-3" /></button>
+                    {language === 'ar' ? b.nameAr : b.nameEn}{blendMode === 'ratios' && b.percent ? ` ${b.percent}%` : ''}
+                    <button type="button" aria-label={t('Remove bean', 'إزالة نوع البن')} onClick={() => toggleBean(b)}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setStep(2)}>{t('Back','رجوع')}</Button>
+              <Button variant="ghost" size="sm" onClick={resetToModeStep}>{t('Back','رجوع')}</Button>
             </div>
 
-            {!wantCustom ? (
-              <div className="grid md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
-                {availablePresets.map((p) => (
-                  <button type="button" key={p.id} onClick={() => setSelectedPresetId(p.id)}
-                    className={cn('text-right p-4 rounded-lg border transition-all', selectedPresetId === p.id ? 'border-primary bg-primary/5' : 'border-border')}>
-                    <p className="font-bold">{language === 'ar' ? p.nameAr : p.nameEn}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{p.tierAr}</p>
-                    <p className="text-xs mt-1 text-muted-foreground">{p.compositionAr}</p>
-                    <p className="text-xs mt-1 text-primary/80 italic">{p.descAr}</p>
-                    <p className="text-sm font-semibold text-primary mt-2">{t(`From ${p.price250} EGP`, `من ${p.price250} ج.م`)}</p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
-                {Object.entries(beanCatalog).map(([family, beans]) => (
-                  <div key={family}>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">{family}</p>
-                    <div className="space-y-2">
-                      {beans.map((bean) => {
-                        const sel = selectedBeans.find((b) => b.id === bean.id)
-                        return (
-                          <div key={bean.id} className="p-2 border border-border rounded-lg">
-                            <div className="flex items-center justify-between gap-2">
-                              <button type="button" onClick={() => { toggleBean(bean); setSelectedPresetId(null) }}
-                                className={cn('text-right flex-1 px-2 py-1 rounded-md transition-all', sel ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
-                                {language === 'ar' ? bean.nameAr : bean.nameEn}
-                              </button>
-                              {sel && (
-                                <Input type="number" min={0} max={100} value={sel.percent}
-                                  onChange={(e) => updateBeanPercent(bean.id, e.target.value)}
-                                  placeholder="%" className="w-20 h-8" />
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{bean.descAr}</p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
+            {selectedBeans.length > 0 && blendMode === 'ratios' && (
+              <div className={cn(
+                'mb-4 rounded-xl border px-4 py-2 text-sm',
+                ratioTotal === 100 ? 'border-primary/25 bg-primary/5 text-primary' : 'border-border bg-secondary/40 text-muted-foreground',
+              )}>
+                {t('Ratios total:', 'إجمالي النسب:')} <strong>{ratioTotal || 0}%</strong>
               </div>
             )}
+
+            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+              {Object.entries(groupedBeans).map(([family, beans]) => (
+                <div key={family}>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">{familyLabel(family)}</p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {beans.map((bean) => {
+                      const sel = selectedBeans.find((b) => b.id === bean.id)
+                      const description = language === 'ar' ? bean.descAr : bean.descEn
+                      return (
+                        <div key={bean.id} className="p-3 border border-border rounded-xl">
+                          <div className="flex items-center justify-between gap-2">
+                            <button type="button" onClick={() => toggleBean(bean)}
+                              className={cn('text-right flex-1 px-3 py-2 rounded-lg transition-all', sel ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
+                              {language === 'ar' ? bean.nameAr : bean.nameEn}
+                            </button>
+                            {sel && blendMode === 'ratios' && (
+                              <Input type="number" min={0} max={100} value={sel.percent}
+                                onChange={(e) => updateBeanPercent(bean.id, e.target.value)}
+                                placeholder="%" className="w-20 h-9" />
+                            )}
+                          </div>
+                          {description && <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{description}</p>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <div className="mt-6 pt-6 border-t border-border">
               <h4 className="font-medium mb-3">{t('Size:', 'الحجم:')}</h4>
@@ -484,13 +486,13 @@ function CustomizeBlend() {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">{t('Total Price', 'السعر')}</p>
                   <p className="text-2xl font-bold text-primary">{getPrice()} {t('EGP','ج.م')}</p>
                 </div>
                 <Button size="lg" onClick={handleAdd}
-                  disabled={!baseId || (wantCustom ? selectedBeans.length === 0 : !selectedPreset)}
+                  disabled={!baseId || !blendMode || selectedBeans.length === 0}
                   className="gap-2">
                   <ShoppingBag className="w-5 h-5" />
                   {t('Add to Cart','أضف للسلة')}
