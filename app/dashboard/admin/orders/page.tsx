@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Package, Search, ChevronDown, RefreshCw, Banknote, Wallet, CreditCard, MapPin, Phone, Mail, User } from 'lucide-react'
+import { Package, Search, ChevronDown, RefreshCw, Banknote, Wallet, CreditCard, MapPin, Phone, Mail, User, MessageCircle, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
@@ -39,6 +39,9 @@ type Order = {
   }>
 }
 
+type CancelModal = { orderId: string; orderNumber: string; currentNotes: string | null | undefined }
+type WhatsAppPending = { phone: string; orderNumber: string; newStatus: string; cancellationReason?: string | null }
+
 const STATUSES = [
   { value: 'pending',    en: 'Pending',          ar: 'معلق',          color: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20' },
   { value: 'confirmed',  en: 'Confirmed',         ar: 'مؤكد',          color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
@@ -54,6 +57,22 @@ const PAYMENT_ICONS: Record<string, React.ReactNode> = {
   instapay: <CreditCard className="h-3.5 w-3.5" />,
 }
 
+const STATUS_WA_MESSAGES: Record<string, string> = {
+  confirmed:  (n: string) => `✅ طلبك رقم *#${n}* تم تأكيده بنجاح 🎉\n\nشكراً لتسوقك من *لاين كوفي* ☕`,
+  processing: (n: string) => `☕ طلبك رقم *#${n}* قيد التجهيز الآن!\n\nنعمل على تحضيره بأفضل جودة 💛`,
+  shipped:    (n: string) => `🚗 طلبك رقم *#${n}* في الطريق إليك!\n\nستصلك قريباً إن شاء الله 🙏`,
+  delivered:  (n: string) => `✅ طلبك رقم *#${n}* وصل!\n\nنتمنى تكون بخير وتعجبك قهوتنا ☕💛\n*لاين كوفي*`,
+  cancelled:  (n: string, r?: string | null) =>
+    `❌ للأسف طلبك رقم *#${n}* تم إلغاؤه.\n${r ? `السبب: ${r}\n` : ''}\nللاستفسار تواصل معنا. *لاين كوفي*`,
+} as unknown as Record<string, (n: string, r?: string | null) => string>
+
+function buildWhatsAppUrl(phone: string, orderNumber: string, status: string, reason?: string | null) {
+  const fn = (STATUS_WA_MESSAGES as Record<string, (n: string, r?: string | null) => string>)[status]
+  if (!fn) return null
+  const text = fn(orderNumber, reason)
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+}
+
 function statusMeta(value: string) {
   return STATUSES.find((s) => s.value === value) || { en: value, ar: value, color: 'bg-white/5 text-white/40 border-white/10' }
 }
@@ -67,6 +86,9 @@ export default function AdminOrdersPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [cancelModal, setCancelModal] = useState<CancelModal | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [whatsappPending, setWhatsappPending] = useState<WhatsAppPending | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -102,24 +124,54 @@ export default function AdminOrdersPage() {
     setFiltered(list)
   }, [search, filterStatus, orders])
 
-  const updateStatus = async (orderId: string, status: string) => {
+  const doUpdateStatus = async (orderId: string, status: string, cancellationReason?: string) => {
     setUpdating(orderId)
     try {
+      const order = orders.find(o => o.id === orderId)
+      const body: Record<string, unknown> = { status }
+      if (status === 'cancelled' && cancellationReason?.trim()) {
+        body.cancellation_reason = cancellationReason.trim()
+        body.notes = order?.notes || undefined
+      }
+
       const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       })
-      if (res.ok) {
-        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
-        toast.success(t('Order status updated', 'تم تحديث حالة الطلب'))
-      } else {
+      const json = await res.json()
+      if (!res.ok || !json.success) {
         toast.error(t('Update failed', 'فشل التحديث'))
+        return
+      }
+
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
+      toast.success(t('Order status updated', 'تم تحديث حالة الطلب'))
+
+      // If server returned WhatsApp info, prompt admin to notify customer
+      if (json.whatsapp) {
+        setWhatsappPending({
+          phone: json.whatsapp.phone,
+          orderNumber: json.whatsapp.orderNumber,
+          newStatus: json.whatsapp.newStatus,
+          cancellationReason: json.whatsapp.cancellationReason,
+        })
       }
     } catch {
       toast.error(t('Update failed', 'فشل التحديث'))
     } finally {
       setUpdating(null)
+      setCancelModal(null)
+      setCancelReason('')
+    }
+  }
+
+  const handleStatusChange = (order: Order, newStatus: string) => {
+    if (newStatus === 'cancelled') {
+      setCancelModal({ orderId: order.id, orderNumber: order.order_number, currentNotes: order.notes })
+      setCancelReason('')
+    } else {
+      doUpdateStatus(order.id, newStatus)
     }
   }
 
@@ -214,6 +266,35 @@ export default function AdminOrdersPage() {
         />
       </div>
 
+      {/* WhatsApp notification prompt */}
+      {whatsappPending && (
+        <div className="mb-5 flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+          <p className="text-green-400 text-sm">
+            {t('Send status update to customer via WhatsApp?', 'إرسال تحديث الحالة للعميل عبر واتساب؟')}
+          </p>
+          <div className="flex items-center gap-2">
+            <a
+              href={buildWhatsAppUrl(whatsappPending.phone, whatsappPending.orderNumber, whatsappPending.newStatus, whatsappPending.cancellationReason) || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setWhatsappPending(null)}
+              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              {t('Send WhatsApp', 'إرسال واتساب')}
+            </a>
+            <button
+              type="button"
+              onClick={() => setWhatsappPending(null)}
+              className="h-7 w-7 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors"
+              aria-label={t('Dismiss', 'تجاهل')}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Orders List */}
       {loading ? (
         <div className="space-y-3">
@@ -274,7 +355,7 @@ export default function AdminOrdersPage() {
                     <select
                       value={order.status}
                       disabled={updating === order.id}
-                      onChange={(e) => updateStatus(order.id, e.target.value)}
+                      onChange={(e) => handleStatusChange(order, e.target.value)}
                       aria-label={t('Change order status', 'تغيير حالة الطلب')}
                       className="appearance-none bg-[#0f0900] border border-[#c8941a]/20 text-white/60 rounded-xl py-2 pr-3 pl-7 text-xs font-medium focus:outline-none focus:border-[#c8941a]/40 cursor-pointer disabled:opacity-50 transition-all"
                     >
@@ -299,20 +380,15 @@ export default function AdminOrdersPage() {
                 {/* Expanded details */}
                 {expanded && (
                   <div className="border-t border-[#c8941a]/10 px-5 py-4 bg-[#0f0900] space-y-4">
-                    {/* Customer info */}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider">
-                          {t('Customer', 'بيانات العميل')}
-                        </p>
+                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider">{t('Customer', 'بيانات العميل')}</p>
                         <div className="flex items-center gap-2 text-sm text-white/70">
-                          <User className="h-3.5 w-3.5 text-white/30 shrink-0" />
-                          {customerName}
+                          <User className="h-3.5 w-3.5 text-white/30 shrink-0" />{customerName}
                         </div>
                         {customerPhone && customerPhone !== '-' && (
                           <div className="flex items-center gap-2 text-xs text-white/40">
-                            <Phone className="h-3 w-3 text-white/20 shrink-0" />
-                            {customerPhone}
+                            <Phone className="h-3 w-3 text-white/20 shrink-0" />{customerPhone}
                           </div>
                         )}
                         {(order.customer_email || order.shipping_address?.email) && (
@@ -323,9 +399,7 @@ export default function AdminOrdersPage() {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider">
-                          {t('Delivery Address', 'عنوان التوصيل')}
-                        </p>
+                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider">{t('Delivery Address', 'عنوان التوصيل')}</p>
                         <div className="flex items-start gap-2 text-sm text-white/60">
                           <MapPin className="h-3.5 w-3.5 text-white/30 shrink-0 mt-0.5" />
                           {getCustomerAddress(order)}
@@ -333,11 +407,8 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
 
-                    {/* Payment info */}
                     <div>
-                      <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-2">
-                        {t('Payment', 'الدفع')}
-                      </p>
+                      <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-2">{t('Payment', 'الدفع')}</p>
                       <div className="flex items-center gap-2 text-sm text-white/60">
                         {order.payment_method && PAYMENT_ICONS[order.payment_method]}
                         <span>{paymentMethodLabel(order.payment_method)}</span>
@@ -353,12 +424,9 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
 
-                    {/* Order items */}
                     {order.items && order.items.length > 0 && (
                       <div>
-                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-2">
-                          {t('Products', 'المنتجات')}
-                        </p>
+                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-2">{t('Products', 'المنتجات')}</p>
                         <div className="space-y-1.5 bg-[#180d04] rounded-xl border border-[#c8941a]/10 p-3">
                           {order.items.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between text-sm">
@@ -367,16 +435,13 @@ export default function AdminOrdersPage() {
                                 {item.size && <span className="text-white/30 text-xs ml-1">({item.size})</span>}
                                 {' × '}{item.quantity}
                               </span>
-                              <span className="font-medium text-[#c8941a]/80 text-xs">
-                                {item.total_price} {t('EGP', 'ج.م')}
-                              </span>
+                              <span className="font-medium text-[#c8941a]/80 text-xs">{item.total_price} {t('EGP', 'ج.م')}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Totals */}
                     <div className="border-t border-[#c8941a]/10 pt-3 space-y-1.5">
                       {order.subtotal !== undefined && (
                         <div className="flex justify-between text-xs text-white/30">
@@ -392,10 +457,7 @@ export default function AdminOrdersPage() {
                       )}
                       {order.discount_amount !== undefined && order.discount_amount > 0 && (
                         <div className="flex justify-between text-xs text-green-400/70">
-                          <span>
-                            {t('Discount', 'الخصم')}
-                            {order.discount_code && ` (${order.discount_code})`}
-                          </span>
+                          <span>{t('Discount', 'الخصم')}{order.discount_code && ` (${order.discount_code})`}</span>
                           <span>- {order.discount_amount} {t('EGP', 'ج.م')}</span>
                         </div>
                       )}
@@ -405,15 +467,10 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
 
-                    {/* Notes */}
                     {order.notes && (
                       <div>
-                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-1.5">
-                          {t('Notes', 'ملاحظات')}
-                        </p>
-                        <p className="text-sm text-white/50 bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5">
-                          {order.notes}
-                        </p>
+                        <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-1.5">{t('Notes', 'ملاحظات')}</p>
+                        <p className="text-sm text-white/50 bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 whitespace-pre-line">{order.notes}</p>
                       </div>
                     )}
                   </div>
@@ -421,6 +478,55 @@ export default function AdminOrdersPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Cancellation Reason Modal */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setCancelModal(null); setCancelReason('') }} />
+          <div className="relative w-full max-w-md bg-[#0f0900] border border-red-500/25 rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05]">
+              <div>
+                <h3 className="text-white font-bold text-sm">{t('Cancel Order', 'إلغاء الطلب')}</h3>
+                <p className="text-white/40 text-xs mt-0.5">#{cancelModal.orderNumber}</p>
+              </div>
+              <button type="button" aria-label={t('Close', 'إغلاق')} onClick={() => { setCancelModal(null); setCancelReason('') }} className="text-white/30 hover:text-white/60 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-white/40 text-xs mb-2">{t('Reason for cancellation (optional)', 'سبب الإلغاء (اختياري)')}</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder={t('e.g. Item out of stock, customer requested cancellation...', 'مثال: المنتج غير متاح، العميل طلب الإلغاء...')}
+                  rows={3}
+                  dir="rtl"
+                  className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-3 text-sm text-white/70 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all resize-none"
+                />
+                <p className="text-white/25 text-[10px] mt-1.5">{t('This reason will be visible in the order notes and sent to the customer if you choose.', 'يظهر السبب في ملاحظات الطلب ويمكن إرساله للعميل.')}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/[0.05]">
+              <button
+                type="button"
+                onClick={() => { setCancelModal(null); setCancelReason('') }}
+                className="px-4 py-2 rounded-xl text-white/40 hover:text-white/60 text-sm transition-colors"
+              >
+                {t('Go Back', 'رجوع')}
+              </button>
+              <button
+                type="button"
+                onClick={() => doUpdateStatus(cancelModal.orderId, 'cancelled', cancelReason)}
+                disabled={updating === cancelModal.orderId}
+                className="px-5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-all disabled:opacity-50"
+              >
+                {updating === cancelModal.orderId ? t('Cancelling...', 'جارٍ الإلغاء...') : t('Confirm Cancellation', 'تأكيد الإلغاء')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

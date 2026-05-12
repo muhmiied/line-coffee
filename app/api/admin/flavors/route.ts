@@ -13,19 +13,27 @@ async function guard() {
   return { admin }
 }
 
+// GET — all flavor categories with their flavors
 export async function GET() {
   const admin = createAdminClient()
   if (!admin) return NextResponse.json({ success: false, error: 'Not configured' }, { status: 503 })
 
   const { data, error } = await admin
-    .from('flavors')
-    .select('*')
+    .from('flavor_bases')
+    .select('*, options:flavor_options(id, name_en, name_ar, is_active, sort_order)')
     .order('sort_order', { ascending: true })
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true, data: data || [] })
+
+  const sorted = (data || []).map(base => ({
+    ...base,
+    options: (base.options || []).sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order),
+  }))
+
+  return NextResponse.json({ success: true, data: sorted })
 }
 
+// POST — create a new flavor category (base)
 export async function POST(request: NextRequest) {
   const result = await guard()
   if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.status })
@@ -37,13 +45,8 @@ export async function POST(request: NextRequest) {
   }
 
   const { data, error } = await admin
-    .from('flavors')
-    .insert({
-      name_en: body.name_en.trim(),
-      name_ar: body.name_ar.trim(),
-      is_active: body.is_active ?? true,
-      sort_order: body.sort_order ?? 0,
-    })
+    .from('flavor_bases')
+    .insert({ name_en: body.name_en.trim(), name_ar: body.name_ar.trim(), is_active: body.is_active ?? true, sort_order: body.sort_order ?? 0 })
     .select()
     .single()
 

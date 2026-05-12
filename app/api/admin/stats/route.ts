@@ -59,11 +59,14 @@ export async function GET() {
     return d >= sixtyDaysAgo && d < thirtyDaysAgo
   })
 
-  const totalSales = allOrders.reduce((s, o) => s + Number(o.total || 0), 0)
+  // Only count confirmed/active orders in revenue (not pending/cancelled)
+  const REVENUE_STATUSES = ['confirmed', 'processing', 'shipped', 'delivered']
+  const revenueOrders = allOrders.filter(o => REVENUE_STATUSES.includes(o.status))
+  const totalSales = revenueOrders.reduce((s, o) => s + Number(o.total || 0), 0)
   const totalOrders = allOrders.length
 
-  const currentSales = currentPeriodOrders.reduce((s, o) => s + Number(o.total || 0), 0)
-  const prevSales = prevPeriodOrders.reduce((s, o) => s + Number(o.total || 0), 0)
+  const currentSales = currentPeriodOrders.filter(o => REVENUE_STATUSES.includes(o.status)).reduce((s, o) => s + Number(o.total || 0), 0)
+  const prevSales = prevPeriodOrders.filter(o => REVENUE_STATUSES.includes(o.status)).reduce((s, o) => s + Number(o.total || 0), 0)
   const salesChange = prevSales === 0 && currentSales === 0 ? 0 : prevSales === 0 ? 100 : Math.round(((currentSales - prevSales) / prevSales) * 100)
 
   const currentOrderCount = currentPeriodOrders.length
@@ -81,7 +84,7 @@ export async function GET() {
     const key = d.toISOString().slice(0, 10)
     salesByDay[key] = 0
   }
-  currentPeriodOrders.forEach(o => {
+  currentPeriodOrders.filter(o => REVENUE_STATUSES.includes(o.status)).forEach(o => {
     const key = o.created_at.slice(0, 10)
     if (key in salesByDay) {
       salesByDay[key] += Number(o.total || 0)

@@ -28,7 +28,10 @@ export async function GET() {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
-  const totalSales = (orders || []).reduce((sum, order) => sum + Number(order.total || 0), 0)
+  const REVENUE_STATUSES = ['confirmed', 'processing', 'shipped', 'delivered']
+  const totalSales = (orders || [])
+    .filter(o => REVENUE_STATUSES.includes(o.status))
+    .reduce((sum, order) => sum + Number(order.total || 0), 0)
 
   return NextResponse.json({
     success: true,
