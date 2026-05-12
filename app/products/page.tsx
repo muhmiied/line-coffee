@@ -32,6 +32,16 @@ type SidebarCategory = {
   isCustomizeFlavor?: boolean
 }
 
+// ─── Fallback categories shown when DB fetch returns empty ────────────────────
+const FALLBACK_DB_CATEGORIES: DbCategory[] = [
+  { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'قهوة تركي',    image_url: null },
+  { id: 'esp', slug: 'espresso',        name_en: 'Espresso',         name_ar: 'إسبريسو',       image_url: null },
+  { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'قهوة نكهات',   image_url: null },
+  { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',    image_url: null },
+  { id: 'cap', slug: 'cappuccino',      name_en: 'Cappuccino',       name_ar: 'كابتشينو',      image_url: null },
+  { id: 'hc',  slug: 'hot-chocolate',   name_en: 'Hot Chocolate',    name_ar: 'هوت شوكلت',    image_url: null },
+]
+
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
 const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr: 'جميع المنتجات' }
 const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'كستمايز التوليفة', isCustomizeBlend: true }
@@ -644,20 +654,23 @@ function ProductsPageInner() {
   const [dbProducts, setDbProducts] = useState<Product[] | null>(null)
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
 
-  // Fetch categories from DB
+  // Fetch categories from DB; fall back to hardcoded if DB is empty or unreachable
   useEffect(() => {
     fetch('/api/categories')
       .then(r => r.json())
-      .then(d => { if (d.success && d.data?.length > 0) setDbCategories(d.data) })
-      .catch(() => {})
+      .then(d => {
+        if (d.success && d.data?.length > 0) setDbCategories(d.data)
+        else setDbCategories(FALLBACK_DB_CATEGORIES)
+      })
+      .catch(() => setDbCategories(FALLBACK_DB_CATEGORIES))
   }, [])
 
-  // Fetch products from DB; fall back to hardcoded if DB is empty
+  // Fetch products from DB; fall back to hardcoded allProducts if DB is empty
   useEffect(() => {
     fetch('/api/products?limit=300')
       .then(r => r.json())
       .then(d => { if (d.success && d.data?.length > 0) setDbProducts(d.data) })
-      .catch(() => {})
+      .catch(() => { /* keep allProducts fallback */ })
   }, [])
 
   // Build sidebar categories from DB, injecting special UI entries
