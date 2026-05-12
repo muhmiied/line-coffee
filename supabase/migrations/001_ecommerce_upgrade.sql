@@ -175,17 +175,22 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- Add new columns to existing orders table (safe)
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number    text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name   text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email  text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone  text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS address         text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS items           jsonb DEFAULT '[]'::jsonb;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code   text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount numeric(10,2) DEFAULT 0;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes           text;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method  text DEFAULT 'cod';
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency        text DEFAULT 'EGP';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number     text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name    text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email   text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone   text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS address          text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS billing_address  jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS items            jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code    text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount  numeric(10,2) DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes            text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method   text DEFAULT 'cod';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency         text DEFAULT 'EGP';
+
+-- Reload Supabase schema cache
+NOTIFY pgrst, 'reload schema';
 
 -- Auto-generate order_number
 CREATE OR REPLACE FUNCTION generate_order_number()
