@@ -1,8 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Coffee, Plus, Pencil, Trash2, Eye, EyeOff, GripVertical, Save, X } from 'lucide-react'
+import { Coffee, Plus, Pencil, Trash2, Eye, EyeOff, Save, X, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
@@ -68,10 +67,7 @@ export default function AdminCoffeeBeansPage() {
     setEditingId(bean.id)
   }
 
-  const cancelEdit = () => {
-    setEditingId(null)
-    setForm(EMPTY)
-  }
+  const cancelEdit = () => { setEditingId(null); setForm(EMPTY) }
 
   const handleSave = async () => {
     if (!form.name_en.trim() || !form.name_ar.trim()) {
@@ -82,23 +78,13 @@ export default function AdminCoffeeBeansPage() {
     try {
       const isNew = editingId === 'new'
       const url = isNew ? '/api/admin/coffee-beans' : `/api/admin/coffee-beans/${editingId}`
-      const method = isNew ? 'POST' : 'PATCH'
-
       const res = await fetch(url, {
-        method,
+        method: isNew ? 'POST' : 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          sort_order: Number(form.sort_order) || 0,
-        }),
+        body: JSON.stringify({ ...form, sort_order: Number(form.sort_order) || 0 }),
       })
       const json = await res.json()
-
-      if (!json.success) {
-        toast.error(json.error || t('Save failed', 'فشل الحفظ'))
-        return
-      }
-
+      if (!json.success) { toast.error(json.error || t('Save failed', 'فشل الحفظ')); return }
       toast.success(isNew ? t('Bean added', 'تمت الإضافة') : t('Bean updated', 'تم التحديث'))
       cancelEdit()
       load()
@@ -116,9 +102,8 @@ export default function AdminCoffeeBeansPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !bean.is_active }),
       })
-      setBeans(prev =>
-        prev.map(b => (b.id === bean.id ? { ...b, is_active: !b.is_active } : b))
-      )
+      setBeans(prev => prev.map(b => b.id === bean.id ? { ...b, is_active: !b.is_active } : b))
+      toast.success(!bean.is_active ? t('Activated', 'تم التفعيل') : t('Deactivated', 'تم الإلغاء'))
     } catch {
       toast.error(t('Update failed', 'فشل التحديث'))
     }
@@ -136,210 +121,220 @@ export default function AdminCoffeeBeansPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="min-h-screen bg-[#0f0900] p-6">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a0a00] flex items-center gap-2">
-            <Coffee className="h-6 w-6 text-[#522500]" />
+          <h2 className="text-white font-bold text-lg flex items-center gap-2">
+            <Coffee className="h-5 w-5 text-[#c8941a]" />
             {t('Coffee Beans', 'أنواع حبوب القهوة')}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t(
-              'Manage bean types available in the Customize Blend section',
-              'أدر أنواع الحبوب المتاحة في قسم "اصنع توليفتك"'
-            )}
+          </h2>
+          <p className="text-white/30 text-xs mt-0.5">
+            {t('Manage bean types for the Customize Blend section', 'أدر أنواع الحبوب في قسم "اصنع توليفتك"')}
           </p>
         </div>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 bg-[#522500] text-[#FFDCC2] px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#3d1b00] transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          {t('Add Bean', 'إضافة نوع')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={load}
+            aria-label={t('Refresh', 'تحديث')}
+            className="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 transition-all"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={openNew}
+            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            {t('Add Bean', 'إضافة نوع')}
+          </button>
+        </div>
       </div>
 
-      {/* Form */}
+      {/* Add / Edit Form */}
       {editingId && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-[#e8ddd5] rounded-2xl p-6"
-        >
-          <h2 className="font-semibold text-[#1a0a00] mb-4">
-            {editingId === 'new'
-              ? t('Add New Bean', 'إضافة نوع جديد')
-              : t('Edit Bean', 'تعديل النوع')}
-          </h2>
+        <div className="mb-6 bg-[#180d04] border border-[#c8941a]/20 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold text-sm">
+              {editingId === 'new' ? t('Add New Bean', 'إضافة نوع جديد') : t('Edit Bean', 'تعديل النوع')}
+            </h3>
+            <button type="button" onClick={cancelEdit} aria-label={t('Close', 'إغلاق')} className="text-white/30 hover:text-white/60 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                {t('English Name *', 'الاسم بالإنجليزية *')}
-              </label>
+              <label className="block text-white/40 text-xs mb-1.5">{t('English Name *', 'الاسم بالإنجليزية *')}</label>
               <input
                 value={form.name_en}
                 onChange={e => setForm(p => ({ ...p, name_en: e.target.value }))}
-                className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
                 placeholder="Ethiopian"
+                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                {t('Arabic Name *', 'الاسم بالعربية *')}
-              </label>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Name *', 'الاسم بالعربية *')}</label>
               <input
                 value={form.name_ar}
                 onChange={e => setForm(p => ({ ...p, name_ar: e.target.value }))}
                 dir="rtl"
-                className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
                 placeholder="إثيوبي"
+                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                {t('Origin (optional)', 'المنشأ (اختياري)')}
-              </label>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Origin (optional)', 'المنشأ (اختياري)')}</label>
               <input
                 value={form.origin || ''}
                 onChange={e => setForm(p => ({ ...p, origin: e.target.value }))}
-                className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
                 placeholder="Ethiopia"
+                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                {t('Sort Order', 'ترتيب العرض')}
-              </label>
+              <label className="block text-white/40 text-xs mb-1.5" htmlFor="bean-sort">{t('Sort Order', 'ترتيب العرض')}</label>
               <input
+                id="bean-sort"
                 type="number"
                 value={form.sort_order}
                 onChange={e => setForm(p => ({ ...p, sort_order: Number(e.target.value) }))}
-                className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30"
+                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                min={0}
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                {t('Description EN (optional)', 'الوصف بالإنجليزية (اختياري)')}
-              </label>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Description EN (optional)', 'الوصف بالإنجليزية (اختياري)')}</label>
               <textarea
                 value={form.description_en || ''}
                 onChange={e => setForm(p => ({ ...p, description_en: e.target.value }))}
                 rows={2}
-                className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30 resize-none"
+                placeholder="e.g. Fruity, floral notes..."
+                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all resize-none"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                {t('Description AR (optional)', 'الوصف بالعربية (اختياري)')}
-              </label>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Description AR (optional)', 'الوصف بالعربية (اختياري)')}</label>
               <textarea
                 value={form.description_ar || ''}
                 onChange={e => setForm(p => ({ ...p, description_ar: e.target.value }))}
                 dir="rtl"
                 rows={2}
-                className="w-full border border-[#e8ddd5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#522500]/30 resize-none"
+                placeholder="مثال: نكهات فاكهية وزهرية..."
+                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all resize-none"
               />
             </div>
-            <div className="sm:col-span-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={form.is_active}
-                onChange={e => setForm(p => ({ ...p, is_active: e.target.checked }))}
-                className="h-4 w-4 accent-[#522500]"
-              />
-              <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                {t('Active (visible to customers)', 'نشط (ظاهر للعملاء)')}
-              </label>
+            <div className="sm:col-span-2 flex items-center justify-between p-3 bg-[#0f0900] border border-[#c8941a]/10 rounded-xl">
+              <div>
+                <p className="text-white/70 text-sm font-medium">{t('Active', 'نشط')}</p>
+                <p className="text-white/25 text-xs mt-0.5">{t('Visible in Customize Blend', 'ظاهر في قسم التوليفة')}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm(p => ({ ...p, is_active: !p.is_active }))}
+                aria-label={form.is_active ? t('Deactivate', 'إلغاء التفعيل') : t('Activate', 'تفعيل')}
+                className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active ? 'bg-[#c8941a]' : 'bg-white/10'}`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
             </div>
           </div>
-          <div className="flex gap-3 mt-5">
+          <div className="flex items-center gap-3 mt-5">
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 bg-[#522500] text-[#FFDCC2] px-5 py-2 rounded-xl text-sm font-medium hover:bg-[#3d1b00] disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               {saving ? t('Saving...', 'جاري الحفظ...') : t('Save', 'حفظ')}
             </button>
             <button
+              type="button"
               onClick={cancelEdit}
-              className="flex items-center gap-2 border border-[#e8ddd5] px-5 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-[#faf7f4] transition-colors"
+              className="px-5 py-2 rounded-xl text-white/40 hover:text-white/60 text-sm transition-colors"
             >
-              <X className="h-4 w-4" />
               {t('Cancel', 'إلغاء')}
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Beans List */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="h-8 w-8 border-2 border-[#522500] border-t-transparent rounded-full animate-spin" />
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-[#180d04] rounded-xl h-16 border border-[#c8941a]/5" />
+          ))}
         </div>
       ) : beans.length === 0 ? (
-        <div className="bg-white border border-[#e8ddd5] rounded-2xl py-16 text-center">
-          <Coffee className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-400 text-sm">
-            {t('No coffee beans added yet', 'لا توجد أنواع قهوة بعد')}
-          </p>
+        <div className="flex flex-col items-center justify-center py-24">
+          <div className="h-16 w-16 rounded-2xl bg-[#c8941a]/10 border border-[#c8941a]/20 flex items-center justify-center mb-4">
+            <Coffee className="h-7 w-7 text-[#c8941a]" />
+          </div>
+          <p className="text-white/40 text-sm">{t('No coffee beans added yet', 'لا توجد أنواع قهوة بعد')}</p>
+          <button type="button" onClick={openNew} className="mt-4 text-[#c8941a] text-sm hover:opacity-70 transition-opacity">
+            + {t('Add your first bean', 'أضف أول نوع')}
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
-          {beans.map((bean, i) => (
-            <motion.div
+          {beans.map((bean) => (
+            <div
               key={bean.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className={`bg-white border rounded-xl px-5 py-4 flex items-center gap-4 ${
-                bean.is_active ? 'border-[#e8ddd5]' : 'border-gray-200 opacity-60'
+              className={`group bg-[#180d04] border rounded-xl px-5 py-4 flex items-center gap-4 transition-all ${
+                bean.is_active ? 'border-[#c8941a]/10 hover:border-[#c8941a]/25' : 'border-white/[0.04] opacity-50 hover:opacity-70'
               }`}
             >
-              <GripVertical className="h-4 w-4 text-gray-300 shrink-0" />
+              <div className="h-9 w-9 rounded-xl bg-[#0f0900] border border-[#c8941a]/15 flex items-center justify-center shrink-0">
+                <Coffee className="h-4 w-4 text-[#c8941a]/50" />
+              </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#1a0a00] text-sm">{bean.name_en}</span>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-sm text-gray-600">{bean.name_ar}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-white/80 text-sm">{bean.name_en}</span>
+                  <span className="text-white/20">|</span>
+                  <span className="text-sm text-white/50">{bean.name_ar}</span>
                   {!bean.is_active && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/10">
                       {t('Inactive', 'غير نشط')}
                     </span>
                   )}
                 </div>
                 {bean.origin && (
-                  <p className="text-xs text-gray-400 mt-0.5">📍 {bean.origin}</p>
+                  <p className="text-xs text-white/30 mt-0.5">📍 {bean.origin}</p>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
+                  type="button"
                   onClick={() => toggleActive(bean)}
-                  title={bean.is_active ? t('Deactivate', 'إلغاء التفعيل') : t('Activate', 'تفعيل')}
-                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e8ddd5] text-gray-400 hover:text-[#522500] hover:border-[#522500]/40 transition-colors"
+                  aria-label={bean.is_active ? t('Deactivate', 'إلغاء') : t('Activate', 'تفعيل')}
+                  className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/30 hover:text-white/60 transition-colors"
                 >
                   {bean.is_active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </button>
                 <button
+                  type="button"
                   onClick={() => openEdit(bean)}
-                  title={t('Edit', 'تعديل')}
-                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e8ddd5] text-gray-400 hover:text-[#522500] hover:border-[#522500]/40 transition-colors"
+                  aria-label={t('Edit', 'تعديل')}
+                  className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#c8941a]/10 border border-[#c8941a]/20 text-[#c8941a] hover:bg-[#c8941a]/20 transition-colors"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => deleteBean(bean.id)}
-                  title={t('Delete', 'حذف')}
-                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-red-100 text-red-400 hover:text-red-600 hover:border-red-300 transition-colors"
+                  aria-label={t('Delete', 'حذف')}
+                  className="h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}

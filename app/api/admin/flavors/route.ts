@@ -13,45 +13,31 @@ async function guard() {
   return { admin }
 }
 
-// GET all flavor bases with their options
 export async function GET() {
-  const result = await guard()
-  if ('error' in result) {
-    return NextResponse.json({ success: false, error: result.error }, { status: result.status })
-  }
-  const { admin } = result
+  const admin = createAdminClient()
+  if (!admin) return NextResponse.json({ success: false, error: 'Not configured' }, { status: 503 })
 
-  const { data: bases, error } = await admin
-    .from('flavor_bases')
-    .select('*, options:flavor_options(*)')
+  const { data, error } = await admin
+    .from('flavors')
+    .select('*')
     .order('sort_order', { ascending: true })
 
-  if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ success: true, data: bases || [] })
+  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true, data: data || [] })
 }
 
-// POST — create a new flavor base
 export async function POST(request: NextRequest) {
   const result = await guard()
-  if ('error' in result) {
-    return NextResponse.json({ success: false, error: result.error }, { status: result.status })
-  }
+  if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.status })
   const { admin } = result
 
   const body = await request.json()
-
   if (!body.name_en?.trim() || !body.name_ar?.trim()) {
-    return NextResponse.json(
-      { success: false, error: 'name_en and name_ar are required' },
-      { status: 400 },
-    )
+    return NextResponse.json({ success: false, error: 'Both names are required' }, { status: 400 })
   }
 
   const { data, error } = await admin
-    .from('flavor_bases')
+    .from('flavors')
     .insert({
       name_en: body.name_en.trim(),
       name_ar: body.name_ar.trim(),
@@ -61,9 +47,6 @@ export async function POST(request: NextRequest) {
     .select()
     .single()
 
-  if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }
-
+  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   return NextResponse.json({ success: true, data }, { status: 201 })
 }
