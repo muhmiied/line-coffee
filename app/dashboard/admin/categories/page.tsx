@@ -327,8 +327,8 @@ export default function CategoriesPage() {
 
               {/* Info */}
               <div className="px-3 py-2.5">
-                <p className="text-white/80 text-sm font-semibold truncate">{cat.name_ar}</p>
-                <p className="text-white/35 text-[11px] truncate">{cat.name_en}</p>
+                <p className="text-white/80 text-sm font-semibold truncate">{t(cat.name_en, cat.name_ar)}</p>
+                <p className="text-white/35 text-[11px] truncate">{t(cat.name_ar, cat.name_en)}</p>
                 <p className="text-[#c8941a]/40 text-[9px] font-mono truncate mt-0.5">{cat.slug}</p>
                 <button
                   type="button"
@@ -455,7 +455,7 @@ export default function CategoriesPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05] shrink-0">
               <div>
                 <h3 className="text-white font-bold text-sm">{t('Manage Products', 'إدارة منتجات الفئة')}</h3>
-                <p className="text-white/30 text-xs mt-0.5">{manageCat.name_ar}</p>
+                <p className="text-white/30 text-xs mt-0.5">{t(manageCat.name_en, manageCat.name_ar)}</p>
               </div>
               <button type="button" aria-label={t('Close', 'إغلاق')} onClick={() => setManageCat(null)} className="text-white/30 hover:text-white/60 transition-colors">
                 <X className="h-4 w-4" />
@@ -491,8 +491,8 @@ export default function CategoriesPage() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-white/80 text-xs font-medium truncate">{p.name_ar}</p>
-                              <p className="text-white/30 text-[10px] truncate">{p.name_en}</p>
+                              <p className="text-white/80 text-xs font-medium truncate">{t(p.name_en, p.name_ar)}</p>
+                              <p className="text-white/30 text-[10px] truncate">{t(p.name_ar, p.name_en)}</p>
                             </div>
                             <button
                               type="button"
@@ -543,10 +543,10 @@ export default function CategoriesPage() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white/70 text-xs font-medium truncate">{p.name_ar}</p>
+                            <p className="text-white/70 text-xs font-medium truncate">{t(p.name_en, p.name_ar)}</p>
                             <p className="text-white/25 text-[10px] truncate">
                               {p.category_id
-                                ? `${t('Currently in', 'في فئة')} ${cats.find(c => c.id === p.category_id)?.name_ar || '...'}`
+                                ? `${t('Currently in', 'في فئة')} ${(() => { const c = cats.find(x => x.id === p.category_id); return c ? t(c.name_en, c.name_ar) : '...' })()}`
                                 : t('Uncategorized', 'بدون فئة')}
                             </p>
                           </div>

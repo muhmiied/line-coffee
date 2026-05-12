@@ -433,10 +433,10 @@ export default function ProductsPage() {
 
                 {/* Info */}
                 <div className="px-3 py-2.5">
-                  <p className="text-white/80 text-sm font-semibold truncate">{product.name_ar}</p>
-                  <p className="text-white/35 text-[11px] truncate">{product.name_en}</p>
+                  <p className="text-white/80 text-sm font-semibold truncate">{t(product.name_en, product.name_ar)}</p>
+                  <p className="text-white/35 text-[11px] truncate">{t(product.name_ar, product.name_en)}</p>
                   {product.category && (
-                    <p className="text-[#c8941a]/40 text-[9px] font-mono truncate mt-0.5">{product.category.name_ar}</p>
+                    <p className="text-[#c8941a]/40 text-[9px] font-mono truncate mt-0.5">{t(product.category.name_en, product.category.name_ar)}</p>
                   )}
                   <div className="flex items-center justify-between mt-1.5">
                     {price !== null ? (

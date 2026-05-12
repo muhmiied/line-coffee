@@ -27,17 +27,27 @@ type DbCategory = {
   is_visible: boolean
 }
 
+const FALLBACK_CATEGORIES = [
+  { slug: 'turkish-coffee',  nameEn: 'Turkish Coffee',  nameAr: 'قهوة تركي',    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop' },
+  { slug: 'espresso',        nameEn: 'Espresso',         nameAr: 'إسبريسو',       image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop' },
+  { slug: 'flavored-coffee', nameEn: 'Flavored Coffee',  nameAr: 'قهوة نكهات',   image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop' },
+  { slug: 'coffee-mix',      nameEn: 'Coffee Mix',       nameAr: 'كوفي ميكس',    image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&h=1000&fit=crop' },
+  { slug: 'cappuccino',      nameEn: 'Cappuccino',       nameAr: 'كابتشينو',      image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&h=1000&fit=crop' },
+  { slug: 'hot-chocolate',   nameEn: 'Hot Chocolate',    nameAr: 'هوت شوكلت',    image: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800&h=1000&fit=crop' },
+]
+
 export function CategoriesSection() {
   const { t, dir } = useLanguage()
   const [categories, setCategories] = useState<Array<{
     slug: string; nameEn: string; nameAr: string; image: string; isCustomize?: boolean
   }>>([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     fetch('/api/categories')
       .then((r) => r.json())
       .then((res) => {
-        if (res.success && Array.isArray(res.data)) {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           const mapped = (res.data as DbCategory[])
             .filter((c) => c.is_visible)
             .map((c) => ({
@@ -46,10 +56,15 @@ export function CategoriesSection() {
               nameAr: c.name_ar,
               image: c.image_url ?? 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
             }))
-          setCategories([...mapped, CUSTOMIZE_ENTRY])
+          setCategories([...(mapped.length > 0 ? mapped : FALLBACK_CATEGORIES), CUSTOMIZE_ENTRY])
+        } else {
+          setCategories([...FALLBACK_CATEGORIES, CUSTOMIZE_ENTRY])
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setCategories([...FALLBACK_CATEGORIES, CUSTOMIZE_ENTRY])
+      })
+      .finally(() => setLoaded(true))
   }, [])
 
   return (
@@ -74,7 +89,7 @@ export function CategoriesSection() {
         </div>
 
         {/* Categories Grid */}
-        {categories.length > 0 && (
+        {loaded && categories.length > 0 && (
           <StaggerContainer
             initial="hidden"
             whileInView="visible"
@@ -134,7 +149,7 @@ export function CategoriesSection() {
         )}
 
         {/* Skeleton while loading */}
-        {categories.length === 0 && (
+        {!loaded && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             {Array.from({ length: 7 }).map((_, i) => (
               <div key={i} className="aspect-[3/4] rounded-xl bg-primary/10 animate-pulse" />
