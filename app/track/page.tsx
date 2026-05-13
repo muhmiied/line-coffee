@@ -61,7 +61,7 @@ export default function TrackPage() {
       {/* Header */}
       <div className="bg-[#522500] py-12 px-4 text-center">
         <Link href="/" className="inline-block mb-6">
-          <Image src="/brand/logo-white.svg" alt="Line Coffee" width={120} height={36} unoptimized />
+          <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized />
         </Link>
         <h1 className="text-[#FFDCC2] text-2xl font-bold mb-2">{t('Track Your Order', 'تتبع طلبك')}</h1>
         <p className="text-[#FFDCC2]/60 text-sm">{t('Enter your order number to see the current status', 'أدخل رقم طلبك لمعرفة الحالة الحالية')}</p>

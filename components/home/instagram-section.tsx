@@ -19,7 +19,7 @@ export function InstagramSection() {
   const { t } = useLanguage()
 
   return (
-    <SectionReveal className="relative py-16 md:py-24 overflow-hidden" style={{ background: '#0F0A07' }}>
+    <SectionReveal className="cinematic-section relative py-16 md:py-24 overflow-hidden" style={{ background: '#0F0A07' }}>
       {/* Ambient glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
@@ -68,14 +68,13 @@ export function InstagramSection() {
                 href="https://instagram.com/linecoffee.eg"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative block aspect-square rounded-xl overflow-hidden group cursor-pointer"
-                style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+                className="premium-image-card relative block aspect-square cursor-pointer overflow-hidden rounded-xl group"
               >
                 <Image
                   src={photo}
                   alt={`Instagram photo ${index + 1}`}
                   fill
-                  className="object-cover transition-transform duration-600 group-hover:scale-110"
+                  className="object-cover brightness-[0.84] contrast-[1.07] saturate-[1.04] transition-all duration-700 group-hover:scale-110 group-hover:brightness-[0.92]"
                 />
                 {/* Cinematic warm overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/8 to-transparent" />

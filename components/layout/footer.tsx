@@ -41,7 +41,6 @@ export function Footer() {
       {/* Cinematic layered background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/25 to-transparent" />
-      <div className="absolute inset-0 brand-pattern-dark opacity-[0.07]" />
 
       <div className="relative z-10">
 
@@ -53,14 +52,14 @@ export function Footer() {
             <div className="lg:col-span-2">
               <Link href="/" className="inline-block mb-6">
                 <span className="sr-only">Line Coffee</span>
-                <span className="relative block h-16 w-56 md:h-[4.5rem] md:w-64">
+                <span className="relative block h-20 w-64 md:h-24 md:w-72">
                   <Image
                     src="/brand/logo-white.svg"
                     alt="Line Coffee"
                     fill
                     unoptimized
                     className="object-contain object-left"
-                    style={{ filter: 'sepia(0.3) brightness(0.97)' }}
+                    style={{ filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.45)) brightness(1.07) contrast(1.02)' }}
                   />
                 </span>
               </Link>

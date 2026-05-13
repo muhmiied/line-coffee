@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
-import localFont from 'next/font/local'
+import { Alexandria, Inter, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { Suspense } from 'react'
@@ -22,28 +21,26 @@ import './globals.css'
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap',
+  display: 'optional',
+  preload: true,
+  fallback: ['Segoe UI', 'Arial', 'sans-serif'],
 })
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
-  display: 'swap',
+  display: 'optional',
   weight: ['400', '500', '600', '700', '800', '900'],
+  preload: true,
+  fallback: ['Georgia', 'Times New Roman', 'serif'],
 })
 
-const vlax = localFont({
-  src: [
-    {
-      path: '../public/fonts/vlax.otf',
-      weight: '400',
-      style: 'normal',
-    },
-  ],
-  variable: '--font-vlax',
-  display: 'swap',
+const arabic = Alexandria({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-arabic',
+  display: 'optional',
   preload: true,
-  fallback: ['sans-serif'],
+  fallback: ['Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
 })
 
 export const metadata: Metadata = {
@@ -92,7 +89,7 @@ export default async function RootLayout({
   const authState = await getInitialAuthState()
 
   return (
-    <html lang="ar" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${vlax.variable} bg-background`}>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${arabic.variable} bg-background`}>
       <head>
         <script
           dangerouslySetInnerHTML={{

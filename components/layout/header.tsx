@@ -130,16 +130,9 @@ export function Header() {
     <>
       <header
         className={cn(
-          'w-full transition-all duration-[400ms] ease-in-out text-white relative z-50',
-          !showGlass && 'bg-transparent',
+          'w-full transition-all duration-[400ms] ease-in-out text-white relative z-50 isolate overflow-hidden',
+          showGlass ? 'nav-glass' : 'bg-transparent',
         )}
-        style={showGlass ? {
-          background: 'rgba(10,7,5,0.82)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(182,136,94,0.12)',
-          boxShadow: '0 4px 32px rgba(0,0,0,0.4), 0 0 0 0 rgba(182,136,94,0)',
-        } : undefined}
       >
         {/* Overlay layers */}
         {showGlass ? (
@@ -172,7 +165,7 @@ export function Header() {
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="relative h-[4rem] w-[13rem] md:h-[4.5rem] md:w-[15rem]"
+                className="relative h-[4.5rem] w-[13rem] md:h-20 md:w-[15rem]"
               >
                 <Image
                   src="/brand/logo-white.svg"
@@ -181,7 +174,7 @@ export function Header() {
                   priority
                   unoptimized
                   className="object-contain object-center"
-                  style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5)) sepia(0.3) brightness(0.97)' }}
+                  style={{ filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.58)) brightness(1.08) contrast(1.02)' }}
                 />
               </motion.div>
             </Link>
@@ -193,17 +186,18 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'relative text-base font-serif font-medium transition-colors duration-200',
+                    'group/nav relative px-1 py-2 text-[15px] font-medium tracking-wide transition-colors duration-300',
                     pathname === link.href
-                      ? 'text-white'
-                      : 'text-white/70 hover:text-white'
+                      ? 'text-[#F5E6D8]'
+                      : 'text-[#D6B79A]/75 hover:text-[#F5E6D8]'
                   )}
                 >
                   {t(link.labelEn, link.labelAr)}
+                  <span className="absolute -bottom-0.5 left-1/2 h-px w-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#D6A373] to-transparent transition-all duration-300 group-hover/nav:w-full" />
                   {pathname === link.href && (
                     <motion.div
                       layoutId="activeNav"
-                      className="absolute -bottom-1 left-0 right-0 h-px rounded-full"
+                      className="absolute -bottom-0.5 left-0 right-0 h-px rounded-full shadow-[0_0_14px_rgba(214,163,115,0.45)]"
                       style={{ background: 'linear-gradient(to right, #B6885E, #D6A373)' }}
                     />
                   )}
@@ -220,7 +214,7 @@ export function Header() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="hidden md:flex items-center gap-1 px-2 text-white/70 hover:text-white hover:bg-white/8"
+                    className="hidden md:flex items-center gap-1 rounded-full border border-transparent px-3 text-[#D6B79A]/75 hover:border-[#B6885E]/20 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8]"
                   >
                     <span className="text-sm">{language === 'en' ? 'EN' : 'AR'}</span>
                     <ChevronDown className="h-3.5 w-3.5" />
@@ -283,7 +277,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className="text-white/70 hover:text-white hover:bg-white/8"
+                  className="text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
                   aria-label={t('Search', 'بحث')}
                 >
                   {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
@@ -332,7 +326,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openWishlist}
-                className="hidden md:flex text-white/70 hover:text-white hover:bg-white/8"
+                className="hidden md:flex text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
                 aria-label={t('Wishlist', 'المفضلة')}
               >
                 <Heart className="h-5 w-5" />
@@ -343,7 +337,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openCart}
-                className="relative text-white/70 hover:text-white hover:bg-white/8"
+                className="relative text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
                 aria-label={t('Cart', 'السلة')}
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -369,7 +363,7 @@ export function Header() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="hidden md:flex items-center gap-1.5 px-2 max-w-[120px] text-white/70 hover:text-white hover:bg-white/8"
+                      className="hidden md:flex items-center gap-1.5 rounded-full border border-transparent px-3 max-w-[130px] text-[#D6B79A]/75 hover:border-[#B6885E]/20 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8]"
                     >
                       <User className="h-4 w-4 shrink-0" />
                       <span className="text-sm truncate">{displayName}</span>
@@ -423,7 +417,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   asChild
-                  className="hidden md:flex text-white/70 hover:text-white hover:bg-white/8"
+                  className="hidden md:flex text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
                 >
                   <Link href="/auth/login" aria-label={t('Account', 'الحساب')}>
                     <User className="h-5 w-5" />
@@ -436,7 +430,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden text-white/70 hover:text-white hover:bg-white/8"
+                className="md:hidden text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8]"
                 aria-label={t('Menu', 'القائمة')}
               >
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

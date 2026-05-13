@@ -68,7 +68,7 @@ export function CategoriesSection() {
   }, [])
 
   return (
-    <SectionReveal className="relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
+    <SectionReveal className="cinematic-section relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
 
       {/* Cinematic background layers */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,_rgba(182,136,94,0.08)_0%,_transparent_70%)]" />
@@ -109,18 +109,16 @@ export function CategoriesSection() {
                 <Link
                   href={`/products?category=${category.slug}`}
                   className={cn(
-                    'group relative block overflow-hidden rounded-xl aspect-[3/4]',
-                    'transition-all duration-500',
+                    'premium-image-card group relative block aspect-[3/4] overflow-hidden rounded-xl',
                     category.isCustomize && 'ring-1 ring-[#B6885E]/50'
                   )}
-                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                 >
                   {/* Background Image */}
                   <Image
                     src={category.image}
                     alt={t(category.nameEn, category.nameAr)}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="object-cover brightness-[0.82] contrast-[1.08] saturate-[1.04] transition-all duration-700 group-hover:scale-110 group-hover:brightness-[0.9]"
                   />
 
                   {/* Cinematic overlay */}

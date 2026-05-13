@@ -36,7 +36,7 @@ export function TestimonialsSection() {
   const { t, dir } = useLanguage()
 
   return (
-    <SectionReveal className="relative py-20 md:py-32 overflow-hidden" style={{ background: '#0B0806' }}>
+    <SectionReveal className="cinematic-section relative py-20 md:py-32 overflow-hidden" style={{ background: '#0B0806' }}>
 
       {/* Cinematic layered background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,_rgba(182,136,94,0.07)_0%,_transparent_70%)]" />
@@ -73,20 +73,7 @@ export function TestimonialsSection() {
           <FadeUp>
             <Link
               href="/products"
-              className="group inline-flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 self-start lg:self-auto"
-              style={{
-                background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
-                color: '#0B0806',
-                boxShadow: '0 4px 20px rgba(182,136,94,0.3)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(182,136,94,0.5)'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(182,136,94,0.3)'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
+              className="premium-button group inline-flex items-center gap-2 self-start rounded-full px-7 py-3 text-sm font-semibold tracking-wide lg:self-auto"
             >
               {t('BROWSE OUR MENU', 'تصفح قائمتنا')}
               <ArrowRight
@@ -109,15 +96,14 @@ export function TestimonialsSection() {
           {testimonials.map((testimonial, index) => (
             <ImageReveal
               key={index}
-              className="relative aspect-[3/4] rounded-2xl overflow-hidden group"
-              style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
+              className="premium-image-card relative aspect-[3/4] overflow-hidden rounded-2xl group"
             >
               {/* Customer Photo */}
               <Image
                 src={testimonial.image}
                 alt={t(testimonial.nameEn, testimonial.nameAr)}
                 fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                className="object-cover brightness-[0.82] contrast-[1.08] saturate-[1.04] transition-all duration-700 group-hover:scale-105 group-hover:brightness-[0.9]"
               />
 
               {/* Cinematic overlay stack */}

@@ -32,7 +32,7 @@ export function BestSellersSection() {
   }, [])
 
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden bg-[#0d0600]">
+    <section className="cinematic-section relative py-20 md:py-28 overflow-hidden bg-[#0d0600]">
 
       {/* Ambient warm glow — center depth */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -100,7 +100,7 @@ export function BestSellersSection() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden bg-[#1e0b02]/80 animate-pulse">
+              <div key={i} className="luxury-panel overflow-hidden rounded-2xl animate-pulse">
                 <div className="aspect-[4/5] bg-[#2a1006]/50" />
                 <div className="p-4 space-y-3">
                   <div className="h-3 bg-[#2a1006]/50 rounded-full w-1/3" />

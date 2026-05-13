@@ -53,7 +53,7 @@ export function FeaturesPills() {
   const { t } = useLanguage()
 
   return (
-    <SectionReveal className="relative py-14 md:py-20 overflow-hidden" style={{ background: '#0B0806' }}>
+    <SectionReveal className="cinematic-section relative py-14 md:py-20 overflow-hidden" style={{ background: '#0B0806' }}>
       {/* Subtle gold line separators */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
       <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
@@ -70,7 +70,7 @@ export function FeaturesPills() {
           {features.map((feature, index) => {
             const Icon = feature.icon
             return (
-              <FadeUp key={index} className="flex flex-col items-center text-center group">
+              <FadeUp key={index} className="premium-info-card flex flex-col items-center text-center group">
                 {/* Gold icon ring */}
                 <div
                   className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 transition-all duration-400 group-hover:scale-110"

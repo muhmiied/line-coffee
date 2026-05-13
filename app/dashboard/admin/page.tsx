@@ -207,7 +207,7 @@ export default function AdminOverviewPage() {
 
         <div className="relative flex items-center justify-between px-6 py-5">
           <div>
-            <Image src="/brand/logo-white.svg" alt="Line Coffee" width={140} height={45} unoptimized className="object-contain mb-3" />
+            <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized className="object-contain mb-3" />
             <p className="text-white/40 text-xs">{t("Here's what's happening with your store today.", 'إليك ملخص أداء متجرك اليوم')}</p>
           </div>
           <div className="text-right">

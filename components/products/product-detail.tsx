@@ -121,7 +121,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
         <div className="space-y-3">
           {/* Main Image — cinematic 4:5 portrait */}
           <motion.div
-            className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#1e0b02]"
+            className="premium-image-card relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#120D09]"
             layoutId={`product-image-${product.id}`}
           >
             <AnimatePresence mode="wait">
@@ -138,7 +138,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                     src={product.images[selectedImageIndex]}
                     alt={name}
                     fill
-                    className="object-cover object-center"
+                    className="object-cover object-center brightness-[0.82] contrast-[1.08] saturate-[1.05]"
                     priority
                   />
                 ) : (
@@ -284,8 +284,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
                         'flex flex-col items-center justify-center px-6 py-3 rounded-lg border-2 cursor-pointer transition-all',
                         'hover:border-primary/50',
                         selectedSize?.id === size.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border'
+                          ? 'border-[#D6A373]/45 bg-[#B6885E]/10 shadow-[0_0_26px_rgba(182,136,94,0.12)]'
+                          : 'border-[#B6885E]/15 bg-[#120D09]/50 hover:border-[#D6A373]/30'
                       )}
                     >
                       <span className="font-medium">{size.size}</span>
@@ -351,7 +351,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
             <div className="flex gap-3 w-full sm:w-auto">
               <Button
                 size="lg"
-                className="flex-1 sm:flex-none"
+                className="premium-button flex-1 rounded-full sm:flex-none"
                 onClick={handleAddToCart}
                 disabled={!selectedSize}
               >
@@ -387,7 +387,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
           {/* Benefits */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
-            <div className="flex items-center gap-3">
+            <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Truck className="h-5 w-5 text-primary" />
               </div>
@@ -396,7 +396,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <p className="text-xs text-muted-foreground">{t('Over 200 EGP', 'فوق 200 ج.م')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Shield className="h-5 w-5 text-primary" />
               </div>
@@ -405,7 +405,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <p className="text-xs text-muted-foreground">{t('100% Satisfaction', 'رضا 100%')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <RefreshCw className="h-5 w-5 text-primary" />
               </div>

@@ -43,7 +43,7 @@ export function StorySection() {
   ]
 
   return (
-    <section ref={ref} className="relative py-24 md:py-36 overflow-hidden" style={{ background: '#0F0A07' }}>
+    <section ref={ref} className="cinematic-section relative py-24 md:py-36 overflow-hidden" style={{ background: '#0F0A07' }}>
 
       {/* ── Cinematic background ── */}
       {/* Parallax coffee farm image */}
@@ -112,7 +112,7 @@ export function StorySection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.15 }}
-                  className="flex gap-4 group"
+                  className="premium-info-card flex gap-4 group"
                 >
                   <div
                     className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
@@ -138,20 +138,7 @@ export function StorySection() {
             {/* CTA */}
             <Link
               href="/about"
-              className="group inline-flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
-              style={{
-                background: 'rgba(182,136,94,0.1)',
-                color: '#D6A373',
-                border: '1px solid rgba(182,136,94,0.3)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(182,136,94,0.18)'
-                e.currentTarget.style.borderColor = 'rgba(182,136,94,0.55)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(182,136,94,0.1)'
-                e.currentTarget.style.borderColor = 'rgba(182,136,94,0.3)'
-              }}
+              className="premium-button-outline group inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold tracking-wide"
             >
               {t('Learn More About Us', 'تعرف علينا أكثر')}
               <ArrowRight
@@ -171,17 +158,12 @@ export function StorySection() {
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative"
           >
-            <div
-              className="relative aspect-[4/5] rounded-2xl overflow-hidden"
-              style={{
-                boxShadow: '0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(182,136,94,0.12)',
-              }}
-            >
+            <div className="premium-image-card relative aspect-[4/5] overflow-hidden rounded-2xl">
               <Image
                 src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80"
                 alt="Coffee preparation"
                 fill
-                className="object-cover"
+                className="object-cover brightness-[0.84] contrast-[1.08] saturate-[1.04] transition-transform duration-700 hover:scale-[1.04]"
               />
               {/* Cinematic warm grade */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/60 via-transparent to-transparent" />
@@ -195,16 +177,9 @@ export function StorySection() {
               viewport={{ once: true }}
               transition={{ delay: 0.35, duration: 0.5 }}
               className={cn(
-                'absolute -bottom-6 rounded-2xl p-5 shadow-2xl',
+                'luxury-panel absolute -bottom-6 rounded-2xl p-5 shadow-2xl',
                 dir === 'rtl' ? '-right-4 md:-right-6' : '-left-4 md:-left-6'
               )}
-              style={{
-                background: 'rgba(24,18,13,0.92)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(182,136,94,0.2)',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(182,136,94,0.15)',
-              }}
             >
               <div className="flex items-center gap-5">
                 <div className="text-center">

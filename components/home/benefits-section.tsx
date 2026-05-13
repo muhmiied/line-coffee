@@ -53,7 +53,7 @@ export function BenefitsSection() {
   ]
 
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
+    <section className="cinematic-section relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
       {/* Ambient glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
@@ -89,7 +89,7 @@ export function BenefitsSection() {
             <motion.div
               key={index}
               variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-              className="text-center group"
+              className="premium-info-card text-center group"
             >
               <div
                 className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 transition-all duration-400 group-hover:scale-110"

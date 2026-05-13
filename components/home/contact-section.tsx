@@ -47,7 +47,7 @@ export function ContactSection() {
   const { t } = useLanguage()
 
   return (
-    <SectionReveal className="relative py-20 md:py-28 overflow-hidden" style={{ background: '#0B0806' }}>
+    <SectionReveal className="cinematic-section relative py-20 md:py-28 overflow-hidden" style={{ background: '#0B0806' }}>
 
       {/* Cinematic background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
@@ -117,14 +117,7 @@ export function ContactSection() {
           {/* Contact Form */}
           <FadeUp>
             <div
-              className="rounded-2xl p-6 md:p-8"
-              style={{
-                background: 'rgba(24,18,13,0.85)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(182,136,94,0.15)',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.35)',
-              }}
+              className="luxury-panel rounded-2xl p-6 md:p-8"
             >
               <h3 className="font-serif text-xl font-semibold mb-6" style={{ color: '#F5E6D8' }}>
                 {t('Send Us a Message', 'أرسل لنا رسالة')}
@@ -185,13 +178,8 @@ export function ContactSection() {
                 />
                 <Button
                   type="submit"
-                  className="w-full font-semibold tracking-wide transition-all duration-300"
+                  className="premium-button w-full rounded-full font-semibold tracking-wide"
                   size="lg"
-                  style={{
-                    background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
-                    color: '#0B0806',
-                    boxShadow: '0 4px 20px rgba(182,136,94,0.3)',
-                  }}
                 >
                   {t('Send Message', 'إرسال الرسالة')}
                 </Button>

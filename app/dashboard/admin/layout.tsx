@@ -128,8 +128,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Image
               src="/brand/logo-white.svg"
               alt="Line Coffee"
-              width={130}
-              height={40}
+              width={150}
+              height={66}
               className="object-contain object-left"
               unoptimized
             />

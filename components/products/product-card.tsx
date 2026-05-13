@@ -107,18 +107,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
         {/* ── Card shell ─────────────────────────────────────────── */}
         <div
           className={cn(
-            'relative overflow-hidden rounded-2xl',
-            'bg-gradient-to-b from-[#1e0b02] to-[#140701]',
-            'border border-[#522500]/[22%]',
-            'shadow-[0_4px_24px_rgba(0,0,0,0.18)]',
-            'transition-all duration-500 ease-out',
-            'group-hover:border-[#c8941a]/[32%]',
-            'group-hover:shadow-[0_22px_60px_rgba(200,148,26,0.16)]',
+            'luxury-card relative overflow-hidden rounded-2xl',
+            'bg-gradient-to-b from-[#1B140F] via-[#15100B] to-[#0B0806]',
+            'border border-[#B6885E]/[16%]',
+            'shadow-[0_16px_46px_rgba(0,0,0,0.34)]',
+            'group-hover:border-[#D6A373]/[34%]',
           )}
         >
 
           {/* ── Image zone ─────────────────────────────────────────── */}
-          <div className="relative aspect-[4/5] overflow-hidden">
+          <div className="relative aspect-[4/5] overflow-hidden bg-[#120D09]">
 
             {product.images?.[0] ? (
               <Image
@@ -126,7 +124,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 alt={name}
                 fill
                 sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
-                className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.07]"
+                className="object-cover object-center brightness-[0.82] contrast-[1.08] saturate-[1.05] transition-all duration-700 ease-out group-hover:scale-[1.08] group-hover:brightness-[0.9]"
               />
             ) : (
               <CinematicPlaceholder categoryId={product.category_id ?? ''} />
@@ -138,6 +136,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-[#0a0300]/90 via-[#0a0300]/40 to-transparent" />
               {/* Warm brown tone cast: corrects cold/blue-shifted photos */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#522500]/22 to-transparent mix-blend-multiply" />
+              <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[radial-gradient(circle_at_50%_12%,_rgba(214,163,115,0.14),_transparent_34%)]" />
             </div>
 
             {/* Sold-Out overlay */}
@@ -178,17 +177,17 @@ export function ProductCard({ product, className }: ProductCardProps) {
               className={cn(
                 'absolute top-3 right-3 z-10',
                 'h-8 w-8 rounded-full flex items-center justify-center',
-                'bg-white/90 backdrop-blur-sm shadow-md',
+                'border border-[#B6885E]/20 bg-[#120D09]/82 backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.35)]',
                 'opacity-0 group-hover:opacity-100',
                 'scale-[0.84] group-hover:scale-100',
-                'transition-all duration-200 ease-out',
+                'transition-all duration-300 ease-out hover:border-[#D6A373]/45 hover:bg-[#B6885E]/15',
                 wishlistPending && 'scale-110',
               )}
             >
               <Heart
                 className={cn(
                   'h-3.5 w-3.5 transition-colors duration-150',
-                  inWishlist ? 'fill-[#522500] text-[#522500]' : 'text-[#522500]/60',
+                  inWishlist ? 'fill-[#D6A373] text-[#D6A373]' : 'text-[#D6B79A]/75',
                 )}
               />
             </button>
@@ -206,7 +205,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 <button
                   type="button"
                   onClick={handleQuickAdd}
-                  className="w-full text-sm font-semibold py-2.5 rounded-xl bg-[#FFDCC2]/95 text-[#522500] flex items-center justify-center gap-2 backdrop-blur-sm hover:bg-[#FFDCC2] transition-colors"
+                  className="premium-button flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
                 >
                   <ShoppingBag className="h-4 w-4" />
                   {t('Quick Add', 'إضافة سريعة')}
@@ -220,33 +219,33 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
             {/* Origin */}
             {product.origin && (
-              <p className="text-[10px] tracking-[0.18em] uppercase font-medium text-[#FFDCC2]/30">
+              <p className="text-[10px] tracking-[0.18em] uppercase font-medium text-[#D6B79A]/45">
                 {product.origin}
               </p>
             )}
 
             {/* Name */}
-            <h3 className="font-serif text-[15px] leading-snug font-semibold line-clamp-2 text-[#FFDCC2]/80 group-hover:text-[#FFDCC2] transition-colors duration-300">
+            <h3 className="font-serif text-[15px] leading-snug font-semibold line-clamp-2 text-[#F5E6D8]/88 transition-colors duration-300 group-hover:text-[#F5E6D8]">
               {name}
             </h3>
 
             {/* Roast pill + rating */}
             <div className="flex items-center gap-2">
               {product.roast_level && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize bg-[#FFDCC2]/[7%] text-[#FFDCC2]/40">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize bg-[#D6A373]/[8%] text-[#D6B79A]/58">
                   {product.roast_level}
                 </span>
               )}
               <div className="flex items-center gap-0.5 ml-auto">
-                <Star className="h-3 w-3 fill-[#c8941a] text-[#c8941a]" />
-                <span className="text-[11px] font-medium text-[#c8941a]/55">4.8</span>
+                <Star className="h-3 w-3 fill-[#D6A373] text-[#D6A373]" />
+                <span className="text-[11px] font-medium text-[#D6A373]/68">4.8</span>
               </div>
             </div>
 
             {/* Price */}
             <div className="flex items-baseline gap-1.5 pt-0.5">
-              <span className="text-lg font-bold text-[#c8941a]">{lowestPrice}</span>
-              <span className="text-xs font-medium text-[#c8941a]/50">{t('EGP', 'ج.م')}</span>
+              <span className="text-lg font-bold text-[#D6A373]">{lowestPrice}</span>
+              <span className="text-xs font-medium text-[#D6A373]/58">{t('EGP', 'ج.م')}</span>
               {comparePrice && (
                 <span className="text-xs line-through ml-0.5 text-[#FFDCC2]/20">
                   {comparePrice}

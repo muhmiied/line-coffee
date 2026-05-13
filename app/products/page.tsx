@@ -374,7 +374,7 @@ function CustomizeBlend() {
   }
 
   return (
-    <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
+    <div className="luxury-panel rounded-2xl p-6 md:p-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-6 h-6 text-primary" />
@@ -392,7 +392,7 @@ function CustomizeBlend() {
             <div className="grid sm:grid-cols-2 gap-4">
               {blendBases.map((b) => (
                 <button type="button" key={b.id} onClick={() => { setBaseId(b.id); setStep(2) }}
-                  className={cn('p-5 rounded-xl border-2 text-right transition-all hover:border-primary', baseId === b.id ? 'border-primary bg-primary/5' : 'border-border')}>
+                  className={cn('premium-info-card p-5 text-right', baseId === b.id ? 'border-[#D6A373]/45 bg-[#B6885E]/10' : '')}>
                   <h4 className="font-bold text-lg mb-1">{language === 'ar' ? b.nameAr : b.nameEn}</h4>
                   <p className="text-xs text-muted-foreground">{b.descAr}</p>
                   <p className="text-sm text-primary font-medium mt-2">{t(`From ${b.price250} EGP`, `من ${b.price250} ج.م`)}</p>
@@ -410,12 +410,12 @@ function CustomizeBlend() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <button type="button" onClick={() => selectMode('types')}
-                className="p-5 rounded-xl border-2 border-border hover:border-primary transition-all text-right">
+                className="premium-info-card p-5 text-right">
                 <p className="font-bold mb-1">{t('Choose types only', 'اختيار الأنواع فقط')}</p>
                 <p className="text-xs text-muted-foreground">{t('Pick the beans without setting percentages', 'اختار أنواع البن اللي تحبها بدون نسب')}</p>
               </button>
               <button type="button" onClick={() => selectMode('ratios')}
-                className="p-5 rounded-xl border-2 border-border hover:border-primary transition-all text-right">
+                className="premium-info-card p-5 text-right">
                 <p className="font-bold mb-1">{t('Choose types with ratios', 'اختيار الأنواع بالنسب')}</p>
                 <p className="text-xs text-muted-foreground">{t('Set a percentage for every selected bean', 'حدد نسبة كل نوع داخل التوليفة')}</p>
               </button>
@@ -548,7 +548,7 @@ function CustomizeFlavor() {
   }
 
   return (
-    <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
+    <div className="luxury-panel rounded-2xl p-6 md:p-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-6 h-6 text-primary" />
@@ -566,7 +566,7 @@ function CustomizeFlavor() {
             <div className="grid sm:grid-cols-3 gap-4">
               {flavorBaseOptions.map((b) => (
                 <button type="button" key={b.id} onClick={() => { setSelectedBase(b); setStep(2) }}
-                  className={cn('p-4 rounded-xl border-2 text-right transition-all hover:border-primary', selectedBase?.id === b.id ? 'border-primary bg-primary/5' : 'border-border')}>
+                  className={cn('premium-info-card p-4 text-right', selectedBase?.id === b.id ? 'border-[#D6A373]/45 bg-[#B6885E]/10' : '')}>
                   <h4 className="font-bold">{language === 'ar' ? b.nameAr : b.nameEn}</h4>
                   <p className="text-sm text-primary font-medium mt-2">{t(`From ${b.price250} EGP`, `من ${b.price250} ج.م`)}</p>
                 </button>
@@ -748,7 +748,7 @@ function ProductsPageInner() {
     <div className="min-h-screen" style={{ background: '#0B0806' }}>
       {/* Hero Banner */}
       <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24" style={{ background: '#0B0806' }}>
-        <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover" priority />
+        <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover brightness-[0.58] contrast-[1.14] saturate-[1.08]" priority />
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
@@ -771,14 +771,14 @@ function ProductsPageInner() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <aside className="lg:w-64 shrink-0">
-            <div className="sticky top-28 bg-card/80 backdrop-blur-sm rounded-2xl p-4 border border-border/50 shadow-sm">
+            <div className="luxury-panel sticky top-28 rounded-2xl p-4">
               <h2 className="font-serif text-lg font-semibold mb-4 px-2">{t('Categories', 'الفئات')}</h2>
               <nav className="space-y-1">
                 {sidebarCategories.map((cat) => (
                   <button type="button" key={cat.slug} onClick={() => handleCategoryChange(cat.slug)}
                     className={cn(
-                      'w-full text-left px-4 py-3 rounded-xl transition-all duration-200 text-sm flex items-center gap-2',
-                      activeCategory === cat.slug ? 'font-medium scale-[1.02]' : 'text-foreground/80 hover:bg-secondary hover:text-foreground hover:scale-[1.01]',
+                      'w-full text-left px-4 py-3 rounded-xl transition-all duration-300 text-sm flex items-center gap-2 border',
+                      activeCategory === cat.slug ? 'font-medium scale-[1.02] border-[#D6A373]/30' : 'border-transparent text-[#D6B79A]/75 hover:border-[#B6885E]/20 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:scale-[1.01]',
                       (cat.isCustomizeBlend || cat.isCustomizeFlavor) && 'border-2 border-dashed border-primary/30'
                     )}
                     style={activeCategory === cat.slug ? {
@@ -808,7 +808,7 @@ function ProductsPageInner() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input type="text" placeholder={t('Search products...', 'ابحث عن المنتجات...')}
                     value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-secondary/50" />
+                    className="border-[#B6885E]/20 bg-[#120D09]/70 pl-10 text-[#F5E6D8] placeholder:text-[#B79B85]/50 focus-visible:ring-[#B6885E]/30" />
                 </div>
 
                 {/* Mix sub-tabs */}
