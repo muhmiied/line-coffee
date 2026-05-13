@@ -66,15 +66,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { language, setLanguage, t } = useLanguage()
   const pathname = usePathname()
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [bellOpen, setBellOpen] = useState(false)
   const [pendingOrders, setPendingOrders] = useState(0)
+  const [pendingOrdersList, setPendingOrdersList] = useState<Array<{
+    id: string
+    order_number: string
+    total: number
+    created_at: string
+    shipping_address: { first_name?: string; last_name?: string } | null
+  }>>([])
 
   // Fetch pending order count for notification badge
   const fetchPendingCount = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/orders', { cache: 'no-store' })
       const json = await res.json()
-      const orders: Array<{ status: string }> = json?.data?.orders || []
-      setPendingOrders(orders.filter(o => o.status === 'pending').length)
+      const orders: Array<{ id: string; status: string; order_number: string; total: number; created_at: string; shipping_address: { first_name?: string; last_name?: string } | null }> = json?.data?.orders || []
+      const pending = orders.filter(o => o.status === 'pending')
+      setPendingOrders(pending.length)
+      setPendingOrdersList(pending.slice(0, 5))
     } catch {
       // ignore
     }
@@ -131,21 +141,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="mx-5 h-px bg-[#c8941a]/10" />
 
-        {/* User card */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-[#c8941a]/10">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#c8941a]/30 to-[#c8941a]/10 border border-[#c8941a]/20 flex items-center justify-center shrink-0">
-              <span className="text-[#c8941a] font-bold text-xs">{initial}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-white/75 text-xs font-semibold truncate">{displayName}</p>
-              <p className="text-white/25 text-[10px] mt-0.5">{t('System Admin', 'مدير النظام')}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mx-5 h-px bg-[#c8941a]/10" />
-
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-0.5">
           {nav.map((item) => {
@@ -181,46 +176,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Promo card */}
-        <div className="px-4 pb-3">
-          <div className="relative rounded-xl overflow-hidden border border-[#c8941a]/15">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#3a1800] to-[#0a0500]" />
-            <div className="relative p-4">
-              <p className="text-white/80 text-[11px] font-bold leading-snug">Brew Inspiration</p>
-              <p className="text-[#c8941a]/60 text-[10px] mt-0.5 mb-3">Deliver Happiness</p>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 bg-[#c8941a]/15 hover:bg-[#c8941a]/25 border border-[#c8941a]/20 text-[#c8941a] text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors"
-              >
-                <Globe className="h-3 w-3" />
-                {t('View Store', 'عرض الموقع')} →
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="mx-5 h-px bg-[#c8941a]/10" />
-
-        {/* Bottom user + logout */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-2.5 px-2 py-1.5 mb-1">
-            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#c8941a]/30 to-[#c8941a]/10 border border-[#c8941a]/20 flex items-center justify-center shrink-0">
-              <span className="text-[#c8941a] font-bold text-[10px]">{initial}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-white/60 text-[11px] font-medium truncate">{displayName}</p>
-              <p className="text-white/20 text-[9px] truncate">{email}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all"
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            {t('Sign Out', 'تسجيل الخروج')}
-          </button>
-        </div>
       </aside>
 
       {/* ── Content ── */}
@@ -231,7 +186,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {pathname === '/dashboard/admin' ? (
             <div>
               <h1 className="text-white font-bold text-base leading-none">
-                {t('Welcome back,', 'مرحباً بعودتك،')} {displayName} 👋
+                {t('Welcome back', 'مرحباً بعودتك')} 👋
               </h1>
               <p className="text-white/30 text-[11px] mt-0.5">
                 {t("Here's what's happening with your store today.", 'إليك ملخص أداء متجرك اليوم')}
@@ -268,19 +223,70 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {language === 'ar' ? 'EN' : 'AR'}
             </button>
 
-            {/* Bell with badge */}
-            <Link
-              href="/dashboard/admin/orders"
-              aria-label={t('Notifications', 'الإشعارات')}
-              className="relative h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 hover:border-[#c8941a]/20 transition-all"
-            >
-              <Bell className="h-4 w-4" />
-              {pendingOrders > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {pendingOrders > 9 ? '9+' : pendingOrders}
-                </span>
+            {/* Bell dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setBellOpen(v => !v)}
+                aria-label={t('Notifications', 'الإشعارات')}
+                className="relative h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 hover:border-[#c8941a]/20 transition-all"
+              >
+                <Bell className="h-4 w-4" />
+                {pendingOrders > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {pendingOrders > 9 ? '9+' : pendingOrders}
+                  </span>
+                )}
+              </button>
+
+              {bellOpen && (
+                <>
+                  <div className="fixed inset-0 z-50" onClick={() => setBellOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-[#0a0500] border border-[#c8941a]/15 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-[#c8941a]/10 flex items-center justify-between">
+                      <p className="text-white/80 text-xs font-semibold">{t('Pending Orders', 'الطلبات المعلقة')}</p>
+                      {pendingOrders > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] font-bold">{pendingOrders}</span>
+                      )}
+                    </div>
+                    {pendingOrdersList.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Bell className="h-6 w-6 mx-auto mb-2 text-white/10" />
+                        <p className="text-white/25 text-xs">{t('No pending orders', 'لا توجد طلبات معلقة')}</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-white/[0.03]">
+                        {pendingOrdersList.map(order => (
+                          <Link
+                            key={order.id}
+                            href="/dashboard/admin/orders"
+                            onClick={() => setBellOpen(false)}
+                            className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors"
+                          >
+                            <div>
+                              <p className="text-white/80 text-xs font-semibold">#{order.order_number}</p>
+                              <p className="text-white/30 text-[10px] mt-0.5">
+                                {order.shipping_address?.first_name || '—'} · {new Date(order.created_at).toLocaleDateString('en-GB')}
+                              </p>
+                            </div>
+                            <span className="text-[#c8941a] text-[11px] font-bold shrink-0 ml-3">{Number(order.total).toLocaleString()} EGP</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    <div className="px-4 py-3 border-t border-[#c8941a]/10">
+                      <Link
+                        href="/dashboard/admin/orders"
+                        onClick={() => setBellOpen(false)}
+                        className="flex items-center justify-center text-[#c8941a] text-xs font-semibold hover:opacity-70 transition-opacity"
+                      >
+                        {t('View All Orders', 'عرض جميع الطلبات')} →
+                      </Link>
+                    </div>
+                  </div>
+                </>
               )}
-            </Link>
+            </div>
 
             {/* Settings */}
             <Link
@@ -346,7 +352,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="flex-1 pt-16 bg-background">
+        <main className="flex-1 pt-16 bg-[#0f0900]">
           {children}
         </main>
       </div>

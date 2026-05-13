@@ -8,11 +8,12 @@ import {
   TrendingUp,
   Package,
   Users,
-  ShoppingBag,
   ArrowUpRight,
   ArrowDownRight,
   Star,
   Coffee,
+  XCircle,
+  CheckCircle2,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -30,6 +31,15 @@ import {
 type DashboardData = {
   stats: {
     totalSales: number
+    deliveredRevenue: number
+    activeOrders: {
+      confirmed:  { count: number; total: number }
+      processing: { count: number; total: number }
+      shipped:    { count: number; total: number }
+      totalCount: number
+      totalAmount: number
+    }
+    cancelledOrders: number
     totalOrders: number
     totalCustomers: number
     totalProducts: number
@@ -71,24 +81,63 @@ function StatusBadge({ status, t }: { status: string; t: (en: string, ar: string
 }
 
 function StatCard({ label, value, change, icon: Icon, t }: {
-  label: string; value: string; change: number; icon: React.ElementType
+  label: string; value: string; change?: number; icon: React.ElementType
   t: (en: string, ar: string) => string
 }) {
-  const positive = change >= 0
+  const positive = (change ?? 0) >= 0
   return (
     <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <div className="h-10 w-10 rounded-xl bg-[#c8941a]/10 border border-[#c8941a]/15 flex items-center justify-center">
           <Icon className="h-5 w-5 text-[#c8941a]" />
         </div>
-        <div className={`flex items-center gap-1 text-xs font-semibold ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
-          {positive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-          {Math.abs(change)}%
-        </div>
+        {change !== undefined && (
+          <div className={`flex items-center gap-1 text-xs font-semibold ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
+            {positive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+            {Math.abs(change)}%
+          </div>
+        )}
       </div>
       <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
       <p className="text-xs text-white/40 mt-1">{label}</p>
-      <p className="text-[10px] text-white/20 mt-0.5">{t('vs last month', 'مقارنة بالشهر الماضي')}</p>
+      {change !== undefined && (
+        <p className="text-[10px] text-white/20 mt-0.5">{t('vs last month', 'مقارنة بالشهر الماضي')}</p>
+      )}
+    </div>
+  )
+}
+
+function ActiveOrdersCard({ data, t }: {
+  data: DashboardData['stats']['activeOrders']
+  t: (en: string, ar: string) => string
+}) {
+  return (
+    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 transition-colors">
+      <div className="flex items-center justify-between mb-3">
+        <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+          <Package className="h-5 w-5 text-blue-400" />
+        </div>
+        <p className="text-2xl font-bold text-white">{data.totalCount}</p>
+      </div>
+      <p className="text-xs text-white/40 mb-3">{t('In Progress', 'قيد التنفيذ')}</p>
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-emerald-400 font-medium">{t('Confirmed', 'مؤكد')}</span>
+          <span className="text-white/40">{data.confirmed.count} · {data.confirmed.total.toLocaleString()} EGP</span>
+        </div>
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-blue-400 font-medium">{t('Preparing', 'قيد التجهيز')}</span>
+          <span className="text-white/40">{data.processing.count} · {data.processing.total.toLocaleString()} EGP</span>
+        </div>
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-indigo-400 font-medium">{t('Shipped', 'تم الشحن')}</span>
+          <span className="text-white/40">{data.shipped.count} · {data.shipped.total.toLocaleString()} EGP</span>
+        </div>
+      </div>
+      <div className="mt-3 pt-3 border-t border-white/[0.05]">
+        <p className="text-[#c8941a] font-bold text-sm">{data.totalAmount.toLocaleString()} EGP</p>
+        <p className="text-white/20 text-[10px] mt-0.5">{t('Total pending amount', 'إجمالي المبالغ المعلقة')}</p>
+      </div>
     </div>
   )
 }
@@ -163,9 +212,9 @@ export default function AdminOverviewPage() {
           </div>
           <div className="text-right">
             <p className="text-[#c8941a] text-3xl font-bold tracking-tight">
-              {loading ? '—' : `${(data?.stats.totalSales || 0).toLocaleString()} EGP`}
+              {loading ? '—' : `${(data?.stats.deliveredRevenue || 0).toLocaleString()} EGP`}
             </p>
-            <p className="text-white/30 text-xs mt-1">{t('Total Sales', 'إجمالي المبيعات')}</p>
+            <p className="text-white/30 text-xs mt-1">{t('Collected Revenue', 'الإيرادات المحصلة')}</p>
             <p className="text-white/15 text-[10px] mt-0.5">{dateLabel}</p>
           </div>
         </div>
@@ -182,10 +231,27 @@ export default function AdminOverviewPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label={t('Total Sales', 'إجمالي المبيعات')}     value={`${(data?.stats.totalSales || 0).toLocaleString()} EGP`} change={data?.stats.salesChange || 0}     icon={TrendingUp}  t={t} />
-          <StatCard label={t('Total Orders', 'إجمالي الطلبات')}    value={String(data?.stats.totalOrders || 0)}                    change={data?.stats.ordersChange || 0}    icon={Package}     t={t} />
-          <StatCard label={t('Total Customers', 'إجمالي العملاء')} value={String(data?.stats.totalCustomers || 0)}                 change={data?.stats.customersChange || 0} icon={Users}       t={t} />
-          <StatCard label={t('Total Products', 'إجمالي المنتجات')} value={String(data?.stats.totalProducts || 0)}                  change={0}                                icon={ShoppingBag} t={t} />
+          <StatCard
+            label={t('Total Sales', 'إجمالي المبيعات')}
+            value={`${(data?.stats.deliveredRevenue || 0).toLocaleString()} EGP`}
+            change={data?.stats.salesChange || 0}
+            icon={CheckCircle2}
+            t={t}
+          />
+          <ActiveOrdersCard data={data!.stats.activeOrders} t={t} />
+          <StatCard
+            label={t('Total Customers', 'إجمالي العملاء')}
+            value={String(data?.stats.totalCustomers || 0)}
+            change={data?.stats.customersChange || 0}
+            icon={Users}
+            t={t}
+          />
+          <StatCard
+            label={t('Cancelled Orders', 'الطلبات الملغاة')}
+            value={String(data?.stats.cancelledOrders || 0)}
+            icon={XCircle}
+            t={t}
+          />
         </div>
       )}
 

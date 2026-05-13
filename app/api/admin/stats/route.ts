@@ -65,6 +65,30 @@ export async function GET() {
   const totalSales = revenueOrders.reduce((s, o) => s + Number(o.total || 0), 0)
   const totalOrders = allOrders.length
 
+  // Delivered revenue — money actually collected
+  const deliveredRevenue = allOrders
+    .filter(o => o.status === 'delivered')
+    .reduce((s, o) => s + Number(o.total || 0), 0)
+
+  // Active orders breakdown (confirmed / processing / shipped)
+  const activeOrders = {
+    confirmed:  { count: 0, total: 0 },
+    processing: { count: 0, total: 0 },
+    shipped:    { count: 0, total: 0 },
+    totalCount: 0,
+    totalAmount: 0,
+  }
+  allOrders.filter(o => ['confirmed', 'processing', 'shipped'].includes(o.status)).forEach(o => {
+    const s = o.status as 'confirmed' | 'processing' | 'shipped'
+    activeOrders[s].count++
+    activeOrders[s].total += Number(o.total || 0)
+    activeOrders.totalCount++
+    activeOrders.totalAmount += Number(o.total || 0)
+  })
+
+  // Cancelled orders count
+  const cancelledOrders = allOrders.filter(o => o.status === 'cancelled').length
+
   const currentSales = currentPeriodOrders.filter(o => REVENUE_STATUSES.includes(o.status)).reduce((s, o) => s + Number(o.total || 0), 0)
   const prevSales = prevPeriodOrders.filter(o => REVENUE_STATUSES.includes(o.status)).reduce((s, o) => s + Number(o.total || 0), 0)
   const salesChange = prevSales === 0 && currentSales === 0 ? 0 : prevSales === 0 ? 100 : Math.round(((currentSales - prevSales) / prevSales) * 100)
@@ -243,6 +267,9 @@ export async function GET() {
     data: {
       stats: {
         totalSales,
+        deliveredRevenue,
+        activeOrders,
+        cancelledOrders,
         totalOrders,
         totalCustomers,
         totalProducts,
