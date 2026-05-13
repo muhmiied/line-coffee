@@ -128,16 +128,9 @@
 
 @theme inline {
   --font-sans: var(--font-playfair), Georgia, 'Times New Roman', serif;
-
   --font-serif: var(--font-playfair), Georgia, 'Times New Roman', serif;
-
   --font-mono: 'Geist Mono', 'Cascadia Code', Consolas, monospace;
-
   --font-arabic-brand: var(--font-arabic), 'Segoe UI', Tahoma, Arial, sans-serif;
-}
-html[lang="ar"] body {
-  font-family: var(--font-arabic-brand);
-}
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -324,9 +317,6 @@ html[lang="ar"] body {
 
 /* Arabic font class */
 .font-arabic {
-  font-family: var(--font-arabic-brand);
-}
-html[lang="ar"] body {
   font-family: var(--font-arabic-brand);
 }
 
