@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowRight, Quote } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
 import { SectionReveal, FadeUp, ImageReveal, StaggerContainer, WordByWord, viewportConfig } from '@/components/ui/motion-primitives'
@@ -37,75 +36,123 @@ export function TestimonialsSection() {
   const { t, dir } = useLanguage()
 
   return (
-    <SectionReveal className="relative py-16 md:py-24 overflow-hidden">
-      {/* Glass/Crystal gradient background - smoother transitions */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FFDCC2] via-[#6b3200] to-[#FFF5ED]" />
-      <div className="absolute inset-0 bg-gradient-to-br from-[#522500]/90 via-[#6b3200]/95 to-[#4a2200]/90" />
-      <div className="absolute inset-0 bg-gradient-to-tl from-[#FFDCC2]/20 via-[#FFDCC2]/5 to-[#FFDCC2]/15" />
-      <div className="absolute inset-0 backdrop-blur-[1px]" />
-      {/* Top fade from cream */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#FFDCC2]/40 via-[#FFDCC2]/15 to-transparent" />
-      {/* Bottom fade to cream */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#FFF5ED]/40 via-[#FFDCC2]/15 to-transparent" />
-      {/* Crystal shine effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-[#FFDCC2]/15 via-transparent to-transparent" />
+    <SectionReveal className="relative py-20 md:py-32 overflow-hidden" style={{ background: '#0B0806' }}>
+
+      {/* Cinematic layered background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,_rgba(182,136,94,0.07)_0%,_transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,_rgba(182,136,94,0.04)_0%,_transparent_70%)]" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
+
       <div className="container mx-auto px-4 relative z-10">
+
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-12">
-          <FadeUp className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold max-w-md" style={{ color: '#FFDCC2' }}>
-            <WordByWord text={t('What Our Customers Say', 'ماذا يقول عملاؤنا')} />
-          </FadeUp>
-          
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-14">
+          <div className="max-w-lg">
+            <FadeUp>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
+                <span
+                  className="text-[11px] tracking-[0.24em] uppercase font-semibold"
+                  style={{ color: '#B6885E' }}
+                >
+                  {t('Testimonials', 'آراء العملاء')}
+                </span>
+              </div>
+            </FadeUp>
+            <FadeUp>
+              <h2
+                className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.1]"
+                style={{ color: '#F5E6D8' }}
+              >
+                <WordByWord text={t('What Our Customers Say', 'ماذا يقول عملاؤنا')} />
+              </h2>
+            </FadeUp>
+          </div>
+
           <FadeUp>
-            <Button 
-              asChild 
-              className="group bg-[#522500] hover:bg-[#3d1c00] text-[#FFDCC2] border-2 border-[#FFDCC2]/30 hover:border-[#FFDCC2]/50 font-semibold px-6 py-3 shadow-lg"
+            <Link
+              href="/products"
+              className="group inline-flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 self-start lg:self-auto"
+              style={{
+                background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
+                color: '#0B0806',
+                boxShadow: '0 4px 20px rgba(182,136,94,0.3)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(182,136,94,0.5)'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(182,136,94,0.3)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
             >
-              <Link href="/products">
-                {t('BROWSE OUR MENU', 'تصفح قائمتنا')}
-                <ArrowRight
-                  className={cn(
-                    'h-4 w-4 transition-transform group-hover:translate-x-1',
-                    dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
-                  )}
-                />
-              </Link>
-            </Button>
+              {t('BROWSE OUR MENU', 'تصفح قائمتنا')}
+              <ArrowRight
+                className={cn(
+                  'h-4 w-4 transition-transform group-hover:translate-x-1',
+                  dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
+                )}
+              />
+            </Link>
           </FadeUp>
         </div>
 
-        {/* Testimonials Grid - 3 tall photos */}
+        {/* Testimonials grid */}
         <StaggerContainer
           initial="hidden"
           whileInView="visible"
           viewport={viewportConfig}
-          className="grid md:grid-cols-3 gap-4 md:gap-6"
+          className="grid md:grid-cols-3 gap-4 md:gap-5"
         >
           {testimonials.map((testimonial, index) => (
-            <ImageReveal key={index} className="relative aspect-[3/4] rounded-xl overflow-hidden group">
+            <ImageReveal
+              key={index}
+              className="relative aspect-[3/4] rounded-2xl overflow-hidden group"
+              style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
+            >
               {/* Customer Photo */}
               <Image
                 src={testimonial.image}
                 alt={t(testimonial.nameEn, testimonial.nameAr)}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-              
-              {/* Quote at bottom */}
+
+              {/* Cinematic overlay stack */}
+              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/15 transition-colors duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/8 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/95 via-[#0B0806]/35 to-transparent" />
+              {/* Gold border on hover */}
+              <div className="absolute inset-0 rounded-2xl ring-0 group-hover:ring-1 ring-[#B6885E]/30 transition-all duration-500" />
+
+              {/* Quote content at bottom */}
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <p className="text-sm md:text-base mb-3 line-clamp-4" style={{ color: 'rgba(255, 220, 194, 0.9)' }}>
+                <Quote
+                  className="h-5 w-5 mb-3 opacity-60"
+                  style={{ color: '#B6885E' }}
+                />
+                <p
+                  className="text-sm md:text-[15px] mb-4 leading-relaxed line-clamp-4"
+                  style={{ color: 'rgba(245,230,216,0.88)' }}
+                >
                   {t(testimonial.quoteEn, testimonial.quoteAr)}
                 </p>
-                <p className="font-medium" style={{ color: '#FFDCC2' }}>
-                  {t(testimonial.nameEn, testimonial.nameAr)}
-                </p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-px flex-1"
+                    style={{ background: 'rgba(182,136,94,0.25)' }}
+                  />
+                  <p className="font-semibold text-sm" style={{ color: '#D6A373' }}>
+                    {t(testimonial.nameEn, testimonial.nameAr)}
+                  </p>
+                </div>
               </div>
             </ImageReveal>
           ))}
         </StaggerContainer>
+
       </div>
     </SectionReveal>
   )

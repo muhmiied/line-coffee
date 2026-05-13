@@ -54,7 +54,6 @@ export function HeroSection() {
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
-  // Auto-advance slides
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
@@ -62,17 +61,9 @@ export function HeroSection() {
     return () => clearInterval(timer)
   }, [])
 
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index)
-  }
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }
+  const goToSlide = (index: number) => setCurrentSlide(index)
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length)
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
 
   const headingText = t(slides[currentSlide].headingEn, slides[currentSlide].headingAr)
   const subheadingText = t(slides[currentSlide].subheadingEn, slides[currentSlide].subheadingAr)
@@ -80,23 +71,24 @@ export function HeroSection() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[100vh] flex items-center overflow-hidden -mt-20 md:-mt-24 pt-48 md:pt-56 bg-[#1a0a00]"
+      className="relative min-h-[110vh] flex items-center overflow-hidden -mt-20 md:-mt-24 pt-44 md:pt-52 pb-36 md:pb-44"
+      style={{ background: '#0B0806' }}
     >
-      {/* Decorative coffee bean - bottom left */}
-      <div className="pointer-events-none absolute bottom-6 left-6 z-20 text-white/35 drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
-        <svg viewBox="0 0 64 64" fill="currentColor" className="h-16 w-16 md:h-20 md:w-20 -rotate-12">
+      {/* ── Decorative coffee bean ── */}
+      <div className="pointer-events-none absolute bottom-6 left-6 z-20 opacity-20">
+        <svg viewBox="0 0 64 64" fill="#B6885E" className="h-16 w-16 md:h-20 md:w-20 -rotate-12">
           <path d="M31 6C18 10 10 23 15 35c5 13 19 22 31 18s18-18 12-30C53 11 42 4 31 6Zm2 8c8-2 17 4 20 12 3 9-1 19-10 22-8 3-18-3-21-12-3-8 2-19 11-22Z" />
         </svg>
       </div>
 
-      {/* Background Images with transition */}
+      {/* ── Slide backgrounds ── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
-          initial={{ opacity: 0, scale: 1.1 }}
+          initial={{ opacity: 0, scale: 1.08 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1.0, ease: 'easeOut' }}
           style={{ y }}
           className="absolute inset-0 z-0"
         >
@@ -107,48 +99,52 @@ export function HeroSection() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="absolute inset-0 brand-pattern-dark opacity-[0.07]" />
+
+          {/* Cinematic grading stack */}
+          {/* 1. Dark base overlay */}
+          <div className="absolute inset-0 bg-black/60" />
+          {/* 2. Warm brown tone cast — luxury cinema feel */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
+          {/* 3. Vignette */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
+          {/* 4. Bottom lift — keeps content readable */}
+          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
+          {/* 5. Top scrim */}
+          <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
+          {/* 6. Ambient gold glow — center warmth */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
+
+          <div className="absolute inset-0 brand-pattern-dark opacity-[0.08]" />
         </motion.div>
       </AnimatePresence>
 
-      {/* Content */}
-      <motion.div
-        style={{ opacity }}
-        className="container mx-auto px-4 relative z-10"
-      >
+      {/* ── Hero content ── */}
+      <motion.div style={{ opacity }} className="container mx-auto px-4 relative z-20">
         <div className="max-w-6xl text-center mx-auto">
-          {/* Stats - moved to top with animated counters */}
+
+          {/* Stats row */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-8 md:gap-12 mb-10"
+            className="flex flex-wrap justify-center gap-8 md:gap-16 mb-12"
           >
-            <div className="text-center">
-              <p className="font-serif text-2xl md:text-3xl font-bold text-[#FFDCC2]">
-                <AnimatedCounter value={15} suffix="+" />
-              </p>
-              <p className="text-xs md:text-sm text-white/70">
-                {t('Countries Sourced', 'دولة مصدر')}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="font-serif text-2xl md:text-3xl font-bold text-[#FFDCC2]">
-                <AnimatedCounter value={50} suffix="K+" />
-              </p>
-              <p className="text-xs md:text-sm text-white/70">
-                {t('Happy Customers', 'عميل سعيد')}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="font-serif text-2xl md:text-3xl font-bold text-[#FFDCC2]">
-                <AnimatedCounter value={100} suffix="%" />
-              </p>
-              <p className="text-xs md:text-sm text-white/70">
-                {t('Arabica Beans', 'حبوب أرابيكا')}
-              </p>
-            </div>
+            {[
+              { value: 15, suffix: '+', labelEn: 'Countries Sourced', labelAr: 'دولة مصدر' },
+              { value: 50, suffix: 'K+', labelEn: 'Happy Customers', labelAr: 'عميل سعيد' },
+              { value: 100, suffix: '%', labelEn: 'Arabica Beans', labelAr: 'حبوب أرابيكا' },
+            ].map((stat) => (
+              <div key={stat.labelEn} className="text-center">
+                <p className="font-serif text-2xl md:text-3xl font-bold" style={{ color: '#D6A373' }}>
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                </p>
+                <p className="text-xs md:text-sm mt-0.5" style={{ color: 'rgba(245,230,216,0.55)' }}>
+                  {t(stat.labelEn, stat.labelAr)}
+                </p>
+                {/* Thin gold underline */}
+                <div className="mx-auto mt-1.5 h-px w-8 bg-gradient-to-r from-transparent via-[#B6885E]/50 to-transparent" />
+              </div>
+            ))}
           </motion.div>
 
           {/* Headline */}
@@ -158,8 +154,12 @@ export function HeroSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="relative font-serif text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.02] mb-6 text-balance text-white drop-shadow-[0_3px_22px_rgba(0,0,0,0.55)]"
+              transition={{ duration: 0.35 }}
+              className="relative font-serif text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.02] mb-6 text-balance"
+              style={{
+                color: '#F5E6D8',
+                textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
+              }}
             >
               <WordByWord text={headingText} />
             </motion.h1>
@@ -173,85 +173,127 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5, delay: 0.55 }}
-              className="text-lg md:text-2xl text-white/85 mb-10 max-w-3xl mx-auto text-pretty drop-shadow-[0_2px_14px_rgba(0,0,0,0.45)]"
+              className="text-lg md:text-xl mb-10 max-w-2xl mx-auto text-pretty leading-relaxed"
+              style={{ color: 'rgba(214,183,154,0.85)' }}
             >
               {subheadingText}
             </motion.p>
           </AnimatePresence>
 
-          {/* CTAs - Elegant outlined style */}
+          {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.55 }}
             className="flex flex-col sm:flex-row justify-center gap-4"
           >
-            <Button 
-              size="lg" 
-              variant="outline"
-              asChild 
-              className="group border-2 border-white/80 text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-[#522500] transition-all duration-300"
+            {/* Primary — gold gradient */}
+            <Link
+              href="/products"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
+                color: '#0B0806',
+                boxShadow: '0 4px 24px rgba(182,136,94,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 8px 40px rgba(182,136,94,0.55), inset 0 1px 0 rgba(255,255,255,0.2)'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 24px rgba(182,136,94,0.35), inset 0 1px 0 rgba(255,255,255,0.15)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
             >
-              <Link href="/products">
-                {t('Shop Now', 'تسوق الآن')}
-                <ArrowRight
-                  className={cn(
-                    'h-4 w-4 transition-transform group-hover:translate-x-1',
-                    dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
-                  )}
-                />
-              </Link>
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              asChild
-              className="group border-2 border-[#522500] bg-[#522500] text-[#FFDCC2] hover:bg-[#3a1a00] hover:border-[#3a1a00] transition-all duration-300"
-            >
-              <Link href="/about">{t('Our Story', 'قصتنا')}</Link>
-            </Button>
-          </motion.div>
+              {t('Shop Now', 'تسوق الآن')}
+              <ArrowRight
+                className={cn(
+                  'h-4 w-4 transition-transform group-hover:translate-x-1',
+                  dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
+                )}
+              />
+            </Link>
 
+            {/* Secondary — ghost with gold border */}
+            <Link
+              href="/about"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
+              style={{
+                background: 'rgba(182,136,94,0.08)',
+                color: '#D6A373',
+                border: '1px solid rgba(182,136,94,0.35)',
+                backdropFilter: 'blur(8px)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(182,136,94,0.15)'
+                e.currentTarget.style.borderColor = 'rgba(182,136,94,0.6)'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(182,136,94,0.08)'
+                e.currentTarget.style.borderColor = 'rgba(182,136,94,0.35)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
+              {t('Our Story', 'قصتنا')}
+            </Link>
+          </motion.div>
 
         </div>
       </motion.div>
 
-      {/* Slide Navigation Arrows */}
+      {/* ── Slide nav arrows ── */}
       <div className="absolute inset-y-0 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
         <Button
           variant="ghost"
           size="icon"
           onClick={prevSlide}
-          className="pointer-events-auto h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/40 text-white"
+          className="pointer-events-auto h-11 w-11 rounded-full backdrop-blur-md text-white border transition-all duration-200"
+          style={{
+            background: 'rgba(24,18,13,0.55)',
+            borderColor: 'rgba(182,136,94,0.25)',
+          }}
         >
-          <ChevronLeft className={cn('h-6 w-6', dir === 'rtl' && 'rotate-180')} />
+          <ChevronLeft className={cn('h-5 w-5', dir === 'rtl' && 'rotate-180')} />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={nextSlide}
-          className="pointer-events-auto h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/40 text-white"
+          className="pointer-events-auto h-11 w-11 rounded-full backdrop-blur-md text-white border transition-all duration-200"
+          style={{
+            background: 'rgba(24,18,13,0.55)',
+            borderColor: 'rgba(182,136,94,0.25)',
+          }}
         >
-          <ChevronRight className={cn('h-6 w-6', dir === 'rtl' && 'rotate-180')} />
+          <ChevronRight className={cn('h-5 w-5', dir === 'rtl' && 'rotate-180')} />
         </Button>
       </div>
 
-      {/* Slide Indicators - moved to right side */}
+      {/* ── Slide indicators ── */}
       <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={cn(
-              'w-2 rounded-full transition-all duration-300',
-              currentSlide === index
-                ? 'h-8 bg-[#FFDCC2]'
-                : 'h-2 bg-white/30 hover:bg-white/50'
-            )}
+            className="rounded-full transition-all duration-400"
+            style={{
+              width: '6px',
+              height: currentSlide === index ? '32px' : '6px',
+              background: currentSlide === index
+                ? 'linear-gradient(180deg, #D6A373, #B6885E)'
+                : 'rgba(245,230,216,0.25)',
+            }}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>
+
+      {/* ── Bottom fade into next section ── */}
+      <div
+        className="absolute bottom-0 inset-x-0 h-32 pointer-events-none z-10"
+        style={{ background: 'linear-gradient(to top, #0B0806, transparent)' }}
+      />
     </section>
   )
 }

@@ -53,40 +53,74 @@ export function BenefitsSection() {
   ]
 
   return (
-    <section className="py-16 md:py-24">
-      <div className="container mx-auto px-4">
+    <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
+      {/* Ambient glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
+
+      <div className="container mx-auto px-4 relative z-10">
+
+        {/* Section label */}
+        <div className="text-center mb-14">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#B6885E]/60" />
+            <span
+              className="text-[11px] tracking-[0.24em] uppercase font-semibold"
+              style={{ color: '#B6885E' }}
+            >
+              {t('Why Line Coffee?', 'لماذا لاين كوفي؟')}
+            </span>
+            <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#B6885E]/60" />
+          </div>
+          <h2 className="font-serif text-2xl md:text-3xl font-bold" style={{ color: '#F5E6D8' }}>
+            {t('More Than Just Coffee', 'أكثر من مجرد قهوة')}
+          </h2>
+        </div>
+
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          variants={{
-            visible: {
-              transition: { staggerChildren: 0.1 },
-            },
-          }}
+          variants={{ visible: { transition: { staggerChildren: 0.09 } } }}
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
         >
           {benefits.map((benefit, index) => (
             <motion.div
               key={index}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
-              }}
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
               className="text-center group"
             >
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                <benefit.icon className="h-6 w-6" />
+              <div
+                className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 transition-all duration-400 group-hover:scale-110"
+                style={{
+                  background: 'rgba(182,136,94,0.08)',
+                  border: '1px solid rgba(182,136,94,0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(182,136,94,0.18)'
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(182,136,94,0.2)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(182,136,94,0.08)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              >
+                <benefit.icon className="h-5 w-5" strokeWidth={1.5} style={{ color: '#B6885E' }} />
               </div>
-              <h3 className="font-medium text-sm md:text-base mb-1">
+              <h3
+                className="font-semibold text-sm md:text-base mb-1.5 transition-colors duration-300 group-hover:text-[#D6A373]"
+                style={{ color: '#F5E6D8' }}
+              >
                 {t(benefit.titleEn, benefit.titleAr)}
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs leading-relaxed" style={{ color: 'rgba(183,155,133,0.65)' }}>
                 {t(benefit.descEn, benefit.descAr)}
               </p>
             </motion.div>
           ))}
         </motion.div>
+
       </div>
     </section>
   )

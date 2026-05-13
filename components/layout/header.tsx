@@ -76,22 +76,18 @@ export function Header() {
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
   const cartItemCount = isMounted ? getTotalItems() : 0
 
-  // Pages where header starts transparent and turns brown on scroll
   const isTransparentTop =
     pathname === '/' ||
     pathname === '/products' ||
     pathname.startsWith('/about') ||
     pathname.startsWith('/products/')
 
-  // Show brown glass background: always on non-transparent pages, or when scrolled
-  const showBrown = !isTransparentTop || isScrolled
+  const showGlass = !isTransparentTop || isScrolled
 
   const displayName =
     profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || null
 
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  useEffect(() => { setIsMounted(true) }, [])
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
@@ -99,17 +95,13 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false)
-  }, [pathname])
+  useEffect(() => { setIsMobileMenuOpen(false) }, [pathname])
 
   useEffect(() => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       const filtered = sampleProducts.filter(
-        (p) =>
-          p.name_en.toLowerCase().includes(query) ||
-          p.name_ar.includes(searchQuery)
+        (p) => p.name_en.toLowerCase().includes(query) || p.name_ar.includes(searchQuery)
       )
       setSearchResults(filtered)
     } else {
@@ -138,51 +130,49 @@ export function Header() {
     <>
       <header
         className={cn(
-          'w-full transition-all duration-[400ms] ease-in-out text-white relative',
-          !showBrown && 'bg-transparent',
-          showBrown && [
-            'backdrop-blur-[22px] saturate-150',
-            'border-b border-[#FFDCC2]/20',
-            'shadow-[0_4px_32px_rgba(82,37,0,0.22)]',
-          ]
+          'w-full transition-all duration-[400ms] ease-in-out text-white relative z-50',
+          !showGlass && 'bg-transparent',
         )}
-        style={
-          showBrown
-            ? {
-                background:
-                  'linear-gradient(135deg, rgba(255,220,194,0.22) 0%, rgba(255,220,194,0.07) 50%, transparent 100%), rgba(82,37,0,0.90)',
-              }
-            : undefined
-        }
+        style={showGlass ? {
+          background: 'rgba(10,7,5,0.82)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(182,136,94,0.12)',
+          boxShadow: '0 4px 32px rgba(0,0,0,0.4), 0 0 0 0 rgba(182,136,94,0)',
+        } : undefined}
       >
-        {/* Overlays */}
-        {showBrown ? (
+        {/* Overlay layers */}
+        {showGlass ? (
           <>
-            {/* Horizontal cream sweep */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FFDCC2]/[0.09] to-transparent pointer-events-none" />
-            {/* Top cream highlight line */}
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#FFDCC2]/55 to-transparent pointer-events-none" />
+            {/* Subtle gold sweep */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B6885E]/[0.04] to-transparent pointer-events-none" />
+            {/* Top gold line */}
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/30 to-transparent pointer-events-none" />
             {/* Inner top shimmer */}
-            <div className="absolute top-0 inset-x-0 h-[45%] bg-gradient-to-b from-[#FFDCC2]/[0.07] to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[40%] bg-gradient-to-b from-[#B6885E]/[0.04] to-transparent pointer-events-none" />
           </>
         ) : (
-          /* Dark scrim on transparent header — keeps white logo readable even if hero image fails */
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent pointer-events-none" />
+          /* Dark scrim on transparent header */
+          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/15 to-transparent pointer-events-none" />
         )}
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex items-center justify-between h-20 md:h-24 relative">
-            {/* Subtle bottom line on home transparent state */}
-            {!showBrown && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] md:w-[60%] h-[2px] bg-white/40 rounded-full" />
+
+            {/* Thin gold underline on transparent state */}
+            {!showGlass && (
+              <div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-px"
+                style={{ background: 'linear-gradient(to right, transparent, rgba(182,136,94,0.3), transparent)' }}
+              />
             )}
 
-            {/* Logo — always white since bg is always dark when visible */}
+            {/* Logo */}
             <Link href="/" className="flex items-center">
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="relative h-[3.5rem] w-[12rem] md:h-[4rem] md:w-[14rem]"
+                className="relative h-[4rem] w-[13rem] md:h-[4.5rem] md:w-[15rem]"
               >
                 <Image
                   src="/brand/logo-white.svg"
@@ -190,7 +180,8 @@ export function Header() {
                   fill
                   priority
                   unoptimized
-                  className="object-contain object-center drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]"
+                  className="object-contain object-center"
+                  style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5)) sepia(0.3) brightness(0.97)' }}
                 />
               </motion.div>
             </Link>
@@ -202,15 +193,18 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'relative text-base md:text-lg font-serif font-medium transition-colors drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]',
-                    pathname === link.href ? 'text-[#FFDCC2]' : 'text-white'
+                    'relative text-base font-serif font-medium transition-colors duration-200',
+                    pathname === link.href
+                      ? 'text-white'
+                      : 'text-white/70 hover:text-white'
                   )}
                 >
                   {t(link.labelEn, link.labelAr)}
                   {pathname === link.href && (
                     <motion.div
                       layoutId="activeNav"
-                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#FFDCC2] rounded-full"
+                      className="absolute -bottom-1 left-0 right-0 h-px rounded-full"
+                      style={{ background: 'linear-gradient(to right, #B6885E, #D6A373)' }}
                     />
                   )}
                 </Link>
@@ -218,22 +212,42 @@ export function Header() {
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+
               {/* Language */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="hidden md:flex items-center gap-1 px-2 text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                    className="hidden md:flex items-center gap-1 px-2 text-white/70 hover:text-white hover:bg-white/8"
                   >
                     <span className="text-sm">{language === 'en' ? 'EN' : 'AR'}</span>
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('ar')}>عربي</DropdownMenuItem>
+                <DropdownMenuContent
+                  align="end"
+                  style={{
+                    background: 'rgba(18,13,9,0.95)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(182,136,94,0.18)',
+                  }}
+                >
+                  <DropdownMenuItem
+                    onClick={() => setLanguage('en')}
+                    style={{ color: '#F5E6D8' }}
+                    className="focus:bg-[#B6885E]/15 focus:text-[#D6A373]"
+                  >
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLanguage('ar')}
+                    style={{ color: '#F5E6D8' }}
+                    className="focus:bg-[#B6885E]/15 focus:text-[#D6A373]"
+                  >
+                    عربي
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -243,9 +257,9 @@ export function Header() {
                   {isSearchOpen && (
                     <motion.div
                       initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: 280, opacity: 1 }}
+                      animate={{ width: 260, opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.28 }}
                       className="overflow-hidden"
                     >
                       <Input
@@ -254,16 +268,22 @@ export function Header() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         autoFocus
-                        className="bg-white/10 border-white/30 text-white placeholder:text-white/60 h-9 text-sm backdrop-blur-sm"
+                        className="h-9 text-sm"
+                        style={{
+                          background: 'rgba(182,136,94,0.08)',
+                          border: '1px solid rgba(182,136,94,0.25)',
+                          color: '#F5E6D8',
+                        }}
                       />
                     </motion.div>
                   )}
                 </AnimatePresence>
+
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className="text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                  className="text-white/70 hover:text-white hover:bg-white/8"
                   aria-label={t('Search', 'بحث')}
                 >
                   {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
@@ -272,10 +292,15 @@ export function Header() {
                 <AnimatePresence>
                   {isSearchOpen && (searchResults.length > 0 || searchQuery) && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full right-0 mt-2 w-80 bg-card rounded-lg shadow-xl border border-border overflow-hidden"
+                      exit={{ opacity: 0, y: 8 }}
+                      className="absolute top-full right-0 mt-2 w-72 rounded-xl shadow-2xl overflow-hidden"
+                      style={{
+                        background: 'rgba(18,13,9,0.96)',
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(182,136,94,0.18)',
+                      }}
                     >
                       {searchResults.length > 0 ? (
                         <div className="max-h-64 overflow-y-auto">
@@ -283,17 +308,17 @@ export function Header() {
                             <button
                               key={product.id}
                               onClick={() => handleSearchSelect(product.slug)}
-                              className="w-full px-4 py-3 text-left hover:bg-secondary/50 transition-colors flex items-center gap-3"
+                              className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors duration-150 hover:bg-[#B6885E]/10"
                             >
-                              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span className="text-sm">
+                              <Search className="h-3.5 w-3.5 shrink-0" style={{ color: '#B6885E' }} />
+                              <span className="text-sm" style={{ color: '#D6B79A' }}>
                                 {language === 'ar' ? product.name_ar : product.name_en}
                               </span>
                             </button>
                           ))}
                         </div>
                       ) : searchQuery ? (
-                        <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                        <div className="px-4 py-5 text-center text-sm" style={{ color: 'rgba(183,155,133,0.6)' }}>
                           {t('No products found', 'لا توجد منتجات')}
                         </div>
                       ) : null}
@@ -307,7 +332,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openWishlist}
-                className="hidden md:flex text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                className="hidden md:flex text-white/70 hover:text-white hover:bg-white/8"
                 aria-label={t('Wishlist', 'المفضلة')}
               >
                 <Heart className="h-5 w-5" />
@@ -318,7 +343,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openCart}
-                className="relative text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                className="relative text-white/70 hover:text-white hover:bg-white/8"
                 aria-label={t('Cart', 'السلة')}
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -326,7 +351,11 @@ export function Header() {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#FFDCC2] text-[#522500] text-xs flex items-center justify-center font-medium"
+                    className="absolute -top-1 -right-1 h-4.5 w-4.5 min-w-[1.1rem] rounded-full text-[10px] flex items-center justify-center font-bold px-1"
+                    style={{
+                      background: 'linear-gradient(135deg, #B6885E, #D6A373)',
+                      color: '#0B0806',
+                    }}
                   >
                     {cartItemCount > 99 ? '99+' : cartItemCount}
                   </motion.span>
@@ -340,23 +369,31 @@ export function Header() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="hidden md:flex items-center gap-1.5 px-2 max-w-[120px] text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                      className="hidden md:flex items-center gap-1.5 px-2 max-w-[120px] text-white/70 hover:text-white hover:bg-white/8"
                     >
                       <User className="h-4 w-4 shrink-0" />
                       <span className="text-sm truncate">{displayName}</span>
                       <ChevronDown className="h-3 w-3 shrink-0" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48"
+                    style={{
+                      background: 'rgba(18,13,9,0.96)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(182,136,94,0.18)',
+                    }}
+                  >
                     {isAdmin ? (
                       <>
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
                           <Link href="/dashboard/admin" className="flex items-center gap-2 cursor-pointer">
                             <LayoutDashboard className="h-4 w-4" />
                             {t('Dashboard', 'لوحة التحكم')}
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
                           <Link href="/" className="flex items-center gap-2 cursor-pointer">
                             <Globe className="h-4 w-4" />
                             {t('Website', 'الموقع')}
@@ -364,17 +401,17 @@ export function Header() {
                         </DropdownMenuItem>
                       </>
                     ) : (
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
                         <Link href="/dashboard/orders" className="flex items-center gap-2 cursor-pointer">
                           <Package className="h-4 w-4" />
                           {t('My Orders', 'أوردراتي')}
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator style={{ background: 'rgba(182,136,94,0.12)' }} />
                     <DropdownMenuItem
                       onSelect={() => void signOut()}
-                      className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
+                      className="flex items-center gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10"
                     >
                       <LogOut className="h-4 w-4" />
                       {t('Sign Out', 'تسجيل خروج')}
@@ -386,7 +423,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   asChild
-                  className="hidden md:flex text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                  className="hidden md:flex text-white/70 hover:text-white hover:bg-white/8"
                 >
                   <Link href="/auth/login" aria-label={t('Account', 'الحساب')}>
                     <User className="h-5 w-5" />
@@ -399,12 +436,13 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden text-white hover:bg-white/10 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                className="md:hidden text-white/70 hover:text-white hover:bg-white/8"
                 aria-label={t('Menu', 'القائمة')}
               >
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
+
           </div>
         </div>
       </header>
@@ -420,7 +458,8 @@ export function Header() {
             className="fixed inset-0 z-40 md:hidden"
           >
             <div
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+              className="absolute inset-0"
+              style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
               onClick={() => setIsMobileMenuOpen(false)}
             />
 
@@ -430,11 +469,18 @@ export function Header() {
               exit={{ x: language === 'ar' ? -300 : 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={cn(
-                'absolute top-16 bottom-0 w-72 bg-card border-border shadow-xl p-6 overflow-y-auto',
-                language === 'ar' ? 'left-0 border-r' : 'right-0 border-l'
+                'absolute top-16 bottom-0 w-72 shadow-2xl p-6 overflow-y-auto',
+                language === 'ar' ? 'left-0' : 'right-0'
               )}
+              style={{
+                background: 'rgba(15,10,7,0.97)',
+                backdropFilter: 'blur(20px)',
+                borderLeft: language !== 'ar' ? '1px solid rgba(182,136,94,0.15)' : undefined,
+                borderRight: language === 'ar' ? '1px solid rgba(182,136,94,0.15)' : undefined,
+              }}
             >
               <div className="flex flex-col gap-6">
+
                 {/* Mobile Search */}
                 <div className="relative">
                   <Input
@@ -442,18 +488,26 @@ export function Header() {
                     placeholder={t('Search products...', 'ابحث عن المنتجات...')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-secondary/50"
+                    style={{
+                      background: 'rgba(182,136,94,0.08)',
+                      border: '1px solid rgba(182,136,94,0.2)',
+                      color: '#F5E6D8',
+                    }}
                   />
                   {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-card rounded-lg shadow-lg border border-border max-h-48 overflow-y-auto z-10">
+                    <div
+                      className="absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10"
+                      style={{
+                        background: 'rgba(18,13,9,0.98)',
+                        border: '1px solid rgba(182,136,94,0.15)',
+                      }}
+                    >
                       {searchResults.map((product) => (
                         <button
                           key={product.id}
-                          onClick={() => {
-                            handleSearchSelect(product.slug)
-                            setIsMobileMenuOpen(false)
-                          }}
-                          className="w-full px-3 py-2 text-left hover:bg-secondary/50 transition-colors text-sm"
+                          onClick={() => { handleSearchSelect(product.slug); setIsMobileMenuOpen(false) }}
+                          className="w-full px-3 py-2.5 text-left text-sm transition-colors hover:bg-[#B6885E]/12"
+                          style={{ color: '#D6B79A' }}
                         >
                           {language === 'ar' ? product.name_ar : product.name_en}
                         </button>
@@ -463,19 +517,21 @@ export function Header() {
                 </div>
 
                 {/* Navigation Links */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
                   {navLinks.map((link, index) => (
                     <motion.div
                       key={link.href}
                       initial={{ opacity: 0, x: language === 'ar' ? -20 : 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.08 }}
                     >
                       <Link
                         href={link.href}
                         className={cn(
-                          'block text-lg font-medium py-2 transition-colors hover:text-primary',
-                          pathname === link.href ? 'text-primary' : 'text-foreground'
+                          'block text-base font-medium py-2.5 px-3 rounded-lg transition-colors duration-200',
+                          pathname === link.href
+                            ? 'text-[#D6A373] bg-[#B6885E]/10'
+                            : 'text-white/70 hover:text-white hover:bg-white/5'
                         )}
                       >
                         {t(link.labelEn, link.labelAr)}
@@ -484,64 +540,77 @@ export function Header() {
                   ))}
                 </div>
 
-                <div className="h-px bg-border" />
+                <div className="h-px" style={{ background: 'rgba(182,136,94,0.12)' }} />
 
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                   {displayName ? (
                     <>
                       <Link
                         href={isAdmin ? '/dashboard/admin' : '/dashboard/orders'}
-                        className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                       >
-                        {isAdmin ? (
-                          <LayoutDashboard className="h-5 w-5" />
-                        ) : (
-                          <Package className="h-5 w-5" />
-                        )}
-                        <span>
-                          {isAdmin
-                            ? t('Dashboard', 'لوحة التحكم')
-                            : t('My Orders', 'أوردراتي')}
+                        {isAdmin ? <LayoutDashboard className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+                        <span className="text-sm">
+                          {isAdmin ? t('Dashboard', 'لوحة التحكم') : t('My Orders', 'أوردراتي')}
                         </span>
                       </Link>
                       <button
                         onClick={() => { setIsMobileMenuOpen(false); void signOut() }}
-                        className="flex items-center gap-3 text-destructive hover:text-destructive transition-colors"
+                        className="flex items-center gap-3 py-2 px-3 rounded-lg text-red-400 hover:bg-red-500/8 transition-colors"
                       >
                         <LogOut className="h-5 w-5" />
-                        <span>{t('Sign Out', 'تسجيل خروج')}</span>
+                        <span className="text-sm">{t('Sign Out', 'تسجيل خروج')}</span>
                       </button>
                     </>
                   ) : (
                     <Link
                       href="/auth/login"
-                      className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                      className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                     >
                       <User className="h-5 w-5" />
-                      <span>{t('Sign In', 'تسجيل الدخول')}</span>
+                      <span className="text-sm">{t('Sign In', 'تسجيل الدخول')}</span>
                     </Link>
                   )}
                   <button
                     onClick={() => { openWishlist(); setIsMobileMenuOpen(false) }}
-                    className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                    className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                   >
                     <Heart className="h-5 w-5" />
-                    <span>{t('Wishlist', 'المفضلة')}</span>
+                    <span className="text-sm">{t('Wishlist', 'المفضلة')}</span>
                   </button>
                 </div>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      style={{
+                        background: 'rgba(182,136,94,0.08)',
+                        border: '1px solid rgba(182,136,94,0.2)',
+                        color: '#D6B79A',
+                      }}
+                    >
                       {language === 'en' ? 'English' : 'عربي'}
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-full">
-                    <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage('ar')}>عربي</DropdownMenuItem>
+                  <DropdownMenuContent
+                    className="w-full"
+                    style={{
+                      background: 'rgba(18,13,9,0.96)',
+                      border: '1px solid rgba(182,136,94,0.18)',
+                    }}
+                  >
+                    <DropdownMenuItem onClick={() => setLanguage('en')} style={{ color: '#D6B79A' }}>
+                      English
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ar')} style={{ color: '#D6B79A' }}>
+                      عربي
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
               </div>
             </motion.nav>
           </motion.div>

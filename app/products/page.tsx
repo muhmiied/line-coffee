@@ -745,11 +745,16 @@ function ProductsPageInner() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ background: '#0B0806' }}>
       {/* Hero Banner */}
-      <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24 bg-[#1a0a00]">
+      <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24" style={{ background: '#0B0806' }}>
         <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover" priority />
-        <div className="absolute inset-0 bg-foreground/60" />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.08)_0%,_transparent_70%)]" />
         <div className="relative z-10 text-center text-white px-4">
           <motion.h1 initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }}
             className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
@@ -773,9 +778,14 @@ function ProductsPageInner() {
                   <button type="button" key={cat.slug} onClick={() => handleCategoryChange(cat.slug)}
                     className={cn(
                       'w-full text-left px-4 py-3 rounded-xl transition-all duration-200 text-sm flex items-center gap-2',
-                      activeCategory === cat.slug ? 'bg-[#522500] text-white font-medium shadow-md scale-[1.02]' : 'text-foreground/80 hover:bg-secondary hover:text-foreground hover:scale-[1.01]',
+                      activeCategory === cat.slug ? 'font-medium scale-[1.02]' : 'text-foreground/80 hover:bg-secondary hover:text-foreground hover:scale-[1.01]',
                       (cat.isCustomizeBlend || cat.isCustomizeFlavor) && 'border-2 border-dashed border-primary/30'
-                    )}>
+                    )}
+                    style={activeCategory === cat.slug ? {
+                      background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
+                      color: '#0B0806',
+                      boxShadow: '0 4px 16px rgba(182,136,94,0.3)',
+                    } : undefined}>
                     {(cat.isCustomizeBlend || cat.isCustomizeFlavor) && <Sparkles className="w-4 h-4 shrink-0" />}
                     {language === 'ar' ? cat.nameAr : cat.nameEn}
                     {activeCategory === cat.slug && <ChevronRight className="w-4 h-4 ml-auto" />}
@@ -845,10 +855,10 @@ function ProductsPageInner() {
 export default function ProductsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen">
-        <div className="bg-primary text-primary-foreground py-12 md:py-16">
+      <div className="min-h-screen" style={{ background: '#0B0806' }}>
+        <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24" style={{ background: '#0F0A07' }}>
           <div className="container mx-auto px-4 text-center">
-            <div className="h-10 w-56 bg-white/15 rounded-lg mx-auto" />
+            <div className="h-10 w-56 rounded-lg mx-auto" style={{ background: 'rgba(182,136,94,0.1)' }} />
           </div>
         </div>
       </div>

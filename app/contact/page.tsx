@@ -17,10 +17,7 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
-    // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
     toast.success(t('Message sent successfully!', 'تم إرسال الرسالة بنجاح!'))
     setIsSubmitting(false)
     ;(e.target as HTMLFormElement).reset()
@@ -61,45 +58,74 @@ export default function ContactPage() {
   ]
 
   return (
-    <div className="min-h-screen py-12 md:py-24">
-      <div className="container mx-auto px-4">
-        {/* Header */}
+    <div className="min-h-screen" style={{ background: '#0B0806' }}>
+
+      {/* Cinematic background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_30%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
+      </div>
+
+      {/* Header */}
+      <div className="relative pt-32 md:pt-40 pb-12 md:pb-16 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
         >
-          <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#B6885E]/60" />
+            <p className="text-[11px] tracking-[0.28em] uppercase font-semibold" style={{ color: '#B6885E' }}>
+              {t('Get In Touch', 'تواصل معنا')}
+            </p>
+            <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#B6885E]/60" />
+          </div>
+          <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4" style={{ color: '#F5E6D8' }}>
             {t('Contact Us', 'تواصل معنا')}
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="max-w-2xl mx-auto px-4" style={{ color: 'rgba(183,155,133,0.72)' }}>
             {t(
               'Have a question or feedback? We would love to hear from you.',
               'لديك سؤال أو ملاحظة؟ يسعدنا سماعك.'
             )}
           </p>
         </motion.div>
+      </div>
 
+      {/* Content */}
+      <div className="container mx-auto px-4 pb-24 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12">
+
           {/* Contact Info */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="space-y-6"
+            className="space-y-4"
           >
             {contactInfo.map((item, index) => {
               const Icon = item.icon
               const content = (
-                <div className="flex items-start gap-4 p-6 bg-card rounded-xl border border-border">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="h-5 w-5 text-primary" />
+                <div
+                  className="flex items-start gap-4 p-5 rounded-xl transition-all duration-300"
+                  style={{
+                    background: 'rgba(24,18,13,0.7)',
+                    border: '1px solid rgba(182,136,94,0.15)',
+                    backdropFilter: 'blur(12px)',
+                  }}
+                >
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                    style={{
+                      background: 'rgba(182,136,94,0.1)',
+                      border: '1px solid rgba(182,136,94,0.22)',
+                    }}
+                  >
+                    <Icon className="h-4.5 w-4.5" style={{ color: '#B6885E' }} />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">
+                    <h3 className="font-medium mb-0.5" style={{ color: '#F5E6D8' }}>
                       {t(item.labelEn, item.labelAr)}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm" style={{ color: 'rgba(183,155,133,0.65)' }}>
                       {t(item.valueEn, item.valueAr)}
                     </p>
                   </div>
@@ -112,7 +138,7 @@ export default function ContactPage() {
                   href={item.href}
                   target={item.href.startsWith('http') ? '_blank' : undefined}
                   rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  className="block transition-transform hover:scale-[1.02]"
+                  className="block transition-transform hover:scale-[1.01]"
                 >
                   {content}
                 </a>
@@ -128,24 +154,38 @@ export default function ContactPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="bg-card rounded-xl border border-border p-6 md:p-8">
-              <h2 className="font-serif text-xl font-semibold mb-6">
+            <div
+              className="rounded-2xl p-6 md:p-8"
+              style={{
+                background: 'rgba(24,18,13,0.85)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(182,136,94,0.15)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.35)',
+              }}
+            >
+              <h2 className="font-serif text-xl font-semibold mb-6" style={{ color: '#F5E6D8' }}>
                 {t('Send us a Message', 'أرسل لنا رسالة')}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">
+                    <label className="text-sm font-medium mb-2 block" style={{ color: 'rgba(183,155,133,0.8)' }}>
                       {t('Name', 'الاسم')}
                     </label>
                     <Input
                       name="name"
                       required
                       placeholder={t('Your name', 'اسمك')}
+                      style={{
+                        background: 'rgba(182,136,94,0.07)',
+                        border: '1px solid rgba(182,136,94,0.18)',
+                        color: '#F5E6D8',
+                      }}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">
+                    <label className="text-sm font-medium mb-2 block" style={{ color: 'rgba(183,155,133,0.8)' }}>
                       {t('Email', 'البريد الإلكتروني')}
                     </label>
                     <Input
@@ -153,38 +193,59 @@ export default function ContactPage() {
                       type="email"
                       required
                       placeholder={t('your@email.com', 'بريدك@الإلكتروني.com')}
+                      style={{
+                        background: 'rgba(182,136,94,0.07)',
+                        border: '1px solid rgba(182,136,94,0.18)',
+                        color: '#F5E6D8',
+                      }}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
+                  <label className="text-sm font-medium mb-2 block" style={{ color: 'rgba(183,155,133,0.8)' }}>
                     {t('Subject', 'الموضوع')}
                   </label>
                   <Input
                     name="subject"
                     required
                     placeholder={t('How can we help?', 'كيف يمكننا مساعدتك؟')}
+                    style={{
+                      background: 'rgba(182,136,94,0.07)',
+                      border: '1px solid rgba(182,136,94,0.18)',
+                      color: '#F5E6D8',
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
+                  <label className="text-sm font-medium mb-2 block" style={{ color: 'rgba(183,155,133,0.8)' }}>
                     {t('Message', 'الرسالة')}
                   </label>
                   <Textarea
                     name="message"
                     required
                     rows={5}
+                    className="resize-none"
                     placeholder={t('Your message...', 'رسالتك...')}
+                    style={{
+                      background: 'rgba(182,136,94,0.07)',
+                      border: '1px solid rgba(182,136,94,0.18)',
+                      color: '#F5E6D8',
+                    }}
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full font-semibold tracking-wide transition-all duration-300"
                   size="lg"
                   disabled={isSubmitting}
+                  style={{
+                    background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
+                    color: '#0B0806',
+                    boxShadow: '0 4px 20px rgba(182,136,94,0.3)',
+                  }}
                 >
                   {isSubmitting ? (
-                    <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    <div className="h-5 w-5 border-2 border-[#0B0806]/40 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
@@ -195,6 +256,7 @@ export default function ContactPage() {
               </form>
             </div>
           </motion.div>
+
         </div>
       </div>
     </div>

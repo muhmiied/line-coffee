@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Leaf, Award, Heart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
 
@@ -31,7 +30,7 @@ export function StorySection() {
       icon: Award,
       titleEn: 'Expert Roasting',
       titleAr: 'تحميص احترافي',
-      descEn: 'Small-batch roasting by master roasters to bring out each bean\'s unique character.',
+      descEn: "Small-batch roasting by master roasters to bring out each bean's unique character.",
       descAr: 'تحميص بكميات صغيرة من قبل محمصين محترفين لإبراز الطابع الفريد لكل حبة.',
     },
     {
@@ -44,58 +43,68 @@ export function StorySection() {
   ]
 
   return (
-    <section ref={ref} className="relative py-24 md:py-32 overflow-hidden">
-      {/* Glass/Crystal gradient background - smoother transitions */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FFDCC2] via-[#6b3200] to-[#FFDCC2]" />
-      <div className="absolute inset-0 bg-gradient-to-br from-[#522500]/90 via-[#6b3200]/95 to-[#4a2200]/90" />
-      <div className="absolute inset-0 bg-gradient-to-tl from-[#FFDCC2]/20 via-[#FFDCC2]/5 to-[#FFDCC2]/15" />
-      <div className="absolute inset-0 backdrop-blur-[1px]" />
-      {/* Top fade from cream */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#FFDCC2]/40 via-[#FFDCC2]/15 to-transparent" />
-      {/* Bottom fade to cream */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#FFDCC2]/40 via-[#FFDCC2]/15 to-transparent" />
-      {/* Crystal shine effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#FFDCC2]/10 via-transparent to-transparent" />
-      {/* Background Image */}
+    <section ref={ref} className="relative py-24 md:py-36 overflow-hidden" style={{ background: '#0F0A07' }}>
+
+      {/* ── Cinematic background ── */}
+      {/* Parallax coffee farm image */}
       <div className="absolute inset-0">
         <motion.div style={{ y }} className="absolute inset-0">
           <Image
             src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80"
             alt="Coffee farm"
             fill
-            className="object-cover opacity-15"
+            className="object-cover opacity-10"
           />
         </motion.div>
+        {/* Dark cinematic overlay */}
+        <div className="absolute inset-0 bg-[#0F0A07]/80" />
+        {/* Warm radial glow — left side (content side) */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_20%_50%,_rgba(182,136,94,0.09)_0%,_transparent_70%)]" />
+        {/* Right image glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_80%_50%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
       </div>
 
+      {/* Gold edge lines */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
+
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Content */}
+        <div className="grid lg:grid-cols-2 gap-14 lg:gap-24 items-center">
+
+          {/* ── Content ── */}
           <motion.div
             initial={{ opacity: 0, x: dir === 'rtl' ? 50 : -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ color: '#FFDCC2' }}
+            transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <p className="font-medium mb-4" style={{ color: '#FFDCC2' }}>
-              {t('Our Story', 'قصتنا')}
-            </p>
-            <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-balance">
-              {t(
-                'From Distant Farms to Your Cup',
-                'من المزارع البعيدة إلى كوبك'
-              )}
+            {/* Label */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
+              <p
+                className="text-[11px] tracking-[0.24em] uppercase font-semibold"
+                style={{ color: '#B6885E' }}
+              >
+                {t('Our Story', 'قصتنا')}
+              </p>
+            </div>
+
+            <h2
+              className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-balance leading-[1.1]"
+              style={{ color: '#F5E6D8' }}
+            >
+              {t('From Distant Farms to Your Cup', 'من المزارع البعيدة إلى كوبك')}
             </h2>
-            <p className="text-primary-foreground/80 text-lg mb-8 text-pretty">
+
+            <p className="text-lg mb-10 text-pretty leading-relaxed" style={{ color: 'rgba(214,183,154,0.75)' }}>
               {t(
-                'Line Coffee began with a simple mission: to bring the world\'s finest coffee to Saudi Arabia. We travel to the most renowned coffee-growing regions, building lasting relationships with farmers who share our passion for exceptional quality.',
+                "Line Coffee began with a simple mission: to bring the world's finest coffee to Saudi Arabia. We travel to the most renowned coffee-growing regions, building lasting relationships with farmers who share our passion for exceptional quality.",
                 'بدأت لاين كوفي بمهمة بسيطة: جلب أفضل قهوة في العالم إلى المملكة العربية السعودية. نسافر إلى أشهر مناطق زراعة القهوة، نبني علاقات دائمة مع المزارعين الذين يشاركوننا شغفنا بالجودة الاستثنائية.'
               )}
             </p>
 
             {/* Values */}
-            <div className="space-y-6 mb-8">
+            <div className="space-y-7 mb-10">
               {values.map((value, index) => (
                 <motion.div
                   key={index}
@@ -103,16 +112,22 @@ export function StorySection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.15 }}
-                  className="flex gap-4"
+                  className="flex gap-4 group"
                 >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-[#FFDCC2] flex items-center justify-center">
-                    <value.icon className="h-5 w-5 text-[#FFDCC2]" />
+                  <div
+                    className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+                    style={{
+                      background: 'rgba(182,136,94,0.1)',
+                      border: '1px solid rgba(182,136,94,0.28)',
+                    }}
+                  >
+                    <value.icon className="h-4 w-4" style={{ color: '#B6885E' }} />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">
+                    <h3 className="font-semibold mb-1" style={{ color: '#F5E6D8' }}>
                       {t(value.titleEn, value.titleAr)}
                     </h3>
-                    <p className="text-primary-foreground/70 text-sm">
+                    <p className="text-sm leading-relaxed" style={{ color: 'rgba(183,155,133,0.7)' }}>
                       {t(value.descEn, value.descAr)}
                     </p>
                   </div>
@@ -120,63 +135,95 @@ export function StorySection() {
               ))}
             </div>
 
-            <Button variant="secondary" size="lg" asChild className="group">
-              <Link href="/about">
-                {t('Learn More About Us', 'تعرف علينا أكثر')}
-                <ArrowRight
-                  className={cn(
-                    'h-4 w-4 transition-transform group-hover:translate-x-1',
-                    dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
-                  )}
-                />
-              </Link>
-            </Button>
+            {/* CTA */}
+            <Link
+              href="/about"
+              className="group inline-flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
+              style={{
+                background: 'rgba(182,136,94,0.1)',
+                color: '#D6A373',
+                border: '1px solid rgba(182,136,94,0.3)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(182,136,94,0.18)'
+                e.currentTarget.style.borderColor = 'rgba(182,136,94,0.55)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(182,136,94,0.1)'
+                e.currentTarget.style.borderColor = 'rgba(182,136,94,0.3)'
+              }}
+            >
+              {t('Learn More About Us', 'تعرف علينا أكثر')}
+              <ArrowRight
+                className={cn(
+                  'h-4 w-4 transition-transform group-hover:translate-x-1',
+                  dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
+                )}
+              />
+            </Link>
           </motion.div>
 
-          {/* Images */}
+          {/* ── Image column ── */}
           <motion.div
             initial={{ opacity: 0, x: dir === 'rtl' ? -50 : 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative"
           >
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden">
+            <div
+              className="relative aspect-[4/5] rounded-2xl overflow-hidden"
+              style={{
+                boxShadow: '0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(182,136,94,0.12)',
+              }}
+            >
               <Image
                 src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80"
                 alt="Coffee preparation"
                 fill
                 className="object-cover"
               />
+              {/* Cinematic warm grade */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/10 to-transparent mix-blend-overlay" />
             </div>
-            {/* Floating Stats Card */}
+
+            {/* Floating stats card */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.88 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.35, duration: 0.5 }}
               className={cn(
-                'absolute -bottom-6 glass rounded-xl p-6 shadow-xl max-w-xs',
-                dir === 'rtl' ? '-right-4 md:-right-8' : '-left-4 md:-left-8'
+                'absolute -bottom-6 rounded-2xl p-5 shadow-2xl',
+                dir === 'rtl' ? '-right-4 md:-right-6' : '-left-4 md:-left-6'
               )}
+              style={{
+                background: 'rgba(24,18,13,0.92)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(182,136,94,0.2)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(182,136,94,0.15)',
+              }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-5">
                 <div className="text-center">
-                  <p className="font-serif text-3xl font-bold text-primary">10+</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-serif text-2xl font-bold" style={{ color: '#D6A373' }}>10+</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(183,155,133,0.65)' }}>
                     {t('Years of Excellence', 'سنوات من التميز')}
                   </p>
                 </div>
-                <div className="w-px h-12 bg-border" />
+                <div className="w-px h-10" style={{ background: 'rgba(182,136,94,0.2)' }} />
                 <div className="text-center">
-                  <p className="font-serif text-3xl font-bold text-primary">25+</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-serif text-2xl font-bold" style={{ color: '#D6A373' }}>25+</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(183,155,133,0.65)' }}>
                     {t('Farm Partners', 'شريك مزارع')}
                   </p>
                 </div>
               </div>
             </motion.div>
           </motion.div>
+
         </div>
       </div>
     </section>

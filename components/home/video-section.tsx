@@ -40,12 +40,17 @@ export function VideoSection() {
   }
 
   return (
-    <section ref={ref} className="relative py-24 md:py-32 overflow-hidden">
+    <section ref={ref} className="relative py-24 md:py-32 overflow-hidden" style={{ background: '#0B0806' }}>
+      {/* Ambient gold glow behind video */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
       <motion.div
         style={{ opacity, scale }}
-        className="container mx-auto px-4"
+        className="container mx-auto px-4 relative z-10"
       >
-        <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
+        <div
+          className="relative aspect-video rounded-2xl overflow-hidden"
+          style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(182,136,94,0.12)' }}
+        >
           {/* Video */}
           <video
             ref={videoRef}

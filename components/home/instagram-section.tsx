@@ -19,64 +19,75 @@ export function InstagramSection() {
   const { t } = useLanguage()
 
   return (
-    <SectionReveal className="py-16 md:py-24 bg-gradient-to-t from-secondary/50 via-background to-background">
-      <div className="container mx-auto px-4">
+    <SectionReveal className="relative py-16 md:py-24 overflow-hidden" style={{ background: '#0F0A07' }}>
+      {/* Ambient glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
+
+      <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="text-center mb-10">
-          <FadeUp className="text-primary font-medium mb-2">
-            @linecoffee.eg
+          <FadeUp>
+            <p className="text-[11px] tracking-[0.28em] uppercase font-semibold mb-2" style={{ color: '#B6885E' }}>
+              @linecoffee.eg
+            </p>
           </FadeUp>
-          <FadeUp className="font-serif text-3xl md:text-4xl font-bold mb-4">
+          <FadeUp className="font-serif text-3xl md:text-4xl font-bold mb-5" style={{ color: '#F5E6D8' }}>
             <WordByWord text={t('Follow Our Journey', 'تابع رحلتنا')} />
           </FadeUp>
-          <FadeUp className="flex items-center justify-center gap-4">
-            <a
-              href="https://instagram.com/linecoffee.eg"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Instagram className="h-5 w-5" />
-              <span className="text-sm">Instagram</span>
-            </a>
-            <a
-              href="https://facebook.com/linecoffee"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Facebook className="h-5 w-5" />
-              <span className="text-sm">Facebook</span>
-            </a>
+          <FadeUp className="flex items-center justify-center gap-5">
+            {[
+              { href: 'https://instagram.com/linecoffee.eg', Icon: Instagram, label: 'Instagram' },
+              { href: 'https://facebook.com/linecoffee', Icon: Facebook, label: 'Facebook' },
+            ].map(({ href, Icon, label }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm transition-colors duration-200 hover:text-[#D6A373]"
+                style={{ color: 'rgba(183,155,133,0.6)' }}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </a>
+            ))}
           </FadeUp>
         </div>
 
-        {/* Photos Grid - 6 square photos */}
+        {/* Photos Grid */}
         <StaggerContainer
           initial="hidden"
           whileInView="visible"
           viewport={viewportConfig}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3"
         >
           {instagramPhotos.map((photo, index) => (
-            <ImageReveal
-              key={index}
-            >
+            <ImageReveal key={index}>
               <motion.a
                 href="https://instagram.com/linecoffee.eg"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative block aspect-square rounded-lg overflow-hidden group cursor-pointer"
+                className="relative block aspect-square rounded-xl overflow-hidden group cursor-pointer"
+                style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
               >
                 <Image
                   src={photo}
                   alt={`Instagram photo ${index + 1}`}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="object-cover transition-transform duration-600 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/30 transition-colors duration-300 flex items-center justify-center">
-                  <Instagram className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Cinematic warm overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/8 to-transparent" />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-[#0B0806]/0 group-hover:bg-[#0B0806]/35 transition-colors duration-400 flex items-center justify-center">
+                  <Instagram
+                    className="h-7 w-7 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 drop-shadow-lg"
+                    style={{ filter: 'drop-shadow(0 0 8px rgba(182,136,94,0.5))' }}
+                  />
                 </div>
+                {/* Gold border on hover */}
+                <div className="absolute inset-0 rounded-xl ring-0 group-hover:ring-1 ring-[#B6885E]/35 transition-all duration-400" />
               </motion.a>
             </ImageReveal>
           ))}

@@ -68,23 +68,31 @@ export function CategoriesSection() {
   }, [])
 
   return (
-    <SectionReveal className="relative py-16 md:py-24 overflow-hidden">
-      {/* Glass/Crystal gradient background - cream tones */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#FFF5ED] via-[#FFDCC2]/60 to-[#FFE8D6]" />
-      <div className="absolute inset-0 bg-gradient-to-tl from-[#522500]/5 via-transparent to-[#522500]/3" />
-      <div className="absolute inset-0 backdrop-blur-[0.5px]" />
-      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white/20 to-transparent" />
-      {/* Crystal shine effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent" />
+    <SectionReveal className="relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
+
+      {/* Cinematic background layers */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,_rgba(182,136,94,0.08)_0%,_transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
+
       <div className="container mx-auto px-4 relative z-10">
+
         {/* Header */}
-        <div className="text-center mb-12">
-          <FadeUp className="text-primary font-medium mb-2">
-            {t('Browse by Category', 'تصفح حسب الفئة')}
+        <div className="text-center mb-14">
+          <FadeUp>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#B6885E]/60" />
+              <span className="text-[11px] tracking-[0.24em] uppercase font-semibold" style={{ color: '#B6885E' }}>
+                {t('Browse by Category', 'تصفح حسب الفئة')}
+              </span>
+              <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#B6885E]/60" />
+            </div>
           </FadeUp>
-          <FadeUp className="font-serif text-3xl md:text-4xl font-bold">
-            <WordByWord text={t('Shop by Category', 'تسوق حسب الفئة')} />
+          <FadeUp>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: '#F5E6D8' }}>
+              <WordByWord text={t('Shop by Category', 'تسوق حسب الفئة')} />
+            </h2>
           </FadeUp>
         </div>
 
@@ -94,7 +102,7 @@ export function CategoriesSection() {
             initial="hidden"
             whileInView="visible"
             viewport={viewportConfig}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4"
           >
             {categories.map((category) => (
               <ImageReveal key={category.slug}>
@@ -102,26 +110,40 @@ export function CategoriesSection() {
                   href={`/products?category=${category.slug}`}
                   className={cn(
                     'group relative block overflow-hidden rounded-xl aspect-[3/4]',
-                    category.isCustomize && 'ring-2 ring-primary ring-offset-2'
+                    'transition-all duration-500',
+                    category.isCustomize && 'ring-1 ring-[#B6885E]/50'
                   )}
+                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                 >
                   {/* Background Image */}
                   <Image
                     src={category.image}
                     alt={t(category.nameEn, category.nameAr)}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
 
-                  {/* Overlay */}
+                  {/* Cinematic overlay */}
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors duration-500" />
+                  {/* Warm tone cast */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/10 to-transparent" />
+                  {/* Bottom gradient */}
                   <div className={cn(
-                    'absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent',
-                    category.isCustomize && 'from-primary/90 via-primary/40'
+                    'absolute inset-0 bg-gradient-to-t from-[#0B0806]/92 via-[#0B0806]/30 to-transparent',
+                    category.isCustomize && 'from-[#1B0D05]/95 via-[#B6885E]/20'
                   )} />
+                  {/* Gold border on hover */}
+                  <div className="absolute inset-0 rounded-xl ring-0 group-hover:ring-1 ring-[#B6885E]/40 transition-all duration-400" />
 
                   {/* Customize Badge */}
                   {category.isCustomize && (
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white text-primary px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                    <div
+                      className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.15em] uppercase flex items-center gap-1"
+                      style={{
+                        background: 'linear-gradient(135deg, #B6885E, #D6A373)',
+                        color: '#0B0806',
+                      }}
+                    >
                       <Sparkles className="w-3 h-3" />
                       {t('NEW', 'جديد')}
                     </div>
@@ -129,14 +151,20 @@ export function CategoriesSection() {
 
                   {/* Content */}
                   <div className="absolute inset-0 flex flex-col justify-end p-4">
-                    <h3 className="font-serif text-base md:text-lg font-semibold text-white mb-1 text-center">
+                    <h3
+                      className="font-serif text-sm md:text-base font-semibold text-center mb-1.5 leading-snug"
+                      style={{ color: '#F5E6D8' }}
+                    >
                       {t(category.nameEn, category.nameAr)}
                     </h3>
-                    <div className="flex items-center justify-center gap-1 text-white/80 text-sm group-hover:text-white transition-colors">
+                    <div
+                      className="flex items-center justify-center gap-1 text-xs transition-all duration-300 group-hover:gap-2"
+                      style={{ color: 'rgba(214,163,115,0.75)' }}
+                    >
                       <span>{category.isCustomize ? t('Create Now', 'ابدأ الآن') : t('Explore', 'استكشف')}</span>
                       <ArrowRight
                         className={cn(
-                          'h-4 w-4 transition-transform group-hover:translate-x-1',
+                          'h-3.5 w-3.5 transition-transform group-hover:translate-x-1',
                           dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1'
                         )}
                       />
@@ -150,12 +178,17 @@ export function CategoriesSection() {
 
         {/* Skeleton while loading */}
         {!loaded && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4">
             {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] rounded-xl bg-primary/10 animate-pulse" />
+              <div
+                key={i}
+                className="aspect-[3/4] rounded-xl animate-pulse"
+                style={{ background: 'rgba(182,136,94,0.06)' }}
+              />
             ))}
           </div>
         )}
+
       </div>
     </SectionReveal>
   )

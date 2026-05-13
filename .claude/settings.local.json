@@ -54,7 +54,10 @@
       "Bash(Out-Null)",
       "Bash(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\track\")",
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\api\\\\orders\\\\track\")",
-      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\track\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\track\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Recurse -Directory)",
+      "Bash(Sort-Object)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?|css|json\\)$\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mohamed Sayed\\AppData\\Local\\Microsoft\\Windows\\Fonts"
