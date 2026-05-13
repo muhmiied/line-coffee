@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Alexandria, Inter, Playfair_Display } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { Suspense } from 'react'
@@ -18,28 +18,24 @@ import { DiscountBanner } from '@/components/ui/discount-banner'
 
 import './globals.css'
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'optional',
-  preload: true,
-  fallback: ['Segoe UI', 'Arial', 'sans-serif'],
-})
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
+const playfair = localFont({
+  src: [
+    { path: '../public/fonts/PlayfairDisplay-Regular.ttf',     weight: '400 500', style: 'normal' },
+    { path: '../public/fonts/PlayfairDisplay-Italic.ttf',      weight: '400 500', style: 'italic' },
+    { path: '../public/fonts/PlayfairDisplay-Bold.ttf',        weight: '600 800', style: 'normal' },
+    { path: '../public/fonts/PlayfairDisplay-BoldItalic.ttf',  weight: '600 800', style: 'italic' },
+    { path: '../public/fonts/PlayfairDisplay-Black.ttf',       weight: '900',     style: 'normal' },
+    { path: '../public/fonts/PlayfairDisplay-BlackItalic.ttf', weight: '900',     style: 'italic' },
+  ],
   variable: '--font-playfair',
-  display: 'optional',
-  weight: ['400', '500', '600', '700', '800', '900'],
-  preload: true,
+  display: 'swap',
   fallback: ['Georgia', 'Times New Roman', 'serif'],
 })
 
-const arabic = Alexandria({
-  subsets: ['arabic', 'latin'],
+const arabic = localFont({
+  src: '../public/fonts/vlax.otf',
   variable: '--font-arabic',
-  display: 'optional',
-  preload: true,
+  display: 'swap',
   fallback: ['Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
 })
 
@@ -89,7 +85,7 @@ export default async function RootLayout({
   const authState = await getInitialAuthState()
 
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${arabic.variable} bg-background`}>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={`${playfair.variable} ${arabic.variable} bg-background`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
