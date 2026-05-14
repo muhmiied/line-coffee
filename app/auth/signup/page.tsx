@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Coffee, User, Phone, MapPin, Link2 } from 'lucide-react'
+import Image from 'next/image'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone, MapPin, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -113,11 +114,15 @@ export default function SignupPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <Coffee className="h-8 w-8 text-primary" />
-            <span className="font-serif text-2xl font-bold">
-              <span className="text-primary">Line</span>
-              <span className="text-foreground ml-1">Coffee</span>
+          <Link href="/" className="inline-flex items-center justify-center mb-2">
+            <span className="relative block h-16 w-[148px]">
+              <Image
+                src="/brand/logo-white.svg"
+                alt="Line Coffee"
+                fill
+                unoptimized
+                className="object-contain"
+              />
             </span>
           </Link>
           <h1 className="font-serif text-2xl font-bold mt-6">
@@ -143,7 +148,7 @@ export default function SignupPage() {
                   placeholder={t('First name', 'الاسم الأول')}
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="pl-10"
+                  className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                   required
                 />
               </div>
@@ -157,6 +162,7 @@ export default function SignupPage() {
                 placeholder={t('Last name', 'الاسم الأخير')}
                 value={formData.lastName}
                 onChange={handleChange}
+                className="border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                 required
               />
             </div>
@@ -174,7 +180,7 @@ export default function SignupPage() {
                 placeholder={t('Enter your email', 'أدخل بريدك الإلكتروني')}
                 value={formData.email}
                 onChange={handleChange}
-                className="pl-10"
+                className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                 required
               />
             </div>
@@ -193,7 +199,7 @@ export default function SignupPage() {
                   placeholder={t('+20 100 000 0000', '+20 100 000 0000')}
                   value={formData.phone}
                   onChange={handleChange}
-                  className="pl-10"
+                  className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                   required
                 />
               </div>
@@ -207,6 +213,7 @@ export default function SignupPage() {
                 placeholder={t('+20 100 000 0000', '+20 100 000 0000')}
                 value={formData.whatsapp}
                 onChange={handleChange}
+                className="border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                 required
               />
             </div>
@@ -223,7 +230,7 @@ export default function SignupPage() {
                 placeholder={t('Enter your full address', 'أدخل عنوانك الكامل')}
                 value={formData.address}
                 onChange={handleChange}
-                className="pl-10 resize-none"
+                className="pl-10 resize-none border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                 rows={2}
                 required
               />
@@ -245,7 +252,7 @@ export default function SignupPage() {
                 placeholder={t('Google Maps link', 'رابط خرائط جوجل')}
                 value={formData.locationLink}
                 onChange={handleChange}
-                className="pl-10"
+                className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
               />
             </div>
           </div>
@@ -262,7 +269,7 @@ export default function SignupPage() {
                 placeholder={t('Create a password', 'أنشئ كلمة مرور')}
                 value={formData.password}
                 onChange={handleChange}
-                className="pl-10 pr-10"
+                className="pl-10 pr-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                 required
               />
               <button
@@ -287,7 +294,7 @@ export default function SignupPage() {
                 placeholder={t('Confirm your password', 'أكد كلمة المرور')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="pl-10"
+                className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
                 required
               />
             </div>
