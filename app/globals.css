@@ -12,8 +12,6 @@
    Ambient glow: rgba(182,136,94,0.25)
 ──────────────────────────────────────────────────────────────────────────── */
 
-/* Glow intensity master knob — set to 0 to kill all glow, 1 = full */
-:root { --glow-intensity: 1; }
 
 :root {
   /* ── Deep coffee black canvas ── */
@@ -218,27 +216,7 @@
     font-feature-settings: "kern";
   }
 
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background-image: url('/brand/pattern-gold.svg');
-    background-position: top right;
-    background-repeat: repeat;
-    background-size: min(46vw, 480px) auto;
-    opacity: 0.04;
-    mix-blend-mode: screen;
-    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.66));
-    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.66));
-  }
-
   @media (max-width: 767px) {
-    body::before {
-      background-size: 620px auto;
-      opacity: 0.032;
-    }
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -322,32 +300,6 @@
   font-family: var(--font-arabic-brand);
 }
 
-/* ── Brand pattern overlays ── */
-.brand-pattern-light {
-  background-image: url('/brand/pattern-light.svg');
-  background-repeat: repeat;
-  background-size: 520px 360px;
-}
-
-.brand-pattern-dark {
-  background-image: url('/brand/pattern-dark.svg');
-  background-repeat: repeat;
-  background-size: 960px 640px;
-}
-
-.brand-pattern-gold {
-  background-image: url('/brand/pattern-gold.svg');
-  background-repeat: repeat;
-  background-size: 503px 532px;
-}
-
-.brand-pattern-gold-footer {
-  background-image: url('/brand/pattern-gold.svg');
-  background-repeat: repeat;
-  background-size: 503px 532px;
-  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.15) 100%);
-  mask-image: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.15) 100%);
-}
 
 /* ── Glassmorphism — dark luxury ── */
 .glass {
@@ -382,19 +334,6 @@
     linear-gradient(90deg, transparent, rgba(214, 163, 115, 0.045), transparent);
 }
 
-.nav-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: url('/brand/pattern-gold.svg');
-  background-repeat: repeat;
-  background-size: 220px 232px;
-  opacity: 0.045;
-  mix-blend-mode: screen;
-  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.25) 100%);
-  mask-image: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.25) 100%);
-}
 
 .cinematic-section {
   position: relative;
@@ -514,54 +453,6 @@
   box-shadow: 0 0 8px rgba(200,155,94,0.5);
 }
 
-/* ── Header logo glow ─────────────────────────────────────────── */
-
-/* Register custom property so keyframes can interpolate it smoothly */
-@property --logo-glow-alpha {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 1;
-}
-
-/* Desktop: full 3-layer gold glow + gentle pulse */
-.logo-glow {
-  --logo-glow-alpha: 1;
-  filter:
-    drop-shadow(0 0 6px  rgba(182, 136, 94, calc(0.55 * var(--logo-glow-alpha) * var(--glow-intensity))))
-    drop-shadow(0 0 14px rgba(182, 136, 94, calc(0.35 * var(--logo-glow-alpha) * var(--glow-intensity))))
-    drop-shadow(0 0 28px rgba(182, 136, 94, calc(0.15 * var(--logo-glow-alpha) * var(--glow-intensity))));
-  animation: logo-glow-pulse 4s ease-in-out infinite;
-}
-
-@keyframes logo-glow-pulse {
-  0%, 100% { --logo-glow-alpha: 1;    }
-  50%       { --logo-glow-alpha: 0.75; }
-}
-
-/* Mobile: ~60 % intensity so it doesn't overpower small screens */
-@keyframes logo-glow-pulse-mobile {
-  0%, 100% { --logo-glow-alpha: 0.62; }
-  50%       { --logo-glow-alpha: 0.46; }
-}
-
-@media (max-width: 767px) {
-  .logo-glow { animation-name: logo-glow-pulse-mobile; }
-}
-
-/* Accessibility: freeze glow, skip motion */
-@media (prefers-reduced-motion: reduce) {
-  .logo-glow {
-    animation: none;
-    --logo-glow-alpha: 0.82;
-  }
-}
-
-/* Separator / divider lines in the header */
-.header-separator-glow {
-  box-shadow:
-    0 0 6px  rgba(182, 136, 94, calc(0.45 * var(--glow-intensity))),
-    0 0 14px rgba(182, 136, 94, calc(0.20 * var(--glow-intensity)));
-}
 
 .luxury-panel {
   background:

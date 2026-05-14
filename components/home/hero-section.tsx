@@ -114,7 +114,6 @@ export function HeroSection() {
           {/* 6. Ambient gold glow — center warmth */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
 
-          <div className="absolute inset-0 brand-pattern-gold opacity-[0.07]" />
         </motion.div>
       </AnimatePresence>
 

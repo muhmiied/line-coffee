@@ -202,7 +202,6 @@ export default function AdminOverviewPage() {
       {/* ── Welcome banner (logo card) ── */}
       <div className="relative rounded-2xl overflow-hidden border border-[#c8941a]/15">
         <div className="absolute inset-0 bg-gradient-to-r from-[#1a0900] via-[#120600] to-[#0a0300]" />
-        <div className="absolute inset-0 opacity-[0.05] bg-[url('/brand/pattern-gold.svg')] bg-repeat bg-center bg-[length:252px_266px]" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c8941a]/30 to-transparent" />
 
         <div className="relative flex items-center justify-between px-6 py-5">

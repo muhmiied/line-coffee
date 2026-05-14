@@ -35,7 +35,6 @@ export function BestSellersSection() {
     <section className="cinematic-section relative py-20 md:py-28 overflow-hidden bg-[#0d0600]">
 
       {/* Ambient warm glow — center depth */}
-      <div className="absolute inset-0 brand-pattern-gold opacity-[0.05] pointer-events-none" aria-hidden />
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[360px] rounded-full bg-[#3d1800]/25 blur-[80px]" />
       </div>

@@ -130,8 +130,6 @@ function CinematicLoader() {
         transition={{ duration: totalSec * 0.85, ease: 'easeInOut' }}
       />
 
-      {/* Gold brand pattern at 6% */}
-      <div className="absolute inset-0 brand-pattern-gold loader-pattern-overlay pointer-events-none" />
 
       {/* Top warm ceiling */}
       <div className="absolute top-0 inset-x-0 h-[32%] loader-top-ambient pointer-events-none" />

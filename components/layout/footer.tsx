@@ -41,7 +41,6 @@ export function Footer() {
       {/* Cinematic layered background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/25 to-transparent" />
-      <div className="absolute inset-0 brand-pattern-gold-footer opacity-[0.055] pointer-events-none" />
 
       <div className="relative z-10">
 
@@ -55,12 +54,11 @@ export function Footer() {
                 <span className="sr-only">Line Coffee</span>
                 <span className="relative block h-20 w-64 md:h-24 md:w-72">
                   <Image
-                    src="/brand/logo-colored.svg"
+                    src="/brand/logo-white.svg"
                     alt="Line Coffee"
                     fill
                     unoptimized
                     className="object-contain object-left"
-                    style={{ filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.45))' }}
                   />
                 </span>
               </Link>
