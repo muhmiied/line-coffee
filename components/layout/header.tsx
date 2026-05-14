@@ -140,7 +140,7 @@ export function Header() {
             {/* Subtle gold sweep */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B6885E]/[0.04] to-transparent pointer-events-none" />
             {/* Top gold line */}
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/30 to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/30 to-transparent pointer-events-none header-separator-glow" />
             {/* Inner top shimmer */}
             <div className="absolute top-0 inset-x-0 h-[40%] bg-gradient-to-b from-[#B6885E]/[0.04] to-transparent pointer-events-none" />
           </>
@@ -155,7 +155,7 @@ export function Header() {
             {/* Thin gold underline on transparent state */}
             {!showGlass && (
               <div
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-px"
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-px header-separator-glow"
                 style={{ background: 'linear-gradient(to right, transparent, rgba(182,136,94,0.3), transparent)' }}
               />
             )}
@@ -168,13 +168,12 @@ export function Header() {
                 className="relative h-[4.5rem] w-[13rem] md:h-20 md:w-[15rem]"
               >
                 <Image
-                  src="/brand/logo-white.svg"
+                  src="/brand/logo-colored.svg"
                   alt="Line Coffee"
                   fill
                   priority
                   unoptimized
-                  className="object-contain object-center"
-                  style={{ filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.58)) brightness(1.08) contrast(1.02)' }}
+                  className="object-contain object-center logo-glow"
                 />
               </motion.div>
             </Link>

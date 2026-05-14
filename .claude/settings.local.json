@@ -57,7 +57,11 @@
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\track\")",
       "Bash(Get-ChildItem -Path \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\" -Recurse -Directory)",
       "Bash(Sort-Object)",
-      "Bash(grep -E \"\\\\.\\(tsx?|jsx?|css|json\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?|css|json\\)$\")",
+      "Bash(Get-Content \"C:\\\\Users\\\\Mohamed Sayed\\\\.claude\\\\projects\\\\d--Graphic-LINE-COFFEE-New-folder-LINE-COFFEE-1\\\\d91ef5ce-3c68-4ee2-911c-a295e7eaed37.jsonl\")",
+      "Bash(Select-String -Pattern \"Colored Main|Dark Premium|Pure Black|Alternate Brown|White\\\\.svg|viewBox.*709\")",
+      "Bash(Select-Object -First 20)",
+      "PowerShell($p = \"C:\\\\Users\\\\Mohamed Sayed\\\\.claude\\\\projects\\\\d--Graphic-LINE-COFFEE-New-folder-LINE-COFFEE-1\\\\d91ef5ce-3c68-4ee2-911c-a295e7eaed37.jsonl\"; $lines = Get-Content $p -Encoding UTF8; for \\($i=226; $i -lt $lines.Count; $i++\\) { $l=$lines[$i]; if \\($l.Length -gt 2000\\) { Write-Host \"i=$i len=$\\($l.Length\\)\" } })"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mohamed Sayed\\AppData\\Local\\Microsoft\\Windows\\Fonts"

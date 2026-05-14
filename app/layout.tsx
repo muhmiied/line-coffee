@@ -1,14 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
+import { Cairo } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
-import { Suspense } from 'react'
 import { LanguageProvider } from '@/lib/context/language'
 import { AuthProvider } from '@/lib/context/auth'
 import { getInitialAuthState } from '@/lib/auth/session'
 import { StickyTopBar } from '@/components/layout/sticky-top-bar'
 import { Footer } from '@/components/layout/footer'
-import { PageLoader } from '@/components/layout/page-loader'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { WishlistDrawer } from '@/components/wishlist/wishlist-drawer'
 import { WhatsAppButton } from '@/components/ui/whatsapp-button'
@@ -20,23 +19,23 @@ import './globals.css'
 
 const playfair = localFont({
   src: [
-    { path: '../public/fonts/PlayfairDisplay-Regular.ttf',     weight: '400 500', style: 'normal' },
-    { path: '../public/fonts/PlayfairDisplay-Italic.ttf',      weight: '400 500', style: 'italic' },
-    { path: '../public/fonts/PlayfairDisplay-Bold.ttf',        weight: '600 800', style: 'normal' },
-    { path: '../public/fonts/PlayfairDisplay-BoldItalic.ttf',  weight: '600 800', style: 'italic' },
-    { path: '../public/fonts/PlayfairDisplay-Black.ttf',       weight: '900',     style: 'normal' },
-    { path: '../public/fonts/PlayfairDisplay-BlackItalic.ttf', weight: '900',     style: 'italic' },
+    { path: '../public/fonts/PlayfairDisplay-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/PlayfairDisplay-Italic.ttf', weight: '400', style: 'italic' },
+    { path: '../public/fonts/PlayfairDisplay-Bold.ttf', weight: '700', style: 'normal' },
+    { path: '../public/fonts/PlayfairDisplay-BoldItalic.ttf', weight: '700', style: 'italic' },
+    { path: '../public/fonts/PlayfairDisplay-Black.ttf', weight: '900', style: 'normal' },
+    { path: '../public/fonts/PlayfairDisplay-BlackItalic.ttf', weight: '900', style: 'italic' },
   ],
   variable: '--font-playfair',
   display: 'swap',
   fallback: ['Georgia', 'Times New Roman', 'serif'],
 })
 
-const arabic = localFont({
-  src: '../public/fonts/vlax.otf',
-  variable: '--font-arabic',
+const cairo = Cairo({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-cairo',
   display: 'swap',
-  fallback: ['Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
 })
 
 export const metadata: Metadata = {
@@ -85,7 +84,7 @@ export default async function RootLayout({
   const authState = await getInitialAuthState()
 
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning className={`${playfair.variable} ${arabic.variable} bg-background`}>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={`${playfair.variable} ${cairo.variable} bg-background`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -101,9 +100,6 @@ export default async function RootLayout({
             isSupabaseConfigured={authState.isSupabaseConfigured}
           >
             <ScrollProgress />
-            <Suspense fallback={null}>
-              <PageLoader />
-            </Suspense>
             <StickyTopBar />
             <main className="flex-1 w-full pt-20 md:pt-24">{children}</main>
             <Footer />

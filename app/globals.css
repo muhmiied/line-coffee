@@ -12,6 +12,9 @@
    Ambient glow: rgba(182,136,94,0.25)
 ──────────────────────────────────────────────────────────────────────────── */
 
+/* Glow intensity master knob — set to 0 to kill all glow, 1 = full */
+:root { --glow-intensity: 1; }
+
 :root {
   /* ── Deep coffee black canvas ── */
   --background: 20 30% 3%;
@@ -129,11 +132,10 @@
 @theme inline {
   --font-sans: var(--font-playfair), Georgia, 'Times New Roman', serif;
   --font-serif: var(--font-playfair), Georgia, 'Times New Roman', serif;
-  --font-mono: 'Geist Mono', 'Cascadia Code', Consolas, monospace;
-  --font-arabic-brand: var(--font-arabic), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-arabic-brand: var(--font-cairo), 'Segoe UI', Tahoma, sans-serif;
 
   --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+  --color-foreground: hsl(var(--foreground)); 
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--popover));
@@ -222,11 +224,11 @@
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    background-image: url('/brand/pattern-dark.svg');
+    background-image: url('/brand/pattern-gold.svg');
     background-position: top right;
     background-repeat: repeat;
-    background-size: min(92vw, 960px) auto;
-    opacity: 0.045;
+    background-size: min(46vw, 480px) auto;
+    opacity: 0.04;
     mix-blend-mode: screen;
     mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.66));
     -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.66));
@@ -333,6 +335,20 @@
   background-size: 960px 640px;
 }
 
+.brand-pattern-gold {
+  background-image: url('/brand/pattern-gold.svg');
+  background-repeat: repeat;
+  background-size: 503px 532px;
+}
+
+.brand-pattern-gold-footer {
+  background-image: url('/brand/pattern-gold.svg');
+  background-repeat: repeat;
+  background-size: 503px 532px;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.15) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.15) 100%);
+}
+
 /* ── Glassmorphism — dark luxury ── */
 .glass {
   background: rgba(18, 13, 9, 0.78);
@@ -366,6 +382,20 @@
     linear-gradient(90deg, transparent, rgba(214, 163, 115, 0.045), transparent);
 }
 
+.nav-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('/brand/pattern-gold.svg');
+  background-repeat: repeat;
+  background-size: 220px 232px;
+  opacity: 0.045;
+  mix-blend-mode: screen;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.25) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.25) 100%);
+}
+
 .cinematic-section {
   position: relative;
   overflow: hidden;
@@ -397,6 +427,140 @@
   height: 24rem;
   background: radial-gradient(circle, rgba(182, 136, 94, 0.08), transparent 68%);
   filter: blur(2px);
+}
+
+/* ── Page Loader ─────────────────────────────────────────────────── */
+
+/* Steam wisp */
+.loader-steam-wisp {
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  filter: blur(3.5px);
+  transform-origin: bottom center;
+}
+.loader-steam-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(to top, rgba(200,155,94,0.55) 0%, rgba(210,170,110,0.2) 55%, transparent 100%);
+}
+
+/* Cinematic loader layers */
+.loader-espresso-bg   { background: #0D0603; }
+.loader-vignette      { background: radial-gradient(ellipse 72% 72% at 50% 50%, transparent 28%, rgba(0,0,0,0.75) 100%); }
+.loader-top-ambient   { background: linear-gradient(180deg, rgba(28,10,2,0.45) 0%, transparent 100%); }
+.loader-bottom-ambient{ background: linear-gradient(to top, rgba(28,10,2,0.4), transparent); }
+
+.loader-center-glow {
+  top: 44%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 540px;
+  height: 210px;
+  border-radius: 50%;
+  background: rgba(88,36,6,0.22);
+  filter: blur(72px);
+}
+.loader-pattern-overlay {
+  opacity: 0.06;
+  mix-blend-mode: screen;
+}
+.loader-logo-glow {
+  inset: -10px;
+  border-radius: 16px;
+  background: rgba(182,106,44,0.15);
+  filter: blur(30px);
+}
+
+/* Gold rule divider */
+.loader-gold-rule {
+  margin-top: 22px;
+  width: 38px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,155,94,0.5), transparent);
+}
+/* Tagline */
+.loader-tagline {
+  margin-top: 11px;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: rgba(200,155,94,0.4);
+}
+
+/* Progress line */
+.loader-progress-track {
+  height: 1px;
+  background: rgba(200,155,94,0.07);
+}
+.loader-progress-fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  background: linear-gradient(90deg, transparent 0%, rgba(200,155,94,0.55) 15%, #C89B5E 38%, #D6A373 50%, #C89B5E 62%, rgba(200,155,94,0.55) 85%, transparent 100%);
+  box-shadow: 0 0 12px rgba(200,155,94,0.52), 0 0 4px rgba(200,155,94,0.75);
+}
+
+/* Nav progress bar */
+.loader-nav-track {
+  height: 2px;
+  background: rgba(200,155,94,0.06);
+}
+.loader-nav-fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  background: linear-gradient(90deg, transparent, #C89B5E 30%, #D6A373 50%, #C89B5E 70%, transparent);
+  box-shadow: 0 0 8px rgba(200,155,94,0.5);
+}
+
+/* ── Header logo glow ─────────────────────────────────────────── */
+
+/* Register custom property so keyframes can interpolate it smoothly */
+@property --logo-glow-alpha {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+/* Desktop: full 3-layer gold glow + gentle pulse */
+.logo-glow {
+  --logo-glow-alpha: 1;
+  filter:
+    drop-shadow(0 0 6px  rgba(182, 136, 94, calc(0.55 * var(--logo-glow-alpha) * var(--glow-intensity))))
+    drop-shadow(0 0 14px rgba(182, 136, 94, calc(0.35 * var(--logo-glow-alpha) * var(--glow-intensity))))
+    drop-shadow(0 0 28px rgba(182, 136, 94, calc(0.15 * var(--logo-glow-alpha) * var(--glow-intensity))));
+  animation: logo-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% { --logo-glow-alpha: 1;    }
+  50%       { --logo-glow-alpha: 0.75; }
+}
+
+/* Mobile: ~60 % intensity so it doesn't overpower small screens */
+@keyframes logo-glow-pulse-mobile {
+  0%, 100% { --logo-glow-alpha: 0.62; }
+  50%       { --logo-glow-alpha: 0.46; }
+}
+
+@media (max-width: 767px) {
+  .logo-glow { animation-name: logo-glow-pulse-mobile; }
+}
+
+/* Accessibility: freeze glow, skip motion */
+@media (prefers-reduced-motion: reduce) {
+  .logo-glow {
+    animation: none;
+    --logo-glow-alpha: 0.82;
+  }
+}
+
+/* Separator / divider lines in the header */
+.header-separator-glow {
+  box-shadow:
+    0 0 6px  rgba(182, 136, 94, calc(0.45 * var(--glow-intensity))),
+    0 0 14px rgba(182, 136, 94, calc(0.20 * var(--glow-intensity)));
 }
 
 .luxury-panel {

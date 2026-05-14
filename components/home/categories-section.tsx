@@ -73,6 +73,7 @@ export function CategoriesSection() {
       {/* Cinematic background layers */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,_rgba(182,136,94,0.08)_0%,_transparent_70%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
+      <div className="absolute inset-0 brand-pattern-gold opacity-[0.055] pointer-events-none" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
       <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
 
