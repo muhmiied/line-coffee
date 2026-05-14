@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/lib/context/language'
 import { SectionReveal, FadeUp, StaggerContainer, WordByWord } from '@/components/ui/motion-primitives'
 import { WHATSAPP_ORDER_PHONE_E164, WHATSAPP_DISPLAY, CONTACT_EMAIL } from '@/lib/config/site'
+import { toast } from 'sonner'
 
 const contactItems = [
   {
@@ -45,6 +47,50 @@ const contactItems = [
 
 export function ContactSection() {
   const { t } = useLanguage()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    const payload = {
+      name: String(formData.get('name') || '').trim(),
+      email: String(formData.get('email') || '').trim(),
+      subject: String(formData.get('subject') || '').trim(),
+      message: String(formData.get('message') || '').trim(),
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to send message')
+      }
+
+      if (result.whatsapp_url) {
+        const opened = window.open(result.whatsapp_url, '_blank', 'noopener,noreferrer')
+        if (!opened) window.location.href = result.whatsapp_url
+        toast.success(t('Message saved. Opening WhatsApp...', 'تم حفظ الرسالة. جاري فتح واتساب...'))
+      } else {
+        toast.warning(t(
+          'Message saved, but WhatsApp is not configured.',
+          'تم حفظ الرسالة، لكن واتساب غير مفعّل.'
+        ))
+      }
+
+      form.reset()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('Failed to send message', 'فشل إرسال الرسالة'))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <SectionReveal className="cinematic-section relative py-20 md:py-28 overflow-hidden" style={{ background: '#0B0806' }}>
@@ -124,20 +170,12 @@ export function ContactSection() {
               </h3>
               <form
                 className="space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const fd = new FormData(e.currentTarget)
-                  const name = fd.get('name') as string
-                  const emailVal = fd.get('email') as string
-                  const subject = fd.get('subject') as string
-                  const message = fd.get('message') as string
-                  const text = `رسالة من الموقع:\nالاسم: ${name}\nالإيميل: ${emailVal}\nالموضوع: ${subject}\nالرسالة: ${message}`
-                  window.open(`https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
-                }}
+                onSubmit={handleSubmit}
               >
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Input
                     name="name"
+                    required
                     placeholder={t('Your Name', 'اسمك')}
                     style={{
                       background: 'rgba(182,136,94,0.07)',
@@ -148,6 +186,7 @@ export function ContactSection() {
                   <Input
                     name="email"
                     type="email"
+                    required
                     placeholder={t('Your Email', 'بريدك الإلكتروني')}
                     style={{
                       background: 'rgba(182,136,94,0.07)',
@@ -158,6 +197,7 @@ export function ContactSection() {
                 </div>
                 <Input
                   name="subject"
+                  required
                   placeholder={t('Subject', 'الموضوع')}
                   style={{
                     background: 'rgba(182,136,94,0.07)',
@@ -167,6 +207,7 @@ export function ContactSection() {
                 />
                 <Textarea
                   name="message"
+                  required
                   placeholder={t('Your Message', 'رسالتك')}
                   rows={5}
                   className="resize-none"
@@ -180,8 +221,9 @@ export function ContactSection() {
                   type="submit"
                   className="premium-button w-full rounded-full font-semibold tracking-wide"
                   size="lg"
+                  disabled={isSubmitting}
                 >
-                  {t('Send Message', 'إرسال الرسالة')}
+                  {isSubmitting ? t('Sending...', 'جارٍ الإرسال...') : t('Send Message', 'إرسال الرسالة')}
                 </Button>
               </form>
             </div>

@@ -16,11 +16,45 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    const payload = {
+      name: String(formData.get('name') || '').trim(),
+      email: String(formData.get('email') || '').trim(),
+      subject: String(formData.get('subject') || '').trim(),
+      message: String(formData.get('message') || '').trim(),
+    }
+
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    toast.success(t('Message sent successfully!', 'تم إرسال الرسالة بنجاح!'))
-    setIsSubmitting(false)
-    ;(e.target as HTMLFormElement).reset()
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to send message')
+      }
+
+      if (result.whatsapp_url) {
+        const opened = window.open(result.whatsapp_url, '_blank', 'noopener,noreferrer')
+        if (!opened) window.location.href = result.whatsapp_url
+        toast.success(t('Message saved. Opening WhatsApp...', 'تم حفظ الرسالة. جاري فتح واتساب...'))
+      } else {
+        toast.warning(t(
+          'Message saved, but WhatsApp is not configured.',
+          'تم حفظ الرسالة، لكن واتساب غير مفعّل.'
+        ))
+      }
+
+      form.reset()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('Failed to send message', 'فشل إرسال الرسالة'))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const contactInfo = [

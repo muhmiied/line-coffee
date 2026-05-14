@@ -27,6 +27,7 @@ import {
   Globe,
   Coffee,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react'
 
 const nav = [
@@ -37,6 +38,7 @@ const nav = [
   { href: '/dashboard/admin/coffee-beans', labelEn: 'Coffee Beans',  labelAr: 'أنواع القهوة',     icon: Coffee },
   { href: '/dashboard/admin/flavors',      labelEn: 'Flavors',       labelAr: 'النكهات',          icon: Sparkles },
   { href: '/dashboard/admin/customers',    labelEn: 'Customers',     labelAr: 'العملاء',          icon: Users },
+  { href: '/dashboard/admin/contact-messages', labelEn: 'Contact',   labelAr: 'رسائل التواصل',    icon: MessageSquare },
   { href: '/dashboard/admin/analytics',    labelEn: 'Analytics',     labelAr: 'التحليلات',        icon: BarChart2 },
   { href: '/dashboard/admin/reviews',      labelEn: 'Reviews',       labelAr: 'المراجعات',        icon: Star },
   { href: '/dashboard/admin/discounts',    labelEn: 'Discounts',     labelAr: 'الخصومات',         icon: Percent },
@@ -53,6 +55,7 @@ const pageTitles: Record<string, { en: string; ar: string }> = {
   '/dashboard/admin/coffee-beans': { en: 'Coffee Beans',  ar: 'أنواع القهوة' },
   '/dashboard/admin/flavors':      { en: 'Flavors',       ar: 'النكهات' },
   '/dashboard/admin/customers':    { en: 'Customers',     ar: 'العملاء' },
+  '/dashboard/admin/contact-messages': { en: 'Contact Messages', ar: 'رسائل التواصل' },
   '/dashboard/admin/analytics':    { en: 'Analytics',     ar: 'التحليلات' },
   '/dashboard/admin/reviews':      { en: 'Reviews',       ar: 'المراجعات' },
   '/dashboard/admin/discounts':    { en: 'Discounts',     ar: 'الخصومات' },
