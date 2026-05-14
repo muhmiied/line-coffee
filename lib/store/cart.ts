@@ -17,10 +17,13 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[]
   isOpen: boolean
+  ownerId: string | null
   addItem: (item: CartItem) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
+  resetForGuest: () => void
+  syncOwner: (ownerId: string | null) => void
   openCart: () => void
   closeCart: () => void
   toggleCart: () => void
@@ -33,6 +36,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      ownerId: null,
 
       addItem: (item) => {
         set((state) => {
@@ -72,6 +76,20 @@ export const useCartStore = create<CartStore>()(
 
       clearCart: () => set({ items: [] }),
 
+      resetForGuest: () => set({ items: [], isOpen: false, ownerId: null }),
+
+      syncOwner: (ownerId) => {
+        set((state) => {
+          if (state.ownerId === ownerId) return state
+
+          if (state.ownerId === null && ownerId && state.items.length > 0) {
+            return { ownerId }
+          }
+
+          return { ownerId, items: [], isOpen: false }
+        })
+      },
+
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
@@ -88,7 +106,7 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'line-coffee-cart',
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({ items: state.items, ownerId: state.ownerId }),
     }
   )
 )

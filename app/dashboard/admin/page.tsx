@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/context/auth'
 import { useLanguage } from '@/lib/context/language'
 import {
   TrendingUp,
+  ShoppingBag,
   Package,
   Users,
   ArrowUpRight,

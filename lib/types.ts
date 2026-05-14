@@ -57,6 +57,7 @@ export interface Profile {
   preferred_language: 'en' | 'ar'
   address: string | null
   city: string | null
+  location_link?: string | null
   notes: string | null
   created_at: string
   updated_at: string

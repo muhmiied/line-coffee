@@ -57,6 +57,7 @@ export async function PATCH(request: NextRequest) {
     'phone',
     'address',
     'city',
+    'location_link',
     'notes',
     'preferred_language',
     'avatar_url',
@@ -74,6 +75,24 @@ export async function PATCH(request: NextRequest) {
     .single()
 
   if (error) {
+    if ('location_link' in updatePayload && error.message?.toLowerCase().includes('location_link')) {
+      const payloadWithoutLocation = { ...updatePayload }
+      delete payloadWithoutLocation.location_link
+      const retry = await admin
+        .from('profiles')
+        .upsert({ id: user.id, ...payloadWithoutLocation })
+        .select()
+        .single()
+
+      if (!retry.error) {
+        return NextResponse.json({
+          success: true,
+          data: retry.data,
+          warning: 'Profile saved, but location_link needs the latest migration.',
+        })
+      }
+    }
+
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 

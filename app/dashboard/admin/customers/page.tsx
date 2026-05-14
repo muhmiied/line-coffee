@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Users, Search, RefreshCw, ShoppingBag, TrendingUp, Mail, Phone } from 'lucide-react'
+import { Users, Search, RefreshCw, ShoppingBag, TrendingUp, Mail, Phone, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
@@ -23,6 +23,12 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [sendingId, setSendingId] = useState<string | null>(null)
+  const [notificationDrafts, setNotificationDrafts] = useState<Record<string, {
+    title: string
+    message: string
+    promoCode: string
+  }>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -54,6 +60,57 @@ export default function CustomersPage() {
 
   const totalRevenue = customers.reduce((s, c) => s + c.totalSpent, 0)
   const activeCustomers = customers.filter(c => c.orderCount > 0).length
+
+  const getDraft = (customerId: string) =>
+    notificationDrafts[customerId] || { title: '', message: '', promoCode: '' }
+
+  const updateDraft = (customerId: string, field: 'title' | 'message' | 'promoCode', value: string) => {
+    setNotificationDrafts((prev) => ({
+      ...prev,
+      [customerId]: {
+        ...(prev[customerId] || { title: '', message: '', promoCode: '' }),
+        [field]: value,
+      },
+    }))
+  }
+
+  const sendNotification = async (customer: Customer) => {
+    const draft = getDraft(customer.id)
+    if (!draft.title.trim() || !draft.message.trim()) {
+      toast.error(t('Title and message are required', 'العنوان والرسالة مطلوبان'))
+      return
+    }
+
+    setSendingId(customer.id)
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: customer.id,
+          title: draft.title,
+          message: draft.message,
+          type: draft.promoCode ? 'promo' : 'admin_message',
+          promo_code: draft.promoCode || null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        toast.error(json.error || t('Failed to send notification', 'فشل إرسال الإشعار'))
+        return
+      }
+
+      toast.success(t('Notification sent', 'تم إرسال الإشعار'))
+      setNotificationDrafts((prev) => ({
+        ...prev,
+        [customer.id]: { title: '', message: '', promoCode: '' },
+      }))
+    } catch {
+      toast.error(t('Failed to send notification', 'فشل إرسال الإشعار'))
+    } finally {
+      setSendingId(null)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0900] p-6">
@@ -182,6 +239,45 @@ export default function CustomersPage() {
                         </div>
                         <div className="ml-auto text-white/20 text-[10px]">
                           {t('Joined', 'انضم')} {new Date(c.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-xl border border-[#c8941a]/12 bg-[#0f0900] p-4">
+                        <div className="mb-3 flex items-center gap-2">
+                          <Send className="h-4 w-4 text-[#c8941a]" />
+                          <p className="text-sm font-semibold text-white/80">{t('Send Notification', 'إرسال إشعار')}</p>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <input
+                            value={getDraft(c.id).title}
+                            onChange={e => updateDraft(c.id, 'title', e.target.value)}
+                            placeholder={t('Notification title', 'عنوان الإشعار')}
+                            className="rounded-xl border border-[#c8941a]/20 bg-[#180d04] px-4 py-2.5 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c8941a]/45"
+                          />
+                          <input
+                            value={getDraft(c.id).promoCode}
+                            onChange={e => updateDraft(c.id, 'promoCode', e.target.value.toUpperCase())}
+                            placeholder={t('Promo code (optional)', 'كود خصم (اختياري)')}
+                            className="rounded-xl border border-[#c8941a]/20 bg-[#180d04] px-4 py-2.5 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c8941a]/45"
+                          />
+                        </div>
+                        <textarea
+                          value={getDraft(c.id).message}
+                          onChange={e => updateDraft(c.id, 'message', e.target.value)}
+                          placeholder={t('Write a short message for this customer...', 'اكتب رسالة قصيرة لهذا العميل...')}
+                          rows={3}
+                          className="mt-3 w-full resize-none rounded-xl border border-[#c8941a]/20 bg-[#180d04] px-4 py-3 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c8941a]/45"
+                        />
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => sendNotification(c)}
+                            disabled={sendingId === c.id}
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#c8941a] px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-[#d6a373] disabled:opacity-50"
+                          >
+                            <Send className="h-4 w-4" />
+                            {sendingId === c.id ? t('Sending...', 'جارٍ الإرسال...') : t('Send Notification', 'إرسال الإشعار')}
+                          </button>
                         </div>
                       </div>
                     </div>

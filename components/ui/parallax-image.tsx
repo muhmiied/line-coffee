@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import Image from 'next/image'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, type Variants } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface ParallaxImageProps {
@@ -30,7 +30,7 @@ export function ParallaxImage({
 
   const y = useTransform(scrollYProgress, [0, 1], [`${-speed * 100}px`, `${speed * 100}px`])
 
-  const revealVariants = {
+  const revealVariants: Variants = {
     hidden: {
       clipPath:
         revealDirection === 'left'
@@ -45,7 +45,7 @@ export function ParallaxImage({
       clipPath: 'inset(0 0 0 0)',
       transition: {
         duration: 1,
-        ease: [0.25, 0.1, 0.25, 1],
+        ease: [0.25, 0.1, 0.25, 1] as const,
       },
     },
   }

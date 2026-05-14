@@ -5,6 +5,19 @@ import { isAdminEmail } from '@/lib/config/site'
 
 const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  processing: 'being prepared',
+  shipped: 'out for delivery',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+}
+
+function isMissingNotificationsTable(error: { code?: string; message?: string } | null) {
+  return error?.code === '42P01' || error?.message?.toLowerCase().includes('notifications')
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> },
@@ -74,6 +87,26 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
+  let notificationCreated = false
+  if (body.status !== undefined && data?.user_id) {
+    const status = String(body.status)
+    const { error: notificationError } = await admin
+      .from('notifications')
+      .insert({
+        user_id: data.user_id,
+        title: 'Order status updated',
+        message: `Your order #${data.order_number || orderId} is now ${STATUS_LABELS[status] || status}.`,
+        type: 'order_status',
+        related_order_id: data.id,
+      })
+
+    notificationCreated = !notificationError
+
+    if (notificationError && !isMissingNotificationsTable(notificationError)) {
+      console.error('Failed to create order notification:', notificationError.message)
+    }
+  }
+
   // Return the order with customer phone so the client can send WhatsApp notification
   const customerPhone = data?.customer_phone || data?.shipping_address?.phone || null
   const customerPhoneE164 = customerPhone
@@ -83,6 +116,7 @@ export async function PATCH(
   return NextResponse.json({
     success: true,
     data,
+    notification_created: notificationCreated,
     whatsapp: customerPhoneE164
       ? {
           phone: customerPhoneE164,

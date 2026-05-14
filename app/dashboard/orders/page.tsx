@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Package } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Package } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { Button } from '@/components/ui/button'
 
@@ -33,7 +34,7 @@ const statusStyles: Record<string, string> = {
 }
 
 export default function DashboardOrdersPage() {
-  const { t, language } = useLanguage()
+  const { t, language, dir } = useLanguage()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -60,10 +61,16 @@ export default function DashboardOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen pb-8 pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="max-w-[1600px] mx-auto">
           <div className="mb-6">
+            <Button variant="ghost" size="sm" asChild className="mb-4">
+              <Link href="/dashboard">
+                {dir === 'rtl' ? <ArrowRight className="mr-2 h-4 w-4" /> : <ArrowLeft className="mr-2 h-4 w-4" />}
+                {t('Back to Dashboard', 'العودة إلى لوحة التحكم')}
+              </Link>
+            </Button>
             <h1 className="font-serif text-3xl font-bold">{t('My Orders', 'طلباتي')}</h1>
             <p className="text-muted-foreground mt-2">
               {t('Track your orders and follow their status', 'تابع طلباتك وحالة كل طلب')}
@@ -128,4 +135,3 @@ export default function DashboardOrdersPage() {
     </div>
   )
 }
-

@@ -709,6 +709,40 @@ body {
   scrollbar-width: none;
 }
 body::-webkit-scrollbar { display: none; }
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]),
+textarea,
+select {
+  border-color: rgba(182, 136, 94, 0.34) !important;
+  background-color: rgba(18, 13, 9, 0.76) !important;
+  color: var(--cream) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(214, 183, 154, 0.56) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(214, 163, 115, 0.72) !important;
+  box-shadow: 0 0 0 3px rgba(182, 136, 94, 0.24) !important;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  border-color: rgba(182, 136, 94, 0.14) !important;
+  background-color: rgba(21, 16, 11, 0.58) !important;
+  color: rgba(183, 155, 133, 0.46) !important;
+}
+
+[aria-invalid="true"],
+.border-destructive {
+  border-color: hsl(var(--destructive)) !important;
+}
+
 .section-divider {
   position: relative;
   overflow: hidden;

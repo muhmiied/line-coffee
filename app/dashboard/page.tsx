@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -49,11 +49,21 @@ const menuItems = [
   },
 ]
 
+type OrderPreview = {
+  id: string
+  order_number: string
+  status: string
+  total: number
+  created_at: string
+}
+
 export default function DashboardPage() {
   const { t, dir } = useLanguage()
   const { user, profile, signOut, isLoading } = useAuth()
   const router = useRouter()
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+  const [recentOrders, setRecentOrders] = useState<OrderPreview[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -63,6 +73,30 @@ export default function DashboardPage() {
       router.replace('/dashboard/admin')
     }
   }, [isLoading, user, isAdmin, router])
+
+  useEffect(() => {
+    if (!user || isAdmin) return
+
+    let mounted = true
+    setOrdersLoading(true)
+
+    fetch('/api/orders', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((json) => {
+        if (!mounted) return
+        setRecentOrders((json?.data || []).slice(0, 3))
+      })
+      .catch(() => {
+        if (mounted) setRecentOrders([])
+      })
+      .finally(() => {
+        if (mounted) setOrdersLoading(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [isAdmin, user])
 
   const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User'
   const lastName = profile?.last_name || user?.user_metadata?.last_name || ''
@@ -85,7 +119,7 @@ export default function DashboardPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen pb-8 pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -194,6 +228,32 @@ export default function DashboardPage() {
                     {t('View All', 'عرض الكل')}
                   </Link>
                 </div>
+                {ordersLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : recentOrders.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentOrders.map((order) => (
+                      <Link
+                        key={order.id}
+                        href="/dashboard/orders"
+                        className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-secondary/50"
+                      >
+                        <div>
+                          <p className="font-medium text-primary">#{order.order_number}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{order.total} {t('EGP', 'ج.م')}</p>
+                          <p className="text-xs capitalize text-muted-foreground">{order.status}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p>{t('No orders yet', 'لا توجد طلبات بعد')}</p>
@@ -201,6 +261,7 @@ export default function DashboardPage() {
                     <Link href="/products">{t('Start Shopping', 'ابدأ التسوق')}</Link>
                   </Button>
                 </div>
+                )}
               </div>
             </motion.div>
           </div>

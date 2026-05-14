@@ -15,8 +15,9 @@ async function guard() {
 
 // GET — all flavor categories with their flavors
 export async function GET() {
-  const admin = createAdminClient()
-  if (!admin) return NextResponse.json({ success: false, error: 'Not configured' }, { status: 503 })
+  const result = await guard()
+  if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.status })
+  const { admin } = result
 
   const { data, error } = await admin
     .from('flavor_bases')

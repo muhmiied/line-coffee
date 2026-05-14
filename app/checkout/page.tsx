@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   ShoppingBag,
@@ -37,10 +38,12 @@ export default function CheckoutPage() {
   const { t, language, dir } = useLanguage()
   const { user, profile, isLoading: authLoading } = useAuth()
   const { items, getTotal, clearCart } = useCartStore()
+  const router = useRouter()
 
   const [isLoading, setIsLoading] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
+  const [orderStatus, setOrderStatus] = useState('')
   const [whatsAppUrl, setWhatsAppUrl] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
@@ -133,6 +136,11 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!user) {
+      redirectToLogin()
+      return
+    }
+
     const errors: Record<string, string> = {}
     if (!formData.firstName.trim()) errors.firstName = t('Please enter your first name', 'من فضلك ادخل اسمك الأول')
     if (!formData.lastName.trim()) errors.lastName = t('Please enter your last name', 'من فضلك ادخل اسمك الأخير')
@@ -190,13 +198,11 @@ export default function CheckoutPage() {
 
       if (response.ok && data.success) {
         setOrderNumber(data.order.order_number)
+        setOrderStatus(data.order.status || 'pending')
         setWhatsAppUrl(data.whatsapp_url || '')
         setOrderPlaced(true)
         clearCart()
         toast.success(t('Order placed successfully!', 'تم تأكيد الطلب بنجاح!'))
-        if (data.whatsapp_url) {
-          window.open(data.whatsapp_url, '_blank', 'noopener,noreferrer')
-        }
       } else {
         toast.error(data.error || t('Failed to place order', 'فشل في إنشاء الطلب'))
       }
@@ -205,6 +211,11 @@ export default function CheckoutPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const redirectToLogin = () => {
+    toast.error(t('Please login to complete your order', 'من فضلك سجل الدخول لإتمام الطلب'))
+    router.push('/auth/login?next=/checkout')
   }
 
   // ── Order Success Screen ──────────────────────────────────────
@@ -225,13 +236,16 @@ export default function CheckoutPage() {
           <p className="text-muted-foreground mb-2">
             {t('Thank you for your order', 'شكراً لطلبك')}
           </p>
-          <p className="text-lg font-semibold text-primary mb-6">
+          <p className="text-lg font-semibold text-primary mb-2">
             {t('Order Number:', 'رقم الطلب:')} {orderNumber}
+          </p>
+          <p className="text-sm font-medium text-muted-foreground mb-6">
+            {t('Status:', 'الحالة:')} {orderStatus || 'pending'}
           </p>
           <p className="text-sm text-muted-foreground mb-8">
             {t(
-              'We will contact you shortly to confirm your order.',
-              'سنتواصل معك قريباً لتأكيد طلبك.'
+              'Your order was created in the website. You can optionally send the order details via WhatsApp.',
+              'تم إنشاء طلبك داخل الموقع. يمكنك اختيارياً إرسال تفاصيل الطلب عبر واتساب.'
             )}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -246,7 +260,7 @@ export default function CheckoutPage() {
               <Link href="/products">{t('Continue Shopping', 'متابعة التسوق')}</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/">{t('Back to Home', 'العودة للرئيسية')}</Link>
+              <Link href="/dashboard/orders">{t('My Orders', 'طلباتي')}</Link>
             </Button>
           </div>
         </motion.div>
@@ -315,21 +329,28 @@ export default function CheckoutPage() {
           </h1>
         </div>
 
-        {/* Guest login prompt */}
+        {/* Login required prompt */}
         {!authLoading && !user && (
-          <div className="mb-6 flex items-center gap-3 bg-card border border-border rounded-xl p-4">
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-primary/35 bg-primary/10 p-4 sm:flex-row sm:items-center">
             <LogIn className="w-5 h-5 text-primary shrink-0" />
             <p className="text-sm text-muted-foreground flex-1">
               {t(
-                'Already have an account? Login for faster checkout with saved address.',
-                'هل لديك حساب؟ سجل الدخول لإتمام الطلب بشكل أسرع مع عنوانك المحفوظ.'
+                'Please login to complete your order. Orders are now account-only for your privacy and tracking.',
+                'من فضلك سجل الدخول لإتمام طلبك. الطلبات مرتبطة بالحساب لحماية بياناتك وتتبع الطلب.'
               )}
             </p>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/auth/login?next=/checkout">
-                {t('Login', 'تسجيل الدخول')}
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild size="sm">
+                <Link href="/auth/login?next=/checkout">
+                  {t('Login', 'تسجيل الدخول')}
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/auth/signup?next=/checkout">
+                  {t('Sign Up', 'إنشاء حساب')}
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
 
@@ -510,14 +531,22 @@ export default function CheckoutPage() {
 
               {/* Submit — Mobile */}
               <div className="lg:hidden">
-                <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                <Button
+                  type={user ? 'submit' : 'button'}
+                  size="lg"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={!user ? redirectToLogin : undefined}
+                >
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       {t('Processing...', 'جاري المعالجة...')}
                     </>
                   ) : (
-                    `${t('Place Order', 'تأكيد الطلب')} — ${total} ${t('EGP', 'ج.م')}`
+                    user
+                      ? `${t('Place Order', 'تأكيد الطلب')} — ${total} ${t('EGP', 'ج.م')}`
+                      : t('Login to Complete Order', 'سجل الدخول لإتمام الطلب')
                   )}
                 </Button>
               </div>
@@ -676,11 +705,12 @@ export default function CheckoutPage() {
               {/* Submit — Desktop */}
               <div className="hidden lg:block mt-6">
                 <Button
-                  type="submit"
+                  type={user ? 'submit' : 'button'}
                   form="checkout-form"
                   size="lg"
                   className="w-full"
                   disabled={isLoading}
+                  onClick={!user ? redirectToLogin : undefined}
                 >
                   {isLoading ? (
                     <>
@@ -688,7 +718,7 @@ export default function CheckoutPage() {
                       {t('Processing...', 'جاري المعالجة...')}
                     </>
                   ) : (
-                    t('Place Order', 'تأكيد الطلب')
+                    user ? t('Place Order', 'تأكيد الطلب') : t('Login to Complete Order', 'سجل الدخول لإتمام الطلب')
                   )}
                 </Button>
               </div>

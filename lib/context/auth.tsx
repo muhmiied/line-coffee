@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
+import { useCartStore } from '@/lib/store/cart'
 
 interface AuthContextType {
   user: User | null
@@ -46,6 +47,8 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(initialUser)
   const [profile, setProfile] = useState<Profile | null>(initialProfile)
   const [isLoading, setIsLoading] = useState(false)
+  const cartSyncOwner = useCartStore((state) => state.syncOwner)
+  const resetCartForGuest = useCartStore((state) => state.resetForGuest)
 
   useEffect(() => {
     setUser(initialUser)
@@ -75,6 +78,10 @@ export function AuthProvider({
 
     setProfile(await fetchProfile(user.id))
   }, [fetchProfile, user])
+
+  useEffect(() => {
+    cartSyncOwner(user?.id ?? null)
+  }, [cartSyncOwner, user?.id])
 
   useEffect(() => {
     if (!supabase) {
@@ -137,6 +144,7 @@ export function AuthProvider({
     if (!supabase) {
       setUser(null)
       setProfile(null)
+      resetCartForGuest()
       router.replace('/')
       router.refresh()
       return
@@ -145,6 +153,7 @@ export function AuthProvider({
     setUser(null)
     setProfile(null)
     setIsLoading(false)
+    resetCartForGuest()
 
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -153,7 +162,7 @@ export function AuthProvider({
 
     router.replace('/')
     router.refresh()
-  }, [router, supabase])
+  }, [resetCartForGuest, router, supabase])
 
   return (
     <AuthContext.Provider

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { X } from 'lucide-react'
 import { Header } from './header'
 
-const DEFAULT_TEXT = '🚀 توصيل مجاني على الطلبات فوق 500 ج'
+const DEFAULT_TEXT = '🚀 توصيل مجاني على الطلبات فوق 200 ج'
 
 export function StickyTopBar() {
   const pathname = usePathname()

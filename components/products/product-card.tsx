@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
-import { ShoppingBag, Heart, Star } from 'lucide-react'
+import { ShoppingBag, Heart } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore } from '@/lib/store/wishlist'
@@ -27,6 +26,8 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   'hot-chocolate':   'from-[#1b0700] to-[#3c1300]',
 }
 
+const WEIGHT_OPTIONS = ['250g', '500g', '1kg'] as const
+
 function CinematicPlaceholder({ categoryId }: { categoryId: string }) {
   const grad = CATEGORY_GRADIENTS[categoryId] ?? 'from-[#1a0800] to-[#3e1900]'
   return (
@@ -48,11 +49,18 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   const name = language === 'ar' ? product.name_ar : product.name_en
   const sizes = product.sizes ?? []
+  const description =
+    (language === 'ar' ? product.description_ar : product.description_en)
+    || product.description_en
+    || product.description_ar
+    || product.flavor_notes?.slice(0, 3).join(' - ')
+    || ''
+  const sizeOptions = WEIGHT_OPTIONS.map((weight) => ({
+    weight,
+    size: sizes.find((item) => item.size === weight),
+  }))
   const lowestPrice = sizes.length > 0 ? Math.min(...sizes.map((s) => s.price)) : 0
   const hasDiscount = sizes.some((s) => s.compare_at_price && s.compare_at_price > s.price)
-  const comparePrice = hasDiscount
-    ? (sizes.find((s) => s.compare_at_price)?.compare_at_price ?? null)
-    : null
   const isSoldOut = product.stock_quantity === 0
   const inWishlist = wishlistStore.isInWishlist(product.id)
 
@@ -97,33 +105,29 @@ export function ProductCard({ product, className }: ProductCardProps) {
   }
 
   return (
-    <motion.div
-      variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0 } }}
-      transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-      className={cn('group', className)}
-    >
+    <div className={cn('group', className)}>
       <Link href={`/products/${product.slug}`} className="block">
 
         {/* ── Card shell ─────────────────────────────────────────── */}
         <div
           className={cn(
-            'luxury-card relative overflow-hidden rounded-2xl',
+            'luxury-card relative overflow-hidden rounded-xl',
             'bg-gradient-to-b from-[#1B140F] via-[#15100B] to-[#0B0806]',
             'border border-[#B6885E]/[16%]',
-            'shadow-[0_16px_46px_rgba(0,0,0,0.34)]',
+            'shadow-[0_12px_34px_rgba(0,0,0,0.30)]',
             'group-hover:border-[#D6A373]/[34%]',
           )}
         >
 
           {/* ── Image zone ─────────────────────────────────────────── */}
-          <div className="relative aspect-[4/5] overflow-hidden bg-[#120D09]">
+          <div className="relative h-40 overflow-hidden bg-[#120D09] sm:h-44 lg:h-48">
 
             {product.images?.[0] ? (
               <Image
                 src={product.images[0]}
                 alt={name}
                 fill
-                sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
+                sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 320px"
                 className="object-cover object-center brightness-[0.82] contrast-[1.08] saturate-[1.05] transition-all duration-700 ease-out group-hover:scale-[1.08] group-hover:brightness-[0.9]"
               />
             ) : (
@@ -178,8 +182,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 'absolute top-3 right-3 z-10',
                 'h-8 w-8 rounded-full flex items-center justify-center',
                 'border border-[#B6885E]/20 bg-[#120D09]/82 backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.35)]',
-                'opacity-0 group-hover:opacity-100',
-                'scale-[0.84] group-hover:scale-100',
+                'opacity-100 scale-100 sm:opacity-0 sm:scale-[0.84] sm:group-hover:opacity-100 sm:group-hover:scale-100',
                 'transition-all duration-300 ease-out hover:border-[#D6A373]/45 hover:bg-[#B6885E]/15',
                 wishlistPending && 'scale-110',
               )}
@@ -196,16 +199,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
             {!isSoldOut && (
               <div
                 className={cn(
-                  'absolute bottom-0 inset-x-0 p-3 z-10',
-                  'translate-y-3 opacity-0',
-                  'group-hover:translate-y-0 group-hover:opacity-100',
+                  'absolute bottom-0 inset-x-0 p-2.5 z-10',
+                  'translate-y-0 opacity-100 sm:translate-y-3 sm:opacity-0',
+                  'sm:group-hover:translate-y-0 sm:group-hover:opacity-100',
                   'transition-all duration-300 ease-out',
                 )}
               >
                 <button
                   type="button"
                   onClick={handleQuickAdd}
-                  className="premium-button flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
+                  className="premium-button flex w-full items-center justify-center gap-2 rounded-full py-2 text-xs font-semibold sm:text-sm"
                 >
                   <ShoppingBag className="h-4 w-4" />
                   {t('Quick Add', 'إضافة سريعة')}
@@ -215,47 +218,47 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
 
           {/* ── Info zone ──────────────────────────────────────────── */}
-          <div className="px-4 pb-5 pt-3.5 space-y-2">
+          <div className="space-y-3 px-3.5 pb-4 pt-3.5">
 
-            {/* Origin */}
-            {product.origin && (
-              <p className="text-[10px] tracking-[0.18em] uppercase font-medium text-[#D6B79A]/45">
-                {product.origin}
-              </p>
-            )}
-
-            {/* Name */}
-            <h3 className="font-serif text-[15px] leading-snug font-semibold line-clamp-2 text-[#F5E6D8]/88 transition-colors duration-300 group-hover:text-[#F5E6D8]">
-              {name}
-            </h3>
-
-            {/* Roast pill + rating */}
-            <div className="flex items-center gap-2">
-              {product.roast_level && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize bg-[#D6A373]/[8%] text-[#D6B79A]/58">
-                  {product.roast_level}
-                </span>
+            {/* Name + description */}
+            <div className="space-y-1.5">
+              <h3 className="line-clamp-1 font-serif text-[15px] font-semibold leading-snug text-[#F5E6D8]/90 transition-colors duration-300 group-hover:text-[#F5E6D8]">
+                {name}
+              </h3>
+              {description && (
+                <p className="line-clamp-2 min-h-[2rem] text-xs leading-4 text-[#D6B79A]/58">
+                  {description}
+                </p>
               )}
-              <div className="flex items-center gap-0.5 ml-auto">
-                <Star className="h-3 w-3 fill-[#D6A373] text-[#D6A373]" />
-                <span className="text-[11px] font-medium text-[#D6A373]/68">4.8</span>
-              </div>
             </div>
 
-            {/* Price */}
-            <div className="flex items-baseline gap-1.5 pt-0.5">
-              <span className="text-lg font-bold text-[#D6A373]">{lowestPrice}</span>
-              <span className="text-xs font-medium text-[#D6A373]/58">{t('EGP', 'ج.م')}</span>
-              {comparePrice && (
-                <span className="text-xs line-through ml-0.5 text-[#FFDCC2]/20">
-                  {comparePrice}
-                </span>
-              )}
+            {/* Weight prices */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {sizeOptions.map(({ weight, size }) => {
+                const unavailable = !size || size.is_available === false
+
+                return (
+                  <div
+                    key={weight}
+                    className={cn(
+                      'rounded-lg border px-1.5 py-2 text-center transition-colors',
+                      unavailable
+                        ? 'border-[#B6885E]/10 bg-[#0F0A07]/55 text-[#D6B79A]/35'
+                        : 'border-[#B6885E]/22 bg-[#D6A373]/[0.055] text-[#F5E6D8] group-hover:border-[#D6A373]/36',
+                    )}
+                  >
+                    <p className="text-[11px] font-semibold leading-none tracking-[0.02em]">{weight}</p>
+                    <p className="mt-1 text-[11px] font-bold leading-none text-[#D6A373]">
+                      {size ? `${size.price} ${t('EGP', 'ج.م')}` : t('N/A', 'N/A')}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
         </div>
       </Link>
-    </motion.div>
+    </div>
   )
 }

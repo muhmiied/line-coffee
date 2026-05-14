@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NotificationCenter } from '@/components/notifications/notification-center'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchResults, setSearchResults] = useState<typeof sampleProducts>([])
+  const [searchProducts, setSearchProducts] = useState<typeof sampleProducts>([])
   const [isMounted, setIsMounted] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
@@ -90,6 +92,42 @@ export function Header() {
   useEffect(() => { setIsMounted(true) }, [])
 
   useEffect(() => {
+    let mounted = true
+
+    const loadSearchProducts = async () => {
+      try {
+        const response = await fetch('/api/products?limit=120', { cache: 'no-store' })
+        const json = await response.json()
+        type ProductResponseItem = {
+          id?: string
+          name_en?: string
+          name_ar?: string
+          slug?: string
+        }
+
+        const products = ((json?.data || []) as ProductResponseItem[])
+          .filter((product) => product.id && product.slug && product.name_en && product.name_ar)
+          .map((product) => ({
+            id: String(product.id),
+            slug: String(product.slug),
+            name_en: String(product.name_en),
+            name_ar: String(product.name_ar),
+          }))
+
+        if (mounted) setSearchProducts(products)
+      } catch {
+        if (mounted) setSearchProducts([])
+      }
+    }
+
+    loadSearchProducts()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
@@ -100,14 +138,14 @@ export function Header() {
   useEffect(() => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      const filtered = sampleProducts.filter(
+      const filtered = searchProducts.filter(
         (p) => p.name_en.toLowerCase().includes(query) || p.name_ar.includes(searchQuery)
       )
       setSearchResults(filtered)
     } else {
       setSearchResults([])
     }
-  }, [searchQuery])
+  }, [searchProducts, searchQuery])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -126,11 +164,21 @@ export function Header() {
     setSearchQuery('')
   }
 
+  const closeSearch = () => {
+    setIsSearchOpen(false)
+    setSearchQuery('')
+  }
+
+  const toggleSearch = () => {
+    if (isSearchOpen) closeSearch()
+    else setIsSearchOpen(true)
+  }
+
   return (
     <>
       <header
         className={cn(
-          'w-full transition-all duration-[400ms] ease-in-out text-white relative z-50 isolate overflow-hidden',
+          'w-full transition-all duration-[400ms] ease-in-out text-white relative z-50 isolate overflow-visible',
           showGlass ? 'nav-glass' : 'bg-transparent',
         )}
       >
@@ -245,37 +293,11 @@ export function Header() {
               </DropdownMenu>
 
               {/* Search */}
-              <div ref={searchRef} className="relative hidden md:flex items-center">
-                <AnimatePresence>
-                  {isSearchOpen && (
-                    <motion.div
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: 260, opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.28 }}
-                      className="overflow-hidden"
-                    >
-                      <Input
-                        type="text"
-                        placeholder={t('Search products...', 'ابحث عن المنتجات...')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        autoFocus
-                        className="h-9 text-sm"
-                        style={{
-                          background: 'rgba(182,136,94,0.08)',
-                          border: '1px solid rgba(182,136,94,0.25)',
-                          color: '#F5E6D8',
-                        }}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
+              <div ref={searchRef} className="relative hidden md:flex items-center z-[80]">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  onClick={toggleSearch}
                   className="text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
                   aria-label={t('Search', 'بحث')}
                 >
@@ -283,25 +305,49 @@ export function Header() {
                 </Button>
 
                 <AnimatePresence>
-                  {isSearchOpen && (searchResults.length > 0 || searchQuery) && (
+                  {isSearchOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 8 }}
-                      className="absolute top-full right-0 mt-2 w-72 rounded-xl shadow-2xl overflow-hidden"
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute right-0 top-[calc(100%+0.8rem)] z-[90] w-[22rem] overflow-hidden rounded-2xl shadow-2xl"
                       style={{
-                        background: 'rgba(18,13,9,0.96)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(182,136,94,0.18)',
+                        background: 'linear-gradient(180deg, rgba(18,13,9,0.98), rgba(11,8,6,0.98))',
+                        backdropFilter: 'blur(24px)',
+                        border: '1px solid rgba(214,163,115,0.28)',
+                        boxShadow: '0 24px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,230,216,0.03) inset',
                       }}
                     >
-                      {searchResults.length > 0 ? (
-                        <div className="max-h-64 overflow-y-auto">
+                      <div className="relative border-b border-[#B6885E]/15 p-3">
+                        <Search className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B6885E]" />
+                        <Input
+                          type="text"
+                          placeholder={t('Search products...', 'ابحث عن المنتجات...')}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          autoFocus
+                          className="h-11 rounded-xl pl-10 pr-10 text-sm"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            aria-label={t('Clear search', 'مسح البحث')}
+                            className="absolute right-6 top-1/2 -translate-y-1/2 text-[#D6B79A]/55 transition-colors hover:text-[#F5E6D8]"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      {searchQuery && searchResults.length > 0 ? (
+                        <div className="max-h-72 overflow-y-auto p-1.5">
                           {searchResults.map((product) => (
                             <button
                               key={product.id}
                               onClick={() => handleSearchSelect(product.slug)}
-                              className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors duration-150 hover:bg-[#B6885E]/10"
+                              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-150 hover:bg-[#B6885E]/12"
                             >
                               <Search className="h-3.5 w-3.5 shrink-0" style={{ color: '#B6885E' }} />
                               <span className="text-sm" style={{ color: '#D6B79A' }}>
@@ -311,14 +357,20 @@ export function Header() {
                           ))}
                         </div>
                       ) : searchQuery ? (
-                        <div className="px-4 py-5 text-center text-sm" style={{ color: 'rgba(183,155,133,0.6)' }}>
+                        <div className="px-4 py-8 text-center text-sm" style={{ color: 'rgba(214,183,154,0.68)' }}>
                           {t('No products found', 'لا توجد منتجات')}
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="px-4 py-5 text-center text-xs" style={{ color: 'rgba(183,155,133,0.58)' }}>
+                          {t('Type to search the coffee collection', 'اكتب للبحث في مجموعة القهوة')}
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+
+              <NotificationCenter />
 
               {/* Wishlist */}
               <Button
@@ -387,6 +439,12 @@ export function Header() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
+                          <Link href="/dashboard/profile" className="flex items-center gap-2 cursor-pointer">
+                            <User className="h-4 w-4" />
+                            {t('Edit Profile', 'تعديل الملف الشخصي')}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
                           <Link href="/" className="flex items-center gap-2 cursor-pointer">
                             <Globe className="h-4 w-4" />
                             {t('Website', 'الموقع')}
@@ -394,12 +452,32 @@ export function Header() {
                         </DropdownMenuItem>
                       </>
                     ) : (
-                      <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
-                        <Link href="/dashboard/orders" className="flex items-center gap-2 cursor-pointer">
-                          <Package className="h-4 w-4" />
-                          {t('My Orders', 'أوردراتي')}
-                        </Link>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
+                          <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                            <LayoutDashboard className="h-4 w-4" />
+                            {t('My Account', 'حسابي')}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
+                          <Link href="/dashboard/profile" className="flex items-center gap-2 cursor-pointer">
+                            <User className="h-4 w-4" />
+                            {t('Edit Profile', 'تعديل الملف الشخصي')}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
+                          <Link href="/dashboard/orders" className="flex items-center gap-2 cursor-pointer">
+                            <Package className="h-4 w-4" />
+                            {t('My Orders', 'طلباتي')}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild style={{ color: '#D6B79A' }} className="focus:bg-[#B6885E]/15">
+                          <Link href="/dashboard/wishlist" className="flex items-center gap-2 cursor-pointer">
+                            <Heart className="h-4 w-4" />
+                            {t('Wishlist', 'المفضلة')}
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuSeparator style={{ background: 'rgba(182,136,94,0.12)' }} />
                     <DropdownMenuItem
@@ -475,24 +553,30 @@ export function Header() {
               <div className="flex flex-col gap-6">
 
                 {/* Mobile Search */}
-                <div className="relative">
+                <div className="relative z-20">
                   <Input
                     type="text"
                     placeholder={t('Search products...', 'ابحث عن المنتجات...')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                      background: 'rgba(182,136,94,0.08)',
-                      border: '1px solid rgba(182,136,94,0.2)',
-                      color: '#F5E6D8',
-                    }}
+                    className="h-11 rounded-xl pr-10"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      aria-label={t('Clear search', 'مسح البحث')}
+                      className="absolute right-3 top-3 text-[#D6B79A]/55"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                   {searchResults.length > 0 && (
                     <div
-                      className="absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10"
+                      className="absolute left-0 right-0 top-full z-30 mt-2 max-h-56 overflow-y-auto rounded-xl shadow-2xl"
                       style={{
-                        background: 'rgba(18,13,9,0.98)',
-                        border: '1px solid rgba(182,136,94,0.15)',
+                        background: 'rgba(18,13,9,0.99)',
+                        border: '1px solid rgba(214,163,115,0.28)',
                       }}
                     >
                       {searchResults.map((product) => (
@@ -505,6 +589,17 @@ export function Header() {
                           {language === 'ar' ? product.name_ar : product.name_en}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {searchQuery && searchResults.length === 0 && (
+                    <div
+                      className="absolute left-0 right-0 top-full z-30 mt-2 rounded-xl px-3 py-4 text-center text-sm text-[#D6B79A]/70 shadow-2xl"
+                      style={{
+                        background: 'rgba(18,13,9,0.99)',
+                        border: '1px solid rgba(214,163,115,0.28)',
+                      }}
+                    >
+                      {t('No products found', 'لا توجد منتجات')}
                     </div>
                   )}
                 </div>
@@ -539,14 +634,39 @@ export function Header() {
                   {displayName ? (
                     <>
                       <Link
-                        href={isAdmin ? '/dashboard/admin' : '/dashboard/orders'}
+                        href={isAdmin ? '/dashboard/admin' : '/dashboard'}
                         className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                       >
-                        {isAdmin ? <LayoutDashboard className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+                        <LayoutDashboard className="h-5 w-5" />
                         <span className="text-sm">
-                          {isAdmin ? t('Dashboard', 'لوحة التحكم') : t('My Orders', 'أوردراتي')}
+                          {isAdmin ? t('Dashboard', 'لوحة التحكم') : t('My Account', 'حسابي')}
                         </span>
                       </Link>
+                      <Link
+                        href="/dashboard/profile"
+                        className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        <User className="h-5 w-5" />
+                        <span className="text-sm">{t('Edit Profile', 'تعديل الملف الشخصي')}</span>
+                      </Link>
+                      {!isAdmin && (
+                        <Link
+                          href="/dashboard/orders"
+                          className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                        >
+                          <Package className="h-5 w-5" />
+                          <span className="text-sm">{t('My Orders', 'طلباتي')}</span>
+                        </Link>
+                      )}
+                      {!isAdmin && (
+                        <Link
+                          href="/dashboard/wishlist"
+                          className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                        >
+                          <Heart className="h-5 w-5" />
+                          <span className="text-sm">{t('Wishlist', 'المفضلة')}</span>
+                        </Link>
+                      )}
                       <button
                         onClick={() => { setIsMobileMenuOpen(false); void signOut() }}
                         className="flex items-center gap-3 py-2 px-3 rounded-lg text-red-400 hover:bg-red-500/8 transition-colors"
@@ -564,13 +684,15 @@ export function Header() {
                       <span className="text-sm">{t('Sign In', 'تسجيل الدخول')}</span>
                     </Link>
                   )}
-                  <button
-                    onClick={() => { openWishlist(); setIsMobileMenuOpen(false) }}
-                    className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
-                  >
-                    <Heart className="h-5 w-5" />
-                    <span className="text-sm">{t('Wishlist', 'المفضلة')}</span>
-                  </button>
+                  {!displayName && (
+                    <button
+                      onClick={() => { openWishlist(); setIsMobileMenuOpen(false) }}
+                      className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      <Heart className="h-5 w-5" />
+                      <span className="text-sm">{t('Wishlist', 'المفضلة')}</span>
+                    </button>
+                  )}
                 </div>
 
                 <DropdownMenu>

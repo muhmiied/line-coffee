@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
 const DEFAULT_ANNOUNCEMENT = {
-  text: '🚀 توصيل مجاني على الطلبات فوق 500 ج',
+  text: '🚀 توصيل مجاني على الطلبات فوق 200 ج',
   active: true,
 }
 
@@ -16,7 +16,7 @@ export async function GET() {
     const { data, error } = await admin
       .from('site_settings')
       .select('key, value')
-      .in('key', ['announcement_text', 'announcement_active', 'wa_phone', 'wa_apikey'])
+      .in('key', ['announcement_text', 'announcement_active'])
 
     if (error || !data || data.length === 0) {
       return NextResponse.json(DEFAULT_ANNOUNCEMENT)
@@ -27,8 +27,6 @@ export async function GET() {
     return NextResponse.json({
       text: get('announcement_text') ?? DEFAULT_ANNOUNCEMENT.text,
       active: get('announcement_active') === 'true',
-      wa_phone: get('wa_phone') ?? '',
-      wa_apikey: get('wa_apikey') ?? '',
     })
   } catch {
     return NextResponse.json(DEFAULT_ANNOUNCEMENT)
@@ -53,12 +51,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const rows = []
+    const rows: Array<{ key: string; value: string }> = []
 
     if (typeof body.text === 'string') rows.push({ key: 'announcement_text', value: body.text })
     if (typeof body.active === 'boolean') rows.push({ key: 'announcement_active', value: String(body.active) })
-    if (typeof body.wa_phone === 'string') rows.push({ key: 'wa_phone', value: body.wa_phone })
-    if (typeof body.wa_apikey === 'string') rows.push({ key: 'wa_apikey', value: body.wa_apikey })
 
     if (rows.length > 0) {
       const { error } = await admin

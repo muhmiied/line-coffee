@@ -57,17 +57,17 @@ const PAYMENT_ICONS: Record<string, React.ReactNode> = {
   instapay: <CreditCard className="h-3.5 w-3.5" />,
 }
 
-const STATUS_WA_MESSAGES: Record<string, string> = {
+const STATUS_WA_MESSAGES: Record<string, (n: string, r?: string | null) => string> = {
   confirmed:  (n: string) => `✅ طلبك رقم *#${n}* تم تأكيده بنجاح 🎉\n\nشكراً لتسوقك من *لاين كوفي* ☕`,
   processing: (n: string) => `☕ طلبك رقم *#${n}* قيد التجهيز الآن!\n\nنعمل على تحضيره بأفضل جودة 💛`,
   shipped:    (n: string) => `🚗 طلبك رقم *#${n}* في الطريق إليك!\n\nستصلك قريباً إن شاء الله 🙏`,
   delivered:  (n: string) => `✅ طلبك رقم *#${n}* وصل!\n\nنتمنى تكون بخير وتعجبك قهوتنا ☕💛\n*لاين كوفي*`,
   cancelled:  (n: string, r?: string | null) =>
     `❌ للأسف طلبك رقم *#${n}* تم إلغاؤه.\n${r ? `السبب: ${r}\n` : ''}\nللاستفسار تواصل معنا. *لاين كوفي*`,
-} as unknown as Record<string, (n: string, r?: string | null) => string>
+}
 
 function buildWhatsAppUrl(phone: string, orderNumber: string, status: string, reason?: string | null) {
-  const fn = (STATUS_WA_MESSAGES as Record<string, (n: string, r?: string | null) => string>)[status]
+  const fn = STATUS_WA_MESSAGES[status]
   if (!fn) return null
   const text = fn(orderNumber, reason)
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`

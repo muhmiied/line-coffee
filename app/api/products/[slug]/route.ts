@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getProductBySlug, getRelatedProducts } from '@/lib/services'
+import type { ProductWithDetails } from '@/lib/types/database'
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +27,7 @@ export async function GET(
     }
     
     // جلب المنتجات المشابهة
-    let relatedProducts = []
+    let relatedProducts: ProductWithDetails[] = []
     if (product.category_id) {
       relatedProducts = await getRelatedProducts(
         product.id, 

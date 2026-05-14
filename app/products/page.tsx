@@ -835,13 +835,11 @@ function ProductsPageInner() {
                     <Button onClick={() => handleCategoryChange('all')}>{t('View All', 'عرض الكل')}</Button>
                   </div>
                 ) : (
-                  <motion.div initial="hidden" animate="visible"
-                    variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
                     {filteredProducts.map((product) => (
                       <ProductCard key={product.id} product={product} />
                     ))}
-                  </motion.div>
+                  </div>
                 )}
               </>
             )}

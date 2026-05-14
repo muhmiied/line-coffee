@@ -20,16 +20,36 @@ export default function AdminSettingsPage() {
   const [waSaving, setWaSaving] = useState(false)
 
   useEffect(() => {
-    fetch('/api/settings/announcement', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(d => {
-        setAnnText(d?.text ?? '')
-        setAnnActive(d?.active !== false)
-        setWaPhone(d?.wa_phone ?? '')
-        setWaApiKey(d?.wa_apikey ?? '')
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    let mounted = true
+
+    const loadSettings = async () => {
+      try {
+        const [announcementRes, whatsappRes] = await Promise.all([
+          fetch('/api/settings/announcement', { cache: 'no-store' }),
+          fetch('/api/admin/settings/whatsapp', { cache: 'no-store' }),
+        ])
+
+        const announcement = await announcementRes.json()
+        const whatsapp = whatsappRes.ok ? await whatsappRes.json() : null
+
+        if (!mounted) return
+
+        setAnnText(announcement?.text ?? '')
+        setAnnActive(announcement?.active !== false)
+        setWaPhone(whatsapp?.data?.wa_phone ?? '')
+        setWaApiKey(whatsapp?.data?.wa_apikey ?? '')
+      } catch {
+        // Keep the settings page usable even if optional settings fail to load.
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    loadSettings()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const saveAnnouncement = async () => {
@@ -52,7 +72,7 @@ export default function AdminSettingsPage() {
   const saveWhatsApp = async () => {
     setWaSaving(true)
     try {
-      const res = await fetch('/api/settings/announcement', {
+      const res = await fetch('/api/admin/settings/whatsapp', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wa_phone: waPhone.trim(), wa_apikey: waApiKey.trim() }),
