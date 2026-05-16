@@ -76,13 +76,35 @@ export default function SignupPage() {
       })
 
       if (!result.success) {
-        if (
-          /already registered|already exists|duplicate/i.test(result.error || '')
-        ) {
-          toast.error(t('This email is already registered.', 'هذا البريد الإلكتروني مسجل بالفعل.'))
-          return
+        const errMsg = result.error || ''
+        console.error('[signup] Sign up failed:', errMsg)
+
+        if (/already registered|already exists|duplicate|email.*use/i.test(errMsg)) {
+          toast.error(t(
+            'This email is already registered. Please log in instead.',
+            'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.'
+          ))
+        } else if (/database error/i.test(errMsg)) {
+          toast.error(t(
+            'Account setup failed due to a server error. Please try again or contact support.',
+            'فشل إنشاء الحساب بسبب خطأ في الخادم. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.'
+          ))
+        } else if (/signup.*disabled|signups.*disabled/i.test(errMsg)) {
+          toast.error(t(
+            'Signups are currently disabled. Please contact support.',
+            'التسجيل معطل حالياً. يرجى التواصل مع الدعم.'
+          ))
+        } else if (/rate limit/i.test(errMsg)) {
+          toast.error(t(
+            'Too many attempts. Please wait a few minutes and try again.',
+            'محاولات كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.'
+          ))
+        } else if (errMsg) {
+          toast.error(t(`Signup failed: ${errMsg}`, `فشل التسجيل: ${errMsg}`))
+        } else {
+          toast.error(t('Signup failed. Please try again.', 'فشل التسجيل. يرجى المحاولة مرة أخرى.'))
         }
-        throw new Error(result.error)
+        return
       }
 
       if (result.requiresEmailConfirmation) {
@@ -98,8 +120,9 @@ export default function SignupPage() {
         router.replace('/dashboard')
         router.refresh()
       }
-    } catch {
-      toast.error(t('Signup failed. Email may already be in use.', 'فشل التسجيل. البريد الإلكتروني قد يكون مستخدماً.'))
+    } catch (err) {
+      console.error('[signup] Unexpected exception:', err)
+      toast.error(t('Signup failed. Please try again.', 'فشل التسجيل. يرجى المحاولة مرة أخرى.'))
     } finally {
       setIsLoading(false)
     }

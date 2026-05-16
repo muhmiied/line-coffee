@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface SignUpData {
   email: string
@@ -73,7 +74,40 @@ export async function signUp(data: SignUpData) {
   })
 
   if (error) {
+    console.error('[signUp] Supabase auth.signUp error:', error.message, error)
     return { success: false, error: error.message }
+  }
+
+  // When email confirmation is enabled and the email already exists,
+  // Supabase returns a user with empty identities instead of an error.
+  if (authData.user && (authData.user.identities?.length ?? 0) === 0) {
+    return { success: false, error: 'User already registered' }
+  }
+
+  // Upsert profile as a robust fallback in case the DB trigger didn't fire.
+  if (authData.user) {
+    const admin = createAdminClient()
+    if (admin) {
+      const { error: profileError } = await admin
+        .from('profiles')
+        .upsert(
+          {
+            id: authData.user.id,
+            first_name: data.firstName?.trim() || null,
+            last_name: data.lastName?.trim() || null,
+            phone: data.phone?.trim() || null,
+            whatsapp: data.whatsapp?.trim() || null,
+            address: data.address?.trim() || null,
+            location_link: data.locationLink?.trim() || null,
+            preferred_language: 'ar',
+          },
+          { onConflict: 'id' }
+        )
+
+      if (profileError) {
+        console.error('[signUp] Profile upsert error:', profileError.message, profileError)
+      }
+    }
   }
 
   revalidatePath('/', 'layout')
