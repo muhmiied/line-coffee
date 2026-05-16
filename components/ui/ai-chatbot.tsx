@@ -129,8 +129,8 @@ export function AIChatbot() {
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
         className={cn(
-          'fixed bottom-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl flex items-center justify-center group',
-          dir === 'rtl' ? 'left-6' : 'right-24'
+          'fixed bottom-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl group sm:h-14 sm:w-14',
+          dir === 'rtl' ? 'left-5 sm:left-6' : 'right-20 sm:right-24'
         )}
         aria-label="Open AI Chat"
       >
@@ -146,8 +146,8 @@ export function AIChatbot() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             className={cn(
-              'fixed bottom-24 z-50 w-[350px] h-[500px] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col',
-              dir === 'rtl' ? 'left-6' : 'right-6'
+              'fixed inset-x-3 bottom-20 z-50 flex h-[min(500px,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:inset-x-auto sm:bottom-24 sm:w-[350px]',
+              dir === 'rtl' ? 'sm:left-6' : 'sm:right-6'
             )}
           >
             {/* Header */}

@@ -122,8 +122,9 @@ export function NotificationCenter() {
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.18 }}
             className={cn(
-              'absolute top-[calc(100%+0.75rem)] z-[90] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl shadow-2xl',
-              dir === 'rtl' ? 'left-0' : 'right-0',
+              'fixed inset-x-3 top-24 z-[120] w-auto overflow-hidden rounded-2xl shadow-2xl',
+              'md:absolute md:inset-x-auto md:top-[calc(100%+0.75rem)] md:w-[min(22rem,calc(100vw-2rem))]',
+              dir === 'rtl' ? 'md:left-0' : 'md:right-0',
             )}
             style={{
               background: 'linear-gradient(180deg, rgba(18,13,9,0.99), rgba(11,8,6,0.99))',
@@ -139,7 +140,7 @@ export function NotificationCenter() {
               <CheckCircle2 className="h-4 w-4 text-[#B6885E]" />
             </div>
 
-            <div className="max-h-80 overflow-y-auto p-2">
+            <div className="max-h-[calc(100dvh-11rem)] overflow-y-auto p-2 md:max-h-80">
               {loading ? (
                 <div className="space-y-2 p-2">
                   {[...Array(3)].map((_, index) => (

@@ -99,7 +99,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen pb-8 pt-36 md:pt-40">
+    <div className="min-h-screen pb-8 pt-32 sm:pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           {/* Back Button */}
@@ -131,10 +131,10 @@ export default function ProfilePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onSubmit={handleSubmit}
-            className="space-y-6 bg-card rounded-xl border border-border p-6"
+            className="space-y-6 bg-card rounded-xl border border-border p-4 sm:p-6"
           >
             {/* Avatar */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-0">
               <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-2xl font-bold text-primary">
                   {formData.firstName || formData.lastName ? (
@@ -144,9 +144,9 @@ export default function ProfilePage() {
                   )}
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="font-medium">{formData.firstName} {formData.lastName}</p>
-                <p className="text-sm text-muted-foreground">{formData.email}</p>
+                <p className="truncate text-sm text-muted-foreground">{formData.email}</p>
               </div>
             </div>
 

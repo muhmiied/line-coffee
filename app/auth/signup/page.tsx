@@ -134,7 +134,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -164,7 +164,7 @@ export default function SignupPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Name Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="firstName">{t('First Name', 'الاسم الأول')}</Label>
               <div className="relative">
@@ -215,7 +215,7 @@ export default function SignupPage() {
           </div>
 
           {/* Phone Numbers */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="phone">{t('Phone Number', 'رقم الهاتف')}</Label>
               <div className="relative">

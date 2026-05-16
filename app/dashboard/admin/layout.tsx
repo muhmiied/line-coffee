@@ -119,10 +119,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     : t('Dashboard', 'لوحة التحكم')
 
   return (
-    <div className="flex -mt-20 md:-mt-24 min-h-[100dvh] bg-background">
+    <div className="flex -mt-20 min-h-[100dvh] bg-background md:-mt-24">
 
       {/* ── Sidebar ── */}
-      <aside className="fixed left-0 top-0 h-[100dvh] w-[215px] bg-[#0a0500] flex flex-col z-50 select-none">
+      <aside className="fixed left-0 top-0 z-50 hidden h-[100dvh] w-[215px] select-none flex-col bg-[#0a0500] md:flex">
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#c8941a]/10 to-transparent" />
 
         {/* Logo */}
@@ -182,22 +182,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Content ── */}
-      <div className="flex-1 ml-[215px] min-h-[100dvh] flex flex-col">
+      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col md:ml-[215px]">
 
         {/* Top bar */}
-        <header className="fixed top-0 right-0 left-[215px] h-16 bg-[#0a0500]/95 backdrop-blur-sm border-b border-[#c8941a]/12 z-40 flex items-center justify-between px-6">
+        <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-[#c8941a]/12 bg-[#0a0500]/95 px-3 backdrop-blur-sm sm:px-4 md:left-[215px] md:px-6">
           {pathname === '/dashboard/admin' ? (
-            <div>
-              <h1 className="text-white font-bold text-base leading-none">
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-bold leading-none text-white sm:text-base">
                 {t('Welcome back', 'مرحباً بعودتك')} 👋
               </h1>
-              <p className="text-white/30 text-[11px] mt-0.5">
+              <p className="mt-0.5 hidden text-[11px] text-white/30 sm:block">
                 {t("Here's what's happening with your store today.", 'إليك ملخص أداء متجرك اليوم')}
               </p>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <h1 className="text-white/90 font-bold text-base">{pageTitle}</h1>
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <h1 className="truncate text-sm font-bold text-white/90 sm:text-base">{pageTitle}</h1>
               {pathname === '/dashboard/admin/orders' && pendingOrders > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold">
                   {pendingOrders} {t('pending', 'معلق')}
@@ -206,7 +206,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* Search */}
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
@@ -245,7 +245,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {bellOpen && (
                 <>
                   <div className="fixed inset-0 z-50" onClick={() => setBellOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-[#0a0500] border border-[#c8941a]/15 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                  <div className="fixed inset-x-3 top-[4.5rem] z-[60] max-h-[calc(100dvh-5.5rem)] overflow-hidden rounded-xl border border-[#c8941a]/15 bg-[#0a0500] shadow-2xl md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:w-72">
                     <div className="px-4 py-3 border-b border-[#c8941a]/10 flex items-center justify-between">
                       <p className="text-white/80 text-xs font-semibold">{t('Pending Orders', 'الطلبات المعلقة')}</p>
                       {pendingOrders > 0 && (
@@ -258,7 +258,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <p className="text-white/25 text-xs">{t('No pending orders', 'لا توجد طلبات معلقة')}</p>
                       </div>
                     ) : (
-                      <div className="divide-y divide-white/[0.03]">
+                      <div className="max-h-[calc(100dvh-14rem)] divide-y divide-white/[0.03] overflow-y-auto md:max-h-80">
                         {pendingOrdersList.map(order => (
                           <Link
                             key={order.id}
@@ -315,7 +315,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {avatarOpen && (
                 <>
                   <div className="fixed inset-0 z-50" onClick={() => setAvatarOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#0a0500] border border-[#c8941a]/15 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                  <div className="fixed right-3 top-[4.5rem] z-[60] w-48 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-[#c8941a]/15 bg-[#0a0500] shadow-2xl md:absolute md:right-0 md:top-full md:mt-2">
                     <div className="px-4 py-3 border-b border-[#c8941a]/10">
                       <p className="text-white/80 text-xs font-semibold truncate">{displayName}</p>
                       <p className="text-white/30 text-[10px] truncate mt-0.5">{email}</p>
@@ -355,8 +355,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="flex-1 pt-16 bg-[#0f0900]">
-          {children}
+        <main className="flex-1 bg-[#0f0900] pt-16">
+          <nav className="sticky top-16 z-30 flex gap-2 overflow-x-auto border-b border-[#c8941a]/10 bg-[#0a0500]/96 px-3 py-2 md:hidden">
+            {nav.map((item) => {
+              const active = item.exact
+                ? pathname === item.href
+                : pathname.startsWith(item.href)
+              const isOrders = item.href === '/dashboard/admin/orders'
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium transition-colors',
+                    active
+                      ? 'border-[#c8941a]/25 bg-[#c8941a]/15 text-[#c8941a]'
+                      : 'border-white/[0.06] bg-white/[0.03] text-white/45 hover:text-white/75'
+                  )}
+                >
+                  <item.icon className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t(item.labelEn, item.labelAr)}</span>
+                  {isOrders && pendingOrders > 0 && (
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                      {pendingOrders > 9 ? '9+' : pendingOrders}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+          <div className="min-w-0">{children}</div>
         </main>
       </div>
     </div>

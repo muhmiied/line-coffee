@@ -37,7 +37,7 @@ export function CartDrawer() {
             exit={{ x: dir === 'rtl' ? -400 : 400 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={cn(
-              'fixed top-0 bottom-0 z-50 w-full max-w-md bg-card shadow-xl flex flex-col',
+              'fixed top-0 bottom-0 z-50 w-full max-w-[min(28rem,100vw)] bg-card shadow-xl flex flex-col',
               dir === 'rtl' ? 'left-0' : 'right-0'
             )}
           >
@@ -60,7 +60,7 @@ export function CartDrawer() {
             </div>
 
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <ShoppingBag className="h-16 w-16 text-muted-foreground/30 mb-4" />
@@ -86,10 +86,10 @@ export function CartDrawer() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: dir === 'rtl' ? -100 : 100 }}
-                      className="flex gap-4 p-3 bg-secondary/50 rounded-lg"
+                      className="flex gap-3 p-3 bg-secondary/50 rounded-lg sm:gap-4"
                     >
                       {/* Product Image */}
-                      <div className="relative h-20 w-20 rounded-md overflow-hidden bg-muted shrink-0">
+                      <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted shrink-0 sm:h-20 sm:w-20">
                         {item.image ? (
                           <Image
                             src={item.image}
@@ -111,7 +111,7 @@ export function CartDrawer() {
                         </h4>
                         <p className="text-xs text-muted-foreground mb-2">{item.size}</p>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between">
                           {/* Quantity Controls */}
                           <div className="flex items-center gap-2">
                             <Button
@@ -174,7 +174,7 @@ export function CartDrawer() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t border-border p-4 space-y-4">
+              <div className="border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
                 {/* Summary */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">

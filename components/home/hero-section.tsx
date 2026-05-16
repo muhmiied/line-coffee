@@ -71,7 +71,7 @@ export function HeroSection() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[110vh] flex items-center overflow-hidden -mt-20 md:-mt-24 pt-44 md:pt-52 pb-36 md:pb-44"
+      className="relative flex min-h-[92svh] items-center overflow-hidden -mt-16 pt-32 pb-24 sm:-mt-[4.5rem] sm:pt-40 sm:pb-28 md:-mt-24 md:min-h-[110vh] md:pt-52 md:pb-44"
       style={{ background: '#0B0806' }}
     >
       {/* ── Decorative coffee bean ── */}
@@ -126,7 +126,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-8 md:gap-16 mb-12"
+            className="mb-8 flex flex-wrap justify-center gap-5 sm:gap-8 md:mb-12 md:gap-16"
           >
             {[
               { value: 15, suffix: '+', labelEn: 'Countries Sourced', labelAr: 'دولة مصدر' },
@@ -154,7 +154,7 @@ export function HeroSection() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              className="relative font-serif text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.02] mb-6 text-balance"
+              className="relative mb-5 font-serif text-4xl font-extrabold leading-[1.05] text-balance min-[380px]:text-5xl md:mb-6 md:text-7xl lg:text-8xl"
               style={{
                 color: '#F5E6D8',
                 textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
@@ -172,7 +172,7 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5, delay: 0.55 }}
-              className="text-lg md:text-xl mb-10 max-w-2xl mx-auto text-pretty leading-relaxed"
+              className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty md:mb-10 md:text-xl"
               style={{ color: 'rgba(214,183,154,0.85)' }}
             >
               {subheadingText}
@@ -242,7 +242,7 @@ export function HeroSection() {
       </motion.div>
 
       {/* ── Slide nav arrows ── */}
-      <div className="absolute inset-y-0 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+      <div className="absolute inset-y-0 left-3 right-3 z-20 hidden items-center justify-between pointer-events-none sm:flex md:left-4 md:right-4">
         <Button
           variant="ghost"
           size="icon"
@@ -270,7 +270,7 @@ export function HeroSection() {
       </div>
 
       {/* ── Slide indicators ── */}
-      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
+      <div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-3 sm:flex md:right-6">
         {slides.map((_, index) => (
           <button
             key={index}

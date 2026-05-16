@@ -128,7 +128,7 @@ export default function ReviewsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
         <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Star className="h-4 w-4 text-[#c8941a] fill-[#c8941a]" />

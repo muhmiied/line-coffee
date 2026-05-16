@@ -119,7 +119,7 @@ export default function DashboardPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen pb-8 pt-36 md:pt-40">
+    <div className="min-h-screen pb-8 pt-32 sm:pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -238,7 +238,7 @@ export default function DashboardPage() {
                       <Link
                         key={order.id}
                         href="/dashboard/orders"
-                        className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-secondary/50"
+                    className="flex flex-col gap-2 rounded-lg border border-border p-3 transition-colors hover:bg-secondary/50 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between"
                       >
                         <div>
                           <p className="font-medium text-primary">#{order.order_number}</p>
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                             {new Date(order.created_at).toLocaleDateString()}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="min-[380px]:text-right">
                           <p className="font-semibold">{order.total} {t('EGP', 'ج.م')}</p>
                           <p className="text-xs capitalize text-muted-foreground">{order.status}</p>
                         </div>

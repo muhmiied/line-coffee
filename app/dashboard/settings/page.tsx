@@ -12,7 +12,7 @@ export default function DashboardSettingsPage() {
   const { t, dir, language, setLanguage } = useLanguage()
 
   return (
-    <div className="min-h-screen pb-8 pt-36 md:pt-40">
+    <div className="min-h-screen pb-8 pt-32 sm:pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
           <Link
@@ -31,7 +31,7 @@ export default function DashboardSettingsPage() {
           </div>
 
           <div className="space-y-4">
-            <section className="rounded-xl border border-border bg-card p-6">
+            <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
               <div className="mb-4 flex items-center gap-3">
                 <Globe className="h-5 w-5 text-primary" />
                 <h2 className="font-semibold">{t('Language', 'اللغة')}</h2>
@@ -54,13 +54,13 @@ export default function DashboardSettingsPage() {
               </div>
             </section>
 
-            <section className="rounded-xl border border-border bg-card p-6">
+            <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
               <div className="mb-4 flex items-center gap-3">
                 <User className="h-5 w-5 text-primary" />
                 <h2 className="font-semibold">{t('Account', 'الحساب')}</h2>
               </div>
-              <p className="mb-4 text-sm text-muted-foreground">{user?.email}</p>
-              <div className="flex flex-wrap gap-3">
+              <p className="mb-4 break-all text-sm text-muted-foreground">{user?.email}</p>
+              <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:flex-wrap">
                 <Button asChild variant="outline">
                   <Link href="/dashboard/profile">{t('Edit Profile', 'تعديل الملف الشخصي')}</Link>
                 </Button>

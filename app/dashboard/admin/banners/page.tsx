@@ -223,7 +223,7 @@ export default function BannersPage() {
                   placeholder="https://..." className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all" />
                 {form.image_url && <img src={form.image_url} alt="preview" className="mt-2 w-full h-28 object-cover rounded-xl opacity-70" />}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Title', 'العنوان بالعربية')}</label>
                   <input value={form.title_ar} onChange={e => setForm(p => ({ ...p, title_ar: e.target.value }))} dir="rtl"
@@ -235,7 +235,7 @@ export default function BannersPage() {
                     placeholder="Title" className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Subtitle', 'الوصف بالعربية')}</label>
                   <input value={form.subtitle_ar} onChange={e => setForm(p => ({ ...p, subtitle_ar: e.target.value }))} dir="rtl"
@@ -247,7 +247,7 @@ export default function BannersPage() {
                     placeholder="Short description" className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Link URL', 'رابط الانتقال')}</label>
                   <input value={form.link_url} onChange={e => setForm(p => ({ ...p, link_url: e.target.value }))}

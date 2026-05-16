@@ -49,7 +49,7 @@ export function WishlistDrawer() {
             exit={{ x: dir === 'rtl' ? -400 : 400 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={cn(
-              'fixed top-0 bottom-0 z-50 w-full max-w-md bg-card shadow-xl flex flex-col',
+              'fixed top-0 bottom-0 z-50 w-full max-w-[min(28rem,100vw)] bg-card shadow-xl flex flex-col',
               dir === 'rtl' ? 'left-0' : 'right-0'
             )}
           >
@@ -72,7 +72,7 @@ export function WishlistDrawer() {
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <Heart className="h-16 w-16 text-muted-foreground/30 mb-4" />
@@ -95,12 +95,12 @@ export function WishlistDrawer() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: dir === 'rtl' ? -100 : 100 }}
-                      className="flex gap-4 p-3 bg-secondary/50 rounded-lg"
+                      className="flex gap-3 p-3 bg-secondary/50 rounded-lg sm:gap-4"
                     >
                       <Link
                         href={`/products/${item.slug}`}
                         onClick={closeWishlist}
-                        className="relative h-20 w-20 rounded-md overflow-hidden bg-muted shrink-0"
+                        className="relative h-16 w-16 rounded-md overflow-hidden bg-muted shrink-0 sm:h-20 sm:w-20"
                       >
                         {item.image ? (
                           <Image src={item.image} alt={language === 'ar' ? item.name_ar : item.name_en} fill className="object-cover" />
@@ -121,7 +121,7 @@ export function WishlistDrawer() {
                           {item.price} {t('EGP', 'ج.م')}
                         </p>
                         <div className="flex items-center gap-2 mt-3">
-                          <Button size="sm" onClick={() => handleAddToCart(item)} className="h-8 text-xs">
+                          <Button size="sm" onClick={() => handleAddToCart(item)} className="h-auto min-h-8 px-2 py-1.5 text-xs">
                             <ShoppingBag className="h-3 w-3 mr-1" />
                             {t('Add to Cart', 'أضف للسلة')}
                           </Button>
@@ -143,7 +143,7 @@ export function WishlistDrawer() {
             </div>
 
             {items.length > 0 && (
-              <div className="border-t border-border p-4">
+              <div className="border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 <Button variant="outline" className="w-full" onClick={closeWishlist} asChild>
                   <Link href="/products">{t('Continue Shopping', 'متابعة التسوق')}</Link>
                 </Button>

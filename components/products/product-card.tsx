@@ -120,7 +120,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         >
 
           {/* ── Image zone ─────────────────────────────────────────── */}
-          <div className="relative h-40 overflow-hidden bg-[#120D09] sm:h-44 lg:h-48">
+          <div className="relative h-32 overflow-hidden bg-[#120D09] min-[380px]:h-36 sm:h-40 lg:h-44">
 
             {product.images?.[0] ? (
               <Image
@@ -208,7 +208,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 <button
                   type="button"
                   onClick={handleQuickAdd}
-                  className="premium-button flex w-full items-center justify-center gap-2 rounded-full py-2 text-xs font-semibold sm:text-sm"
+                  className="premium-button flex w-full items-center justify-center gap-1.5 rounded-full py-2 text-[11px] font-semibold sm:gap-2 sm:text-sm"
                 >
                   <ShoppingBag className="h-4 w-4" />
                   {t('Quick Add', 'إضافة سريعة')}
@@ -218,22 +218,22 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
 
           {/* ── Info zone ──────────────────────────────────────────── */}
-          <div className="space-y-3 px-3.5 pb-4 pt-3.5">
+          <div className="space-y-2.5 px-2.5 pb-3 pt-3 sm:px-3.5 sm:pb-4 sm:pt-3.5">
 
             {/* Name + description */}
             <div className="space-y-1.5">
-              <h3 className="line-clamp-1 font-serif text-[15px] font-semibold leading-snug text-[#F5E6D8]/90 transition-colors duration-300 group-hover:text-[#F5E6D8]">
+              <h3 className="line-clamp-1 font-serif text-[14px] font-semibold leading-snug text-[#F5E6D8]/90 transition-colors duration-300 group-hover:text-[#F5E6D8] sm:text-[15px]">
                 {name}
               </h3>
               {description && (
-                <p className="line-clamp-2 min-h-[2rem] text-xs leading-4 text-[#D6B79A]/58">
+                <p className="line-clamp-2 min-h-[2rem] text-[11px] leading-4 text-[#D6B79A]/58 sm:text-xs">
                   {description}
                 </p>
               )}
             </div>
 
             {/* Weight prices */}
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-1">
               {sizeOptions.map(({ weight, size }) => {
                 const unavailable = !size || size.is_available === false
 
@@ -241,14 +241,14 @@ export function ProductCard({ product, className }: ProductCardProps) {
                   <div
                     key={weight}
                     className={cn(
-                      'rounded-lg border px-1.5 py-2 text-center transition-colors',
+                      'rounded-lg border px-1 py-1.5 text-center transition-colors sm:px-1.5 sm:py-2',
                       unavailable
                         ? 'border-[#B6885E]/10 bg-[#0F0A07]/55 text-[#D6B79A]/35'
                         : 'border-[#B6885E]/22 bg-[#D6A373]/[0.055] text-[#F5E6D8] group-hover:border-[#D6A373]/36',
                     )}
                   >
-                    <p className="text-[11px] font-semibold leading-none tracking-[0.02em]">{weight}</p>
-                    <p className="mt-1 text-[11px] font-bold leading-none text-[#D6A373]">
+                    <p className="text-[10px] font-semibold leading-none tracking-[0.02em] sm:text-[11px]">{weight}</p>
+                    <p className="mt-1 text-[9px] font-bold leading-tight text-[#D6A373] min-[380px]:text-[10px] sm:text-[11px]">
                       {size ? `${size.price} ${t('EGP', 'ج.م')}` : t('N/A', 'N/A')}
                     </p>
                   </div>

@@ -21,7 +21,7 @@ export default function DashboardWishlistPage() {
   const wishlistItems = isMounted ? items : []
 
   return (
-    <div className="min-h-screen pb-8 pt-36 md:pt-40">
+    <div className="min-h-screen pb-8 pt-32 sm:pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-5xl">
           <Link
@@ -32,7 +32,7 @@ export default function DashboardWishlistPage() {
             {t('Back to Dashboard', 'العودة للوحة التحكم')}
           </Link>
 
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-serif text-3xl font-bold">{t('Wishlist', 'المفضلة')}</h1>
               <p className="mt-2 text-muted-foreground">
@@ -62,7 +62,7 @@ export default function DashboardWishlistPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {wishlistItems.map((item) => (
                 <div key={item.productId} className="overflow-hidden rounded-xl border border-border bg-card">
                   <Link href={`/products/${item.slug}`} className="relative block aspect-[4/3] bg-secondary">

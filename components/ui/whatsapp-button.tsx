@@ -18,16 +18,16 @@ export function WhatsAppButton() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       onClick={handleClick}
-      className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl flex items-center justify-center group"
+      className="fixed bottom-6 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl group sm:right-6 sm:h-14 sm:w-14"
       aria-label="Contact us on WhatsApp"
     >
-      <MessageCircle className="w-7 h-7 group-hover:scale-110 transition-transform" />
+      <MessageCircle className="h-6 w-6 transition-transform group-hover:scale-110 sm:h-7 sm:w-7" />
       
       {/* Pulse animation */}
       <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30" />
       
       {/* Tooltip */}
-      <span className="absolute right-full mr-3 px-3 py-1.5 bg-foreground text-background text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+      <span className="absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background opacity-0 transition-opacity group-hover:opacity-100 sm:block">
         تواصل معنا
       </span>
     </motion.button>

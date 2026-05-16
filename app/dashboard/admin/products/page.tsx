@@ -481,7 +481,7 @@ export default function ProductsPage() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
               {/* Names */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Name', 'الاسم بالعربية')} *</label>
                   <input
@@ -504,7 +504,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Descriptions */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Description', 'الوصف بالعربية')}</label>
                   <textarea
@@ -529,7 +529,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Category + Stock */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Category', 'الفئة')}</label>
                   <select
@@ -583,7 +583,7 @@ export default function ProductsPage() {
               {/* Prices */}
               <div>
                 <label className="block text-white/40 text-xs mb-1.5">{t('Prices (EGP)', 'الأسعار (ج.م)')}</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {([
                     { label: '250g', field: 'price_250' },
                     { label: '500g', field: 'price_500' },

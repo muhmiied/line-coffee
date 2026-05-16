@@ -202,7 +202,7 @@ export default function DiscountsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
         {[
           { label: t('Total Codes', 'إجمالي الأكواد'), value: discounts.length },
           { label: t('Active', 'نشطة'), value: activeCount },
@@ -285,7 +285,7 @@ export default function DiscountsPage() {
                 <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
                   placeholder="SAVE20" className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 uppercase font-mono placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor="disc-type" className="block text-white/40 text-xs mb-1.5">{t('Type', 'النوع')}</label>
                   <select id="disc-type" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as 'percentage' | 'fixed' }))}
@@ -301,7 +301,7 @@ export default function DiscountsPage() {
                     className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all" min={0} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Min Order (EGP)', 'حد أدنى للطلب')}</label>
                   <input type="number" value={form.min_order} onChange={e => setForm(p => ({ ...p, min_order: e.target.value }))}

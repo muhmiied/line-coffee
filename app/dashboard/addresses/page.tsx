@@ -14,7 +14,7 @@ export default function DashboardAddressesPage() {
   const hasAddress = Boolean(profile?.address || profile?.city || profile?.location_link)
 
   return (
-    <div className="min-h-screen pb-8 pt-36 md:pt-40">
+    <div className="min-h-screen pb-8 pt-32 sm:pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
           <Link
@@ -32,8 +32,8 @@ export default function DashboardAddressesPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-start gap-4">
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+            <div className="flex flex-col gap-4 min-[380px]:flex-row min-[380px]:items-start">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
                 <MapPin className="h-5 w-5 text-primary" />
               </div>
@@ -48,7 +48,7 @@ export default function DashboardAddressesPage() {
                         href={profile.location_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                        className="inline-flex max-w-full items-center gap-1 break-all text-primary hover:underline"
                       >
                         {t('Open Google Maps location', 'افتح الموقع على خرائط جوجل')}
                         <ExternalLink className="h-3.5 w-3.5" />

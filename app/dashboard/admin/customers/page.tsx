@@ -132,7 +132,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
         {[
           { label: t('Total Customers', 'إجمالي العملاء'), value: String(customers.length), icon: Users },
           { label: t('Active Buyers', 'مشترون نشطون'), value: String(activeCustomers), icon: ShoppingBag },

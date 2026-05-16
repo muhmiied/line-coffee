@@ -197,8 +197,8 @@ export function Header() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/15 to-transparent pointer-events-none" />
         )}
 
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="flex items-center justify-between h-20 md:h-24 relative">
+        <div className="container mx-auto px-3 sm:px-4 relative z-10">
+          <div className="flex items-center justify-between h-16 sm:h-[4.5rem] md:h-24 relative">
 
             {/* Thin gold underline on transparent state */}
             {!showGlass && (
@@ -209,11 +209,11 @@ export function Header() {
             )}
 
             {/* Logo */}
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex min-w-0 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="relative h-[4.5rem] w-[13rem] md:h-20 md:w-[15rem]"
+                className="relative h-12 w-36 sm:h-14 sm:w-44 md:h-20 md:w-[15rem]"
               >
                 <Image
                   src="/brand/logo-white.svg"
@@ -253,7 +253,7 @@ export function Header() {
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
 
               {/* Language */}
               <DropdownMenu>
@@ -311,7 +311,7 @@ export function Header() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
                       transition={{ duration: 0.18 }}
-                      className="absolute right-0 top-[calc(100%+0.8rem)] z-[90] w-[22rem] overflow-hidden rounded-2xl shadow-2xl"
+                      className="absolute right-0 top-[calc(100%+0.8rem)] z-[90] w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl shadow-2xl"
                       style={{
                         background: 'linear-gradient(180deg, rgba(18,13,9,0.98), rgba(11,8,6,0.98))',
                         backdropFilter: 'blur(24px)',
@@ -540,7 +540,7 @@ export function Header() {
               exit={{ x: language === 'ar' ? -300 : 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={cn(
-                'absolute top-16 bottom-0 w-72 shadow-2xl p-6 overflow-y-auto',
+                'absolute top-16 bottom-0 w-[min(18rem,calc(100vw-1rem))] shadow-2xl p-5 overflow-y-auto pb-[calc(1.25rem+env(safe-area-inset-bottom))]',
                 language === 'ar' ? 'left-0' : 'right-0'
               )}
               style={{

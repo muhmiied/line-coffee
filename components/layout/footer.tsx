@@ -200,7 +200,7 @@ export function Footer() {
                 &copy; {new Date().getFullYear()} Line Coffee.{' '}
                 {t('All rights reserved.', 'جميع الحقوق محفوظة.')}
               </p>
-              <div className="flex gap-5">
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-5">
                 {footerLinks.support.slice(3).map((link) => (
                   <Link
                     key={link.href}

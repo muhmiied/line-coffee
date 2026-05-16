@@ -61,7 +61,7 @@ export default function DashboardOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen pb-8 pt-36 md:pt-40">
+    <div className="min-h-screen pb-8 pt-32 sm:pt-36 md:pt-40">
       <div className="container mx-auto px-4">
         <div className="max-w-[1600px] mx-auto">
           <div className="mb-6">
@@ -95,7 +95,7 @@ export default function DashboardOrdersPage() {
                         {new Date(order.created_at).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[order.status] || 'bg-secondary text-foreground'}`}>
                         {order.status}
                       </span>
@@ -117,11 +117,11 @@ export default function DashboardOrdersPage() {
                   {expandedId === order.id && (
                     <div className="mt-4 pt-4 border-t border-border space-y-2">
                       {(order.items || []).map((item) => (
-                        <div key={item.id} className="flex justify-between text-sm">
-                          <div>
+                        <div key={item.id} className="flex flex-col gap-1 text-sm min-[380px]:flex-row min-[380px]:justify-between">
+                          <div className="min-w-0 break-words">
                             {item.product_name} {item.size ? `(${item.size})` : ''} x {item.quantity}
                           </div>
-                          <div>{item.total_price} {t('EGP', 'ج.م')}</div>
+                          <div className="shrink-0 font-medium">{item.total_price} {t('EGP', 'ج.م')}</div>
                         </div>
                       ))}
                     </div>
