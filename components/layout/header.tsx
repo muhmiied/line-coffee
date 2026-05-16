@@ -240,14 +240,10 @@ export function Header() {
                   )}
                 >
                   {t(link.labelEn, link.labelAr)}
-                  <span className="absolute -bottom-0.5 left-1/2 h-px w-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#D6A373] to-transparent transition-all duration-300 group-hover/nav:w-full" />
-                  {pathname === link.href && (
-                    <motion.div
-                      layoutId="activeNav"
-                      className="absolute -bottom-0.5 left-0 right-0 h-px rounded-full shadow-[0_0_14px_rgba(214,163,115,0.45)]"
-                      style={{ background: 'linear-gradient(to right, #B6885E, #D6A373)' }}
-                    />
-                  )}
+                  <span className={cn(
+                    "absolute -bottom-0.5 left-1/2 h-px -translate-x-1/2 bg-gradient-to-r from-transparent via-[#D6A373] to-transparent transition-all duration-300",
+                    pathname === link.href ? "w-full shadow-[0_0_14px_rgba(214,163,115,0.45)]" : "w-0 group-hover/nav:w-full"
+                  )} />
                 </Link>
               ))}
             </nav>
