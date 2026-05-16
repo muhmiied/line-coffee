@@ -243,16 +243,19 @@ function buildOrderMessage(payload: OrderMessagePayload): string {
   const itemsText = payload.items
     .map((item, i) => {
       const customizations = item.customizations
-        ? `\n   Customizations: ${JSON.stringify(item.customizations)}`
-        : ''
+        ? `Customizations: ${JSON.stringify(item.customizations)}`
+        : null
 
       return [
-        `${i + 1}. ${item.product_name}`,
-        `   Weight/variant: ${item.size || '-'}`,
-        `   Quantity: ${item.quantity}`,
-        `   Unit price: ${formatMoney(item.unit_price)}`,
-        `   Line total: ${formatMoney(item.total_price)}${customizations}`,
-      ].join('\n')
+        `${i + 1}) ${item.product_name}`,
+        `Weight/variant: ${item.size || '-'}`,
+        `Quantity: ${item.quantity}`,
+        `Unit price: ${formatMoney(item.unit_price)}`,
+        `Line total: ${formatMoney(item.total_price)}`,
+        customizations,
+      ]
+        .filter((line): line is string => line !== null)
+        .join('\n')
     })
     .join('\n\n')
 
@@ -263,7 +266,6 @@ function buildOrderMessage(payload: OrderMessagePayload): string {
     'New Line Coffee Order',
     '----------------------',
     `Order number: ${payload.orderNumber}`,
-    payload.adminOrderLink ? `Admin order link: ${payload.adminOrderLink}` : null,
     '',
     'Customer',
     `Name: ${payload.customerName || '-'}`,
@@ -284,7 +286,10 @@ function buildOrderMessage(payload: OrderMessagePayload): string {
       ? `Discount (${payload.discountCode}): -${formatMoney(payload.discountAmount)}`
       : null,
     `Order total: ${formatMoney(payload.total)}`,
-    payload.notes ? `\nCustomer notes: ${payload.notes}` : null,
+    payload.notes ? `Customer notes: ${payload.notes}` : null,
+    payload.adminOrderLink ? '' : null,
+    payload.adminOrderLink ? 'View in dashboard:' : null,
+    payload.adminOrderLink || null,
   ]
     .filter((line) => line !== null)
     .join('\n')
