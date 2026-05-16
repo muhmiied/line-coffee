@@ -84,7 +84,7 @@ export default function SignupPage() {
           toast.info(`DEV: ${result.devError}`, { duration: 15000 })
         }
 
-        if (/already registered|already exists|duplicate|email.*use/i.test(errMsg)) {
+        if (/user already registered|already registered|already exists|email.*use/i.test(errMsg)) {
           toast.error(t(
             'This email is already registered. Please log in instead.',
             'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.'

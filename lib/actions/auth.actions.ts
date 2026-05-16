@@ -28,6 +28,17 @@ interface UpdateProfileData {
   preferredLanguage?: 'en' | 'ar'
 }
 
+type ProfileUpsertPayload = {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  phone: string | null
+  whatsapp: string | null
+  address: string | null
+  location_link: string | null
+  preferred_language: 'ar'
+}
+
 async function getRequestOrigin() {
   const headerStore = await headers()
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
@@ -53,7 +64,51 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
+function cleanString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
 const isDev = process.env.NODE_ENV === 'development'
+
+function getAuthErrorDetails(error: unknown) {
+  const maybeDetails = error as { status?: unknown; code?: unknown }
+
+  return {
+    status: maybeDetails.status,
+    code: maybeDetails.code,
+  }
+}
+
+function buildSignUpProfilePayload(userId: string, data: SignUpData): ProfileUpsertPayload {
+  return {
+    id: userId,
+    first_name: cleanString(data.firstName),
+    last_name: cleanString(data.lastName),
+    phone: cleanString(data.phone),
+    whatsapp: cleanString(data.whatsapp),
+    address: cleanString(data.address),
+    location_link: cleanString(data.locationLink),
+    preferred_language: 'ar',
+  }
+}
+
+function buildRecoveredProfilePayload(user: {
+  id: string
+  user_metadata?: Record<string, unknown> | null
+}): ProfileUpsertPayload {
+  const metadata = user.user_metadata ?? {}
+
+  return {
+    id: user.id,
+    first_name: cleanString(metadata.first_name),
+    last_name: cleanString(metadata.last_name),
+    phone: cleanString(metadata.phone),
+    whatsapp: cleanString(metadata.whatsapp),
+    address: cleanString(metadata.address),
+    location_link: cleanString(metadata.location_link),
+    preferred_language: 'ar',
+  }
+}
 
 export async function signUp(data: SignUpData) {
   const supabase = await createClient()
@@ -76,17 +131,19 @@ export async function signUp(data: SignUpData) {
   })
 
   if (error) {
+    const details = getAuthErrorDetails(error)
+
     console.error('[signUp] ❌ auth.signUp error:', {
       message: error.message,
       name: error.name,
-      status: (error as Record<string, unknown>)?.status,
-      code: (error as Record<string, unknown>)?.code,
+      status: details.status,
+      code: details.code,
     })
     return {
       success: false as const,
       error: error.message,
       devError: isDev
-        ? `[Auth] ${error.message} | name=${error.name} status=${(error as Record<string, unknown>)?.status} code=${(error as Record<string, unknown>)?.code}`
+        ? `[Auth] ${error.message} | name=${error.name} status=${details.status} code=${details.code}`
         : undefined,
     }
   }
@@ -103,16 +160,7 @@ export async function signUp(data: SignUpData) {
   if (authData.user) {
     const admin = createAdminClient()
     if (admin) {
-      const profilePayload = {
-        id: authData.user.id,
-        first_name: data.firstName?.trim() || null,
-        last_name: data.lastName?.trim() || null,
-        phone: data.phone?.trim() || null,
-        whatsapp: data.whatsapp?.trim() || null,
-        address: data.address?.trim() || null,
-        location_link: data.locationLink?.trim() || null,
-        preferred_language: 'ar',
-      }
+      const profilePayload = buildSignUpProfilePayload(authData.user.id, data)
       console.log('[signUp] Upserting profile:', profilePayload)
 
       const { error: profileError } = await admin
@@ -178,9 +226,10 @@ export async function signIn(data: SignInData) {
 
     if (!existingProfile) {
       console.warn('[signIn] ⚠️ Profile missing for user', user.id, '— creating now')
+      const profilePayload = buildRecoveredProfilePayload(user)
       const { error: createErr } = await admin
         .from('profiles')
-        .insert({ id: user.id, preferred_language: 'ar' })
+        .upsert(profilePayload, { onConflict: 'id' })
       if (createErr) {
         console.error('[signIn] ❌ Profile recovery failed:', createErr.message)
       } else {
