@@ -69,7 +69,7 @@ export function StorySection() {
       <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-14 lg:gap-24 items-center">
+        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20 xl:gap-24">
 
           {/* ── Content ── */}
           <motion.div
@@ -156,18 +156,24 @@ export function StorySection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative"
+            className="relative mx-auto w-full max-w-xl lg:max-w-none"
           >
-            <div className="premium-image-card relative aspect-[4/5] overflow-hidden rounded-2xl">
+            <div className="absolute -inset-4 rounded-2xl bg-[#FFDCC2]/10 blur-3xl" />
+            <div className="absolute -inset-1 rounded-2xl border border-[#FFDCC2]/10" />
+
+            <div className="premium-image-card group relative aspect-[3/4] overflow-hidden rounded-2xl border border-[#FFDCC2]/15 bg-[#120D09] shadow-2xl">
               <Image
-                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80"
-                alt="Coffee preparation"
+                src="/images/story.jpg"
+                alt="Line Coffee premium Arabica and Robusta story"
                 fill
-                className="object-cover brightness-[0.84] contrast-[1.08] saturate-[1.04] transition-transform duration-700 hover:scale-[1.04]"
+                sizes="(min-width: 1024px) 44vw, 92vw"
+                className="object-cover object-center brightness-[0.82] contrast-[1.12] saturate-[1.08] transition-transform duration-700 group-hover:scale-[1.035]"
               />
-              {/* Cinematic warm grade */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/60 via-transparent to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/10 to-transparent mix-blend-overlay" />
+              {/* Cinematic warm grade and soft vignette */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/78 via-[#0F0A07]/18 to-transparent" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_34%,_rgba(11,8,6,0.58)_100%)]" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FFDCC2]/12 via-transparent to-[#522500]/32 mix-blend-soft-light" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FFDCC2]/35 to-transparent" />
             </div>
 
             {/* Floating stats card */}
