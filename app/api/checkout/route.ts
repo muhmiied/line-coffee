@@ -56,6 +56,28 @@ type DiscountRow = {
   expires_at: string | null
 }
 
+type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>
+
+type OrderMessagePayload = {
+  orderNumber: string
+  customerName: string
+  customerPhone: string
+  customerEmail?: string | null
+  customerWhatsapp?: string | null
+  address: string
+  city?: string | null
+  locationLink?: string | null
+  items: SanitizedCheckoutItem[]
+  subtotal: number
+  shipping_cost: number
+  discountCode?: string | null
+  discountAmount?: number | null
+  total: number
+  paymentMethod: string
+  notes?: string | null
+  adminOrderLink?: string
+}
+
 function isUuid(value: unknown): value is string {
   return typeof value === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -153,6 +175,147 @@ function buildWhatsAppMessage(payload: {
     .join('\n')
 
   return lines
+}
+
+function formatMoney(value: number): string {
+  return `${Number.isInteger(value) ? value : value.toFixed(2)} EGP`
+}
+
+function getCustomerInitials(firstName?: string, lastName?: string, fallbackName?: string): string {
+  const words = [firstName, lastName, fallbackName]
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join(' ')
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.match(/[\p{L}\p{N}]/gu)?.join('') || '')
+    .filter(Boolean)
+
+  if (words.length >= 2) {
+    return `${Array.from(words[0])[0] || 'L'}${Array.from(words[1])[0] || 'C'}`.toUpperCase()
+  }
+
+  const chars = Array.from(words[0] || 'LC')
+  return `${chars[0] || 'L'}${chars[1] || 'C'}`.toUpperCase()
+}
+
+function getLastPhoneDigits(phone?: string): string {
+  const digits = (phone || '').replace(/\D/g, '')
+  return (digits.slice(-3) || '000').padStart(3, '0')
+}
+
+async function buildReadableOrderNumber(
+  admin: AdminClient,
+  input: { firstName?: string; lastName?: string; customerName?: string; phone?: string }
+): Promise<string> {
+  const initials = getCustomerInitials(input.firstName, input.lastName, input.customerName)
+  const phoneDigits = getLastPhoneDigits(input.phone)
+  const { count, error } = await admin
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+
+  if (error) {
+    console.warn('Order number count lookup failed; using time-based fallback sequence.')
+  }
+
+  const startingSequence = typeof count === 'number'
+    ? count + 1
+    : Number(String(Date.now()).slice(-4))
+
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const sequence = startingSequence + attempt
+    const candidate = `${initials}-${phoneDigits}-${String(sequence).padStart(4, '0')}`
+    const { data, error: lookupError } = await admin
+      .from('orders')
+      .select('id')
+      .eq('order_number', candidate)
+      .maybeSingle()
+
+    if (!lookupError && !data) return candidate
+    if (lookupError) {
+      console.warn('Order number uniqueness lookup failed; trying the next candidate.')
+    }
+  }
+
+  return `${initials}-${phoneDigits}-${String(startingSequence + 25).padStart(4, '0')}`
+}
+
+function buildOrderMessage(payload: OrderMessagePayload): string {
+  const itemsText = payload.items
+    .map((item, i) => {
+      const customizations = item.customizations
+        ? `\n   Customizations: ${JSON.stringify(item.customizations)}`
+        : ''
+
+      return [
+        `${i + 1}. ${item.product_name}`,
+        `   Weight/variant: ${item.size || '-'}`,
+        `   Quantity: ${item.quantity}`,
+        `   Unit price: ${formatMoney(item.unit_price)}`,
+        `   Line total: ${formatMoney(item.total_price)}${customizations}`,
+      ].join('\n')
+    })
+    .join('\n\n')
+
+  const addressLine = [payload.address, payload.city].filter(Boolean).join(', ')
+  const paymentLabel = PAYMENT_LABELS[payload.paymentMethod] || payload.paymentMethod
+
+  return [
+    'New Line Coffee Order',
+    '----------------------',
+    `Order number: ${payload.orderNumber}`,
+    payload.adminOrderLink ? `Admin order link: ${payload.adminOrderLink}` : null,
+    '',
+    'Customer',
+    `Name: ${payload.customerName || '-'}`,
+    `Phone: ${payload.customerPhone || '-'}`,
+    `WhatsApp: ${payload.customerWhatsapp || payload.customerPhone || 'Not provided'}`,
+    payload.customerEmail ? `Email: ${payload.customerEmail}` : null,
+    `Address: ${addressLine || '-'}`,
+    payload.locationLink ? `Location link: ${payload.locationLink}` : null,
+    '',
+    'Products',
+    itemsText,
+    '',
+    'Payment and totals',
+    `Payment method: ${paymentLabel}`,
+    `Subtotal: ${formatMoney(payload.subtotal)}`,
+    payload.shipping_cost > 0 ? `Shipping: ${formatMoney(payload.shipping_cost)}` : 'Shipping: Free',
+    payload.discountCode && payload.discountAmount
+      ? `Discount (${payload.discountCode}): -${formatMoney(payload.discountAmount)}`
+      : null,
+    `Order total: ${formatMoney(payload.total)}`,
+    payload.notes ? `\nCustomer notes: ${payload.notes}` : null,
+  ]
+    .filter((line) => line !== null)
+    .join('\n')
+}
+
+async function sendTelegramOrderNotification(message: string): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+
+  if (!token || !chatId) {
+    console.warn('Telegram order notification skipped: missing configuration.')
+    return
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message.slice(0, 3900),
+        disable_web_page_preview: false,
+      }),
+    })
+
+    if (!response.ok) {
+      console.warn(`Telegram order notification failed with status ${response.status}.`)
+    }
+  } catch {
+    console.warn('Telegram order notification failed.')
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -344,11 +507,18 @@ export async function POST(request: NextRequest) {
       `${shipping_address.first_name || ''} ${shipping_address.last_name || ''}`.trim()
     const fullAddress =
       [shipping_address.address, shipping_address.city].filter(Boolean).join(', ')
+    const orderNumber = await buildReadableOrderNumber(admin, {
+      firstName: shipping_address.first_name,
+      lastName: shipping_address.last_name,
+      customerName,
+      phone: shipping_address.phone,
+    })
 
     // ── Create order ─────────────────────────────────────────────
     const { data: order, error: orderError } = await admin
       .from('orders')
       .insert({
+        order_number: orderNumber,
         user_id: userId,
         customer_name: customerName,
         customer_email: shipping_address.email || null,
@@ -439,32 +609,37 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Build WhatsApp URL ────────────────────────────────────────
-    const whatsappMessage = buildWhatsAppMessage({
-      orderNumber: order.order_number || order.id,
+    const orderMessage = buildOrderMessage({
+      orderNumber: order.order_number || orderNumber,
       customerName,
       customerPhone: shipping_address.phone || '-',
       customerEmail: shipping_address.email,
+      customerWhatsapp: shipping_address.whatsapp,
       address: shipping_address.address || '',
       city: shipping_address.city,
+      locationLink: shipping_address.location_link,
       items: sanitizedItems,
       subtotal: computedSubtotal,
       shipping_cost: computedShippingCost,
-      discountCode: appliedDiscountCode || undefined,
-      discountAmount: computedDiscountAmount || undefined,
+      discountCode: appliedDiscountCode,
+      discountAmount: computedDiscountAmount,
       total: order.total,
       paymentMethod: payment_method || 'cod',
-      notes: notes || undefined,
+      notes: notes || null,
+      adminOrderLink: new URL('/dashboard/admin/orders', request.url).toString(),
     })
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${encodeURIComponent(
-      whatsappMessage
+      orderMessage
     )}`
+
+    await sendTelegramOrderNotification(orderMessage)
 
     return NextResponse.json({
       success: true,
       order: {
         id: order.id,
-        order_number: order.order_number,
+        order_number: order.order_number || orderNumber,
         total: order.total,
         status: order.status,
       },

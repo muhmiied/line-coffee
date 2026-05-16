@@ -48,15 +48,15 @@ export function BestSellersSection() {
 
         {/* ── Section header ── */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
-          <div>
+          <div className="text-center md:text-start">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="flex items-center gap-3 mb-3"
+              className="premium-section-kicker mx-auto mb-5 md:mx-0"
             >
-              <div className="h-px w-8 bg-[#c8941a]/55" />
-              <span className="text-[11px] tracking-[0.22em] uppercase font-semibold text-[#c8941a]/75">
+              <div className="hidden" />
+              <span className="text-xs md:text-sm tracking-[0.24em] uppercase font-bold text-[#D6A373]">
                 {t('Top Picks', 'الأكثر اختياراً')}
               </span>
             </motion.div>
@@ -66,7 +66,7 @@ export function BestSellersSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.05 }}
-              className="font-serif text-3xl md:text-4xl font-bold text-[#FFDCC2]"
+              className="premium-heading-shimmer font-serif text-4xl md:text-5xl font-bold text-[#FFDCC2]"
             >
               {t('Best Sellers', 'الأكثر مبيعاً')}
             </motion.h2>

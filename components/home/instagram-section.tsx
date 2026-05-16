@@ -28,11 +28,11 @@ export function InstagramSection() {
         {/* Header */}
         <div className="text-center mb-10">
           <FadeUp>
-            <p className="text-[11px] tracking-[0.28em] uppercase font-semibold mb-2" style={{ color: '#B6885E' }}>
+            <p className="premium-section-kicker mx-auto mb-4" style={{ color: '#D6A373' }}>
               @linecoffee.eg
             </p>
           </FadeUp>
-          <FadeUp className="font-serif text-3xl md:text-4xl font-bold mb-5" style={{ color: '#F5E6D8' }}>
+          <FadeUp className="premium-heading-shimmer font-serif text-4xl md:text-5xl font-bold mb-5" style={{ color: '#F5E6D8' }}>
             <WordByWord text={t('Follow Our Journey', 'تابع رحلتنا')} />
           </FadeUp>
           <FadeUp className="flex items-center justify-center gap-5">

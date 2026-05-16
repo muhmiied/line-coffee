@@ -241,7 +241,7 @@
   }
 
   .text-muted-foreground {
-    color: rgba(183, 155, 133, 0.72);
+    color: rgba(214, 183, 154, 0.78);
   }
 
   html[lang="ar"] body,
@@ -298,6 +298,98 @@
 /* Arabic font class */
 .font-arabic {
   font-family: var(--font-arabic-brand);
+}
+
+.premium-section-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  width: min(100%, 34rem);
+  color: var(--gold-light);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  line-height: 1.35;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 0 22px rgba(214, 163, 115, 0.18);
+}
+
+.premium-section-kicker::before,
+.premium-section-kicker::after {
+  content: "";
+  height: 1px;
+  flex: 1 1 4rem;
+  min-width: 2.5rem;
+  background: linear-gradient(90deg, transparent, rgba(214, 163, 115, 0.68));
+  box-shadow: 0 0 18px rgba(182, 136, 94, 0.16);
+}
+
+.premium-section-kicker::after {
+  background: linear-gradient(90deg, rgba(214, 163, 115, 0.68), transparent);
+}
+
+.premium-heading-shimmer {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  color: var(--cream);
+  text-shadow: 0 0 28px rgba(214, 163, 115, 0.12);
+}
+
+.premium-heading-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateX(-135%);
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 220, 194, 0.08) 48%,
+    rgba(255, 220, 194, 0.46) 52%,
+    rgba(214, 163, 115, 0.12) 58%,
+    transparent 68%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  animation: premium-heading-sweep 6.4s var(--ease-luxury) infinite;
+}
+
+@keyframes premium-heading-sweep {
+  0%, 32% {
+    transform: translateX(-135%);
+    opacity: 0;
+  }
+  44% {
+    opacity: 1;
+  }
+  66%, 100% {
+    transform: translateX(135%);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .premium-section-kicker {
+    gap: 0.65rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+  }
+
+  .premium-section-kicker::before,
+  .premium-section-kicker::after {
+    min-width: 1.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-heading-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 

@@ -79,18 +79,18 @@ export function StorySection() {
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
           >
             {/* Label */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
+            <div className="premium-section-kicker mx-auto mb-5 lg:mx-0">
+              <div className="hidden" />
               <p
-                className="text-[11px] tracking-[0.24em] uppercase font-semibold"
-                style={{ color: '#B6885E' }}
+                className="text-xs md:text-sm tracking-[0.24em] uppercase font-bold"
+                style={{ color: '#D6A373' }}
               >
                 {t('Our Story', 'قصتنا')}
               </p>
             </div>
 
             <h2
-              className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-balance leading-[1.1]"
+              className="premium-heading-shimmer font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-balance leading-[1.1] text-center lg:text-start"
               style={{ color: '#F5E6D8' }}
             >
               {t('From Distant Farms to Your Cup', 'من المزارع البعيدة إلى كوبك')}

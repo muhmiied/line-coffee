@@ -48,13 +48,13 @@ export function TestimonialsSection() {
 
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-14">
-          <div className="max-w-lg">
+          <div className="max-w-lg text-center lg:text-start">
             <FadeUp>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
+              <div className="premium-section-kicker mx-auto mb-5 lg:mx-0">
+                <div className="hidden" />
                 <span
-                  className="text-[11px] tracking-[0.24em] uppercase font-semibold"
-                  style={{ color: '#B6885E' }}
+                  className="text-xs md:text-sm tracking-[0.24em] uppercase font-bold"
+                  style={{ color: '#D6A373' }}
                 >
                   {t('Testimonials', 'آراء العملاء')}
                 </span>
@@ -62,7 +62,7 @@ export function TestimonialsSection() {
             </FadeUp>
             <FadeUp>
               <h2
-                className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.1]"
+                className="premium-heading-shimmer font-serif text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1]"
                 style={{ color: '#F5E6D8' }}
               >
                 <WordByWord text={t('What Our Customers Say', 'ماذا يقول عملاؤنا')} />

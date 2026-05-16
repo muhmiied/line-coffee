@@ -83,14 +83,14 @@ export function CategoriesSection() {
           <FadeUp>
             <div className="flex items-center justify-center gap-3 mb-3">
               <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#B6885E]/60" />
-              <span className="text-[11px] tracking-[0.24em] uppercase font-semibold" style={{ color: '#B6885E' }}>
+              <span className="text-xs md:text-sm tracking-[0.24em] uppercase font-bold" style={{ color: '#D6A373' }}>
                 {t('Browse by Category', 'تصفح حسب الفئة')}
               </span>
               <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#B6885E]/60" />
             </div>
           </FadeUp>
           <FadeUp>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: '#F5E6D8' }}>
+            <h2 className="premium-heading-shimmer font-serif text-4xl md:text-5xl font-bold" style={{ color: '#F5E6D8' }}>
               <WordByWord text={t('Shop by Category', 'تسوق حسب الفئة')} />
             </h2>
           </FadeUp>

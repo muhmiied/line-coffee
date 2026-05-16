@@ -63,8 +63,10 @@ export default function CheckoutPage() {
     lastName: '',
     email: '',
     phone: '',
+    whatsapp: '',
     address: '',
     city: '',
+    locationLink: '',
     postalCode: '',
     notes: '',
     paymentMethod: 'cod',
@@ -79,8 +81,10 @@ export default function CheckoutPage() {
       firstName: profile?.first_name || prev.firstName,
       lastName: profile?.last_name || prev.lastName,
       phone: profile?.phone || prev.phone,
+      whatsapp: profile?.whatsapp || profile?.phone || prev.whatsapp,
       address: profile?.address || prev.address,
       city: profile?.city || prev.city,
+      locationLink: profile?.location_link || prev.locationLink,
     }))
   }, [user, profile])
 
@@ -185,9 +189,11 @@ export default function CheckoutPage() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             phone: formData.phone,
+            whatsapp: formData.whatsapp,
             email: formData.email,
             address: formData.address,
             city: formData.city,
+            location_link: formData.locationLink,
             postal_code: formData.postalCode,
           },
           payment_method: formData.paymentMethod,
@@ -202,6 +208,15 @@ export default function CheckoutPage() {
         setWhatsAppUrl(data.whatsapp_url || '')
         setOrderPlaced(true)
         clearCart()
+        if (data.whatsapp_url) {
+          const opened = window.open(data.whatsapp_url, '_blank', 'noopener,noreferrer')
+          if (!opened) window.location.href = data.whatsapp_url
+          toast.success(t(
+            'Order saved. Opening WhatsApp so you can send the order summary.',
+            'تم حفظ الطلب. جاري فتح واتساب لإرسال ملخص الطلب.'
+          ))
+          return
+        }
         toast.success(t('Order placed successfully!', 'تم تأكيد الطلب بنجاح!'))
       } else {
         toast.error(data.error || t('Failed to place order', 'فشل في إنشاء الطلب'))
@@ -244,15 +259,15 @@ export default function CheckoutPage() {
           </p>
           <p className="text-sm text-muted-foreground mb-8">
             {t(
-              'Your order was created in the website. You can optionally send the order details via WhatsApp.',
-              'تم إنشاء طلبك داخل الموقع. يمكنك اختيارياً إرسال تفاصيل الطلب عبر واتساب.'
+              'Your order was saved. WhatsApp should open with your order summary so you can press Send manually.',
+              'تم حفظ طلبك. من المفترض أن يفتح واتساب بملخص الطلب لتضغط إرسال بنفسك.'
             )}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {whatsAppUrl && (
               <Button asChild variant="secondary">
                 <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
-                  {t('Send via WhatsApp', 'إرسال عبر واتساب')}
+                  {t('Open WhatsApp Again', 'فتح واتساب مرة أخرى')}
                 </a>
               </Button>
             )}
@@ -421,6 +436,20 @@ export default function CheckoutPage() {
                       <p className="text-destructive text-xs mt-1">{fieldErrors.phone}</p>
                     )}
                   </div>
+                  <div>
+                    <Label htmlFor="whatsapp">
+                      <Phone className="w-3.5 h-3.5 inline mr-1" />
+                      {t('WhatsApp Number', 'رقم الواتساب')}
+                    </Label>
+                    <Input
+                      id="whatsapp"
+                      name="whatsapp"
+                      type="tel"
+                      value={formData.whatsapp}
+                      onChange={handleInputChange}
+                      placeholder={t('Optional if different from phone', 'اختياري إذا كان مختلف عن الهاتف')}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -468,6 +497,16 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                       />
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="locationLink">{t('Google Maps Location Link', 'رابط موقع Google Maps')}</Label>
+                    <Input
+                      id="locationLink"
+                      name="locationLink"
+                      value={formData.locationLink}
+                      onChange={handleInputChange}
+                      placeholder={t('Optional delivery location link', 'رابط الموقع للتوصيل اختياري')}
+                    />
                   </div>
                 </div>
               </div>

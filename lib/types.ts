@@ -53,6 +53,7 @@ export interface Profile {
   first_name: string | null
   last_name: string | null
   phone: string | null
+  whatsapp?: string | null
   avatar_url: string | null
   preferred_language: 'en' | 'ar'
   address: string | null
