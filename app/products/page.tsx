@@ -31,7 +31,6 @@ type SidebarCategory = {
   slug: string
   nameEn: string
   nameAr: string
-  hasMixTabs?: boolean
   isCustomizeBlend?: boolean
   isCustomizeFlavor?: boolean
 }
@@ -44,6 +43,7 @@ const FALLBACK_DB_CATEGORIES: DbCategory[] = [
   { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',    image_url: null },
   { id: 'cap', slug: 'cappuccino',      name_en: 'Cappuccino',       name_ar: 'كابتشينو',      image_url: null },
   { id: 'hc',  slug: 'hot-chocolate',   name_en: 'Hot Chocolate',    name_ar: 'هوت شوكلت',    image_url: null },
+  { id: 'nc',  slug: 'nescafe',         name_en: 'Nescafe',          name_ar: 'نسكافيه',       image_url: null },
 ]
 
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
@@ -51,10 +51,6 @@ const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr
 const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'اختر توليفتك', isCustomizeBlend: true }
 const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'اختر نكهتك', isCustomizeFlavor: true }
 
-// Slugs shown as sub-tabs inside the "coffee-mix" category (not in main sidebar list)
-const MIX_SUBTAB_SLUGS = new Set(['cappuccino', 'hot-chocolate'])
-// All slugs that belong to the coffee-mix group
-const MIX_GROUP_SLUGS = new Set(['coffee-mix', 'cappuccino', 'hot-chocolate'])
 
 // ─── Flavors ────────────────────────────────────────────────────────────────────
 const coffeeFlavors = [
@@ -229,25 +225,32 @@ const allProducts: Product[] = [
 
   mkProduct('cap-original','cappuccino-original','Cappuccino Original','كابتشينو أوريجنال',
     'Classic creamy cappuccino','كابتشينو كلاسيك كريمي',
-    'coffee-mix',[65,120,220],{ images:[IMG_CAP], subcategory:'cappuccino', is_featured:true, is_best_seller:true } as any),
+    'cappuccino',[65,120,220],{ images:[IMG_CAP], is_featured:true, is_best_seller:true }),
   ...mixFlavors.map((f, i) => mkProduct(
     `cap-${f.id}`, `cappuccino-${f.id}`,
     `${f.nameEn} Cappuccino`, `كابتشينو ${f.nameAr}`,
     `${f.nameEn.toLowerCase()} cappuccino`, `كابتشينو ${f.nameAr}`,
-    'coffee-mix', [75, 140, 260],
-    { images:[IMG_CAP], subcategory:'cappuccino', is_featured: i < 2, flavor_notes:[f.nameEn] } as any
+    'cappuccino', [75, 140, 260],
+    { images:[IMG_CAP], is_featured: i < 2, flavor_notes:[f.nameEn] }
   )),
 
   mkProduct('hc-original','hot-chocolate-original','Hot Chocolate Original','هوت شوكلت أوريجنال',
     'Rich and creamy hot chocolate','هوت شوكلت غني وكريمي',
-    'coffee-mix',[60,110,200],{ images:[IMG_HC], subcategory:'hot-chocolate', is_featured:true, is_best_seller:true } as any),
+    'hot-chocolate',[60,110,200],{ images:[IMG_HC], is_featured:true, is_best_seller:true }),
   ...mixFlavors.map((f, i) => mkProduct(
     `hc-${f.id}`, `hot-chocolate-${f.id}`,
     `${f.nameEn} Hot Chocolate`, `هوت شوكلت ${f.nameAr}`,
     `${f.nameEn.toLowerCase()} hot chocolate`, `هوت شوكلت ${f.nameAr}`,
-    'coffee-mix', [70, 130, 240],
-    { images:[IMG_HC], subcategory:'hot-chocolate', is_featured: i < 2, flavor_notes:[f.nameEn] } as any
+    'hot-chocolate', [70, 130, 240],
+    { images:[IMG_HC], is_featured: i < 2, flavor_notes:[f.nameEn] }
   )),
+
+  mkProduct('nc-1','nescafe-classic','Nescafe Classic','نسكافيه كلاسيك',
+    'Classic instant coffee blend','نسكافيه كلاسيك سريع التحضير',
+    'nescafe',[75,140,260],{ images:[IMG_CM], is_best_seller:true }),
+  mkProduct('nc-2','nescafe-gold','Nescafe Gold','نسكافيه جولد',
+    'Premium gold instant coffee','نسكافيه جولد الفاخر',
+    'nescafe',[90,170,320],{ images:[IMG_CM], is_featured:true }),
 ]
 
 // ─── Flavor base options for customize-flavor ──────────────────────────────────
@@ -635,13 +638,6 @@ function CustomizeFlavor() {
   )
 }
 
-// ─── Mix Sub-Tabs ───────────────────────────────────────────────────────────────
-type MixTab = 'coffee-mix' | 'cappuccino' | 'hot-chocolate'
-const mixTabs: { id: MixTab; labelEn: string; labelAr: string }[] = [
-  { id: 'coffee-mix',     labelEn: 'Coffee Mix',    labelAr: 'كوفي ميكس' },
-  { id: 'cappuccino',     labelEn: 'Cappuccino',    labelAr: 'كابتشينو' },
-  { id: 'hot-chocolate',  labelEn: 'Hot Chocolate', labelAr: 'هوت شوكلت' },
-]
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 function ProductsPageInner() {
@@ -651,7 +647,6 @@ function ProductsPageInner() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'all')
-  const [activeMixTab, setActiveMixTab] = useState<MixTab>('coffee-mix')
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(allProducts)
   const [dbProducts, setDbProducts] = useState<Product[] | null>(null)
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
@@ -677,28 +672,18 @@ function ProductsPageInner() {
 
   // Build sidebar categories from DB, injecting special UI entries
   const sidebarCategories = useMemo<SidebarCategory[]>(() => {
-    const mainCats = dbCategories
-      .filter(c => !MIX_SUBTAB_SLUGS.has(c.slug))
-      .map(c => ({
-        slug: c.slug,
-        nameEn: c.name_en,
-        nameAr: c.name_ar,
-        hasMixTabs: c.slug === 'coffee-mix',
-      }))
-
-    return [
-      ALL_ENTRY,
-      ...mainCats,
-      CUSTOMIZE_BLEND_ENTRY,
-      CUSTOMIZE_FLAVOR_ENTRY,
-    ]
+    const mainCats = dbCategories.map(c => ({
+      slug: c.slug,
+      nameEn: c.name_en,
+      nameAr: c.name_ar,
+    }))
+    return [ALL_ENTRY, ...mainCats, CUSTOMIZE_BLEND_ENTRY, CUSTOMIZE_FLAVOR_ENTRY]
   }, [dbCategories])
 
   const currentCat = sidebarCategories.find((c) => c.slug === activeCategory)
   const isCustomizeBlend = currentCat?.isCustomizeBlend
   const isCustomizeFlavor = currentCat?.isCustomizeFlavor
   const isCustomize = isCustomizeBlend || isCustomizeFlavor
-  const hasMixTabs = currentCat?.hasMixTabs
 
   useEffect(() => {
     const sourceProducts = dbProducts ?? allProducts
@@ -707,28 +692,18 @@ function ProductsPageInner() {
     let products = [...sourceProducts]
 
     if (activeCategory !== 'all') {
-      if (hasMixTabs) {
-        // Include products from all mix-group slugs so sub-tab filtering works
-        products = products.filter((p) => {
-          const catSlug = (p as any).category?.slug ?? p.category_id
-          return MIX_GROUP_SLUGS.has(catSlug)
-        })
-      } else {
-        products = products.filter((p) => {
-          const catSlug = (p as any).category?.slug ?? p.category_id
-          return catSlug === activeCategory
-        })
-      }
-    }
-
-    if (hasMixTabs) {
       products = products.filter((p) => {
-        // DB products: match by their category slug; hardcoded: match by subcategory
-        const catSlug = (p as any).category?.slug
-        const subcat = (p as any).subcategory
-        return catSlug === activeMixTab || subcat === activeMixTab
+        const catSlug = (p as any).category?.slug ?? p.category_id
+        return catSlug === activeCategory
       })
     }
+
+    // Classic / Original always sorts first within a category
+    products.sort((a, b) => {
+      const aFirst = /classic|original/i.test(a.name_en) ? 0 : 1
+      const bFirst = /classic|original/i.test(b.name_en) ? 0 : 1
+      return aFirst - bFirst
+    })
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
@@ -736,11 +711,10 @@ function ProductsPageInner() {
     }
 
     setFilteredProducts(products)
-  }, [activeCategory, activeMixTab, searchQuery, isCustomize, hasMixTabs, dbProducts, dbCategories])
+  }, [activeCategory, searchQuery, isCustomize, dbProducts, dbCategories])
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
-    setActiveMixTab('coffee-mix')
     router.push(`/products?category=${slug}`, { scroll: false })
   }
 
@@ -811,20 +785,7 @@ function ProductsPageInner() {
                     className="border-[#B6885E]/20 bg-[#120D09]/70 pl-10 text-[#F5E6D8] placeholder:text-[#B79B85]/50 focus-visible:ring-[#B6885E]/30" />
                 </div>
 
-                {/* Mix sub-tabs */}
-                {hasMixTabs && (
-                  <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-                    {mixTabs.map((tab) => (
-                      <button type="button" key={tab.id} onClick={() => setActiveMixTab(tab.id)}
-                        className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0',
-                          activeMixTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80')}>
-                        {t(tab.labelEn, tab.labelAr)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between mb-6">
+<div className="flex items-center justify-between mb-6">
                   <p className="text-sm text-muted-foreground">{t(`Showing ${filteredProducts.length} products`, `عرض ${filteredProducts.length} منتج`)}</p>
                 </div>
 

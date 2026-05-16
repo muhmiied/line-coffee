@@ -894,6 +894,61 @@ select:disabled {
   pointer-events: none;
 }
 
+/* ── Premium Nav Link Glow ─────────────────────────────────────────── */
+.nav-link {
+  text-shadow: 0 0 10px rgba(214, 163, 115, 0.06);
+  transition:
+    color       340ms var(--ease-luxury),
+    text-shadow 340ms var(--ease-luxury);
+}
+
+.nav-link:hover {
+  text-shadow:
+    0 0 16px rgba(214, 163, 115, 0.44),
+    0 0 32px rgba(182, 136, 94, 0.18);
+}
+
+.nav-link-active {
+  text-shadow:
+    0 0 20px rgba(214, 163, 115, 0.58),
+    0 0 38px rgba(182, 136, 94, 0.26),
+    0 0  6px rgba(245, 230, 216, 0.20);
+}
+
+/* Inner text wrapper — contains the sweep so it never bleeds into the underline */
+.nav-sweep {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+/* Sweep only fires on the active link */
+.nav-link-active .nav-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 36%,
+    rgba(255, 220, 194, 0.05) 44%,
+    rgba(214, 163, 115, 0.13) 50%,
+    rgba(255, 220, 194, 0.05) 56%,
+    transparent 64%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  animation: nav-link-sweep 6s var(--ease-luxury) infinite;
+}
+
+@keyframes nav-link-sweep {
+  0%,  28% { transform: translateX(-200%); opacity: 0; }
+  42%      { opacity: 1; }
+  66%, 100% { transform: translateX(200%);  opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -902,5 +957,10 @@ select:disabled {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .nav-link-active .nav-sweep::after {
+    animation: none;
+    opacity: 0;
   }
 }

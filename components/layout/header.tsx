@@ -233,13 +233,13 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'group/nav relative px-1 py-2 text-[15px] font-medium tracking-wide transition-colors duration-300',
+                    'group/nav relative px-1 py-2 text-[15px] font-medium tracking-wide nav-link',
                     pathname === link.href
-                      ? 'text-[#F5E6D8]'
-                      : 'text-[#D6B79A]/75 hover:text-[#F5E6D8]'
+                      ? 'text-[#FFF0E4] nav-link-active'
+                      : 'text-[#D6B79A]/85 hover:text-[#F5E6D8]'
                   )}
                 >
-                  {t(link.labelEn, link.labelAr)}
+                  <span className="nav-sweep">{t(link.labelEn, link.labelAr)}</span>
                   <span className={cn(
                     "absolute -bottom-0.5 left-1/2 h-px -translate-x-1/2 bg-gradient-to-r from-transparent via-[#D6A373] to-transparent transition-all duration-300",
                     pathname === link.href ? "w-full shadow-[0_0_14px_rgba(214,163,115,0.45)]" : "w-0 group-hover/nav:w-full"
