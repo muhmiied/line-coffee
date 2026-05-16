@@ -77,7 +77,12 @@ export default function SignupPage() {
 
       if (!result.success) {
         const errMsg = result.error || ''
-        console.error('[signup] Sign up failed:', errMsg)
+        console.error('[signup] Sign up failed:', errMsg, result)
+
+        // In development, show the raw Supabase error in a separate toast
+        if ('devError' in result && result.devError) {
+          toast.info(`DEV: ${result.devError}`, { duration: 15000 })
+        }
 
         if (/already registered|already exists|duplicate|email.*use/i.test(errMsg)) {
           toast.error(t(

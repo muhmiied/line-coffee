@@ -53,6 +53,8 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
 }
 
+const isDev = process.env.NODE_ENV === 'development'
+
 export async function signUp(data: SignUpData) {
   const supabase = await createClient()
   const origin = await getRequestOrigin()
@@ -74,46 +76,68 @@ export async function signUp(data: SignUpData) {
   })
 
   if (error) {
-    console.error('[signUp] Supabase auth.signUp error:', error.message, error)
-    return { success: false, error: error.message }
+    console.error('[signUp] ❌ auth.signUp error:', {
+      message: error.message,
+      name: error.name,
+      status: (error as Record<string, unknown>)?.status,
+      code: (error as Record<string, unknown>)?.code,
+    })
+    return {
+      success: false as const,
+      error: error.message,
+      devError: isDev
+        ? `[Auth] ${error.message} | name=${error.name} status=${(error as Record<string, unknown>)?.status} code=${(error as Record<string, unknown>)?.code}`
+        : undefined,
+    }
   }
+
+  console.log('[signUp] ✅ auth.signUp succeeded, user id:', authData.user?.id)
 
   // When email confirmation is enabled and the email already exists,
   // Supabase returns a user with empty identities instead of an error.
   if (authData.user && (authData.user.identities?.length ?? 0) === 0) {
-    return { success: false, error: 'User already registered' }
+    return { success: false as const, error: 'User already registered', devError: undefined }
   }
 
-  // Upsert profile as a robust fallback in case the DB trigger didn't fire.
+  // Upsert profile via admin client as a fallback in case the DB trigger failed.
   if (authData.user) {
     const admin = createAdminClient()
     if (admin) {
+      const profilePayload = {
+        id: authData.user.id,
+        first_name: data.firstName?.trim() || null,
+        last_name: data.lastName?.trim() || null,
+        phone: data.phone?.trim() || null,
+        whatsapp: data.whatsapp?.trim() || null,
+        address: data.address?.trim() || null,
+        location_link: data.locationLink?.trim() || null,
+        preferred_language: 'ar',
+      }
+      console.log('[signUp] Upserting profile:', profilePayload)
+
       const { error: profileError } = await admin
         .from('profiles')
-        .upsert(
-          {
-            id: authData.user.id,
-            first_name: data.firstName?.trim() || null,
-            last_name: data.lastName?.trim() || null,
-            phone: data.phone?.trim() || null,
-            whatsapp: data.whatsapp?.trim() || null,
-            address: data.address?.trim() || null,
-            location_link: data.locationLink?.trim() || null,
-            preferred_language: 'ar',
-          },
-          { onConflict: 'id' }
-        )
+        .upsert(profilePayload, { onConflict: 'id' })
 
       if (profileError) {
-        console.error('[signUp] Profile upsert error:', profileError.message, profileError)
+        console.error('[signUp] ❌ Profile upsert error:', {
+          message: profileError.message,
+          code: profileError.code,
+          details: profileError.details,
+          hint: profileError.hint,
+        })
+      } else {
+        console.log('[signUp] ✅ Profile upsert succeeded')
       }
+    } else {
+      console.warn('[signUp] ⚠️ Admin client unavailable — SUPABASE_SERVICE_ROLE_KEY not set')
     }
   }
 
   revalidatePath('/', 'layout')
 
   return {
-    success: true,
+    success: true as const,
     requiresEmailConfirmation: !authData.session,
     user: authData.user,
   }
@@ -140,6 +164,28 @@ export async function signIn(data: SignInData) {
     return {
       success: false,
       error: 'Unable to verify your session. Please try again.',
+    }
+  }
+
+  // Recover missing profile — happens when signup trigger failed but auth user was created
+  const admin = createAdminClient()
+  if (admin) {
+    const { data: existingProfile } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!existingProfile) {
+      console.warn('[signIn] ⚠️ Profile missing for user', user.id, '— creating now')
+      const { error: createErr } = await admin
+        .from('profiles')
+        .insert({ id: user.id, preferred_language: 'ar' })
+      if (createErr) {
+        console.error('[signIn] ❌ Profile recovery failed:', createErr.message)
+      } else {
+        console.log('[signIn] ✅ Profile recovered for user', user.id)
+      }
     }
   }
 
