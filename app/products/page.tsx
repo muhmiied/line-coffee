@@ -46,57 +46,20 @@ type SidebarCategory = {
 
 // ─── Fallback categories shown when DB fetch returns empty ────────────────────
 const FALLBACK_DB_CATEGORIES: DbCategory[] = [
-  { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'قهوة تركي',    image_url: null },
-  { id: 'esp', slug: 'espresso',        name_en: 'Espresso',         name_ar: 'إسبريسو',       image_url: null },
-  { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'قهوة نكهات',   image_url: null },
-  { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',    image_url: null },
-  { id: 'cap', slug: 'cappuccino',      name_en: 'Cappuccino',       name_ar: 'كابتشينو',      image_url: null },
-  { id: 'hc',  slug: 'hot-chocolate',   name_en: 'Hot Chocolate',    name_ar: 'هوت شوكلت',    image_url: null },
-  { id: 'nc',  slug: 'nescafe',         name_en: 'Nescafe',          name_ar: 'نسكافيه',       image_url: null },
+  { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'القهوة التركي',    image_url: null },
+  { id: 'esp', slug: 'espresso',        name_en: 'Espresso',         name_ar: 'الإسبريسو',        image_url: null },
+  { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'القهوة بالنكهات', image_url: null },
+  { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',        image_url: null },
+  { id: 'cap', slug: 'cappuccino',      name_en: 'Cappuccino',       name_ar: 'كابتشينو',          image_url: null },
+  { id: 'hc',  slug: 'hot-chocolate',   name_en: 'Hot Chocolate',    name_ar: 'هوت شوكليت',       image_url: null },
+  { id: 'nc',  slug: 'nescafe',         name_en: 'Nescafe',          name_ar: 'نسكافيه',           image_url: null },
 ]
 
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
 const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr: 'جميع المنتجات' }
-const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'اختر توليفتك', isCustomizeBlend: true }
-const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'اختر نكهتك', isCustomizeFlavor: true }
+const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'اصنع توليفتك', isCustomizeBlend: true }
+const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'اصنع نكهتك', isCustomizeFlavor: true }
 
-
-// ─── Flavors ────────────────────────────────────────────────────────────────────
-const coffeeFlavors = [
-  { id: 'hazelnut',   nameEn: 'Hazelnut',     nameAr: 'بندق' },
-  { id: 'caramel',    nameEn: 'Caramel',      nameAr: 'كراميل' },
-  { id: 'vanilla',    nameEn: 'Vanilla',      nameAr: 'فانيليا' },
-  { id: 'chocolate',  nameEn: 'Chocolate',    nameAr: 'شوكولاتة' },
-  { id: 'lotus',      nameEn: 'Lotus',        nameAr: 'لوتس' },
-  { id: 'oreo',       nameEn: 'Oreo',         nameAr: 'أوريو' },
-  { id: 'strawberry', nameEn: 'Strawberry',   nameAr: 'فراولة' },
-  { id: 'mocha',      nameEn: 'Mocha',        nameAr: 'موكا' },
-  { id: 'nutella',    nameEn: 'Nutella',      nameAr: 'نوتيلا' },
-  { id: 'cinnabon',   nameEn: 'Cinnabon',     nameAr: 'سينابون' },
-  { id: 'coconut',    nameEn: 'Coconut',      nameAr: 'جوز الهند' },
-  { id: 'banana',     nameEn: 'Banana',       nameAr: 'موز' },
-  { id: 'mango',      nameEn: 'Mango',        nameAr: 'مانجو' },
-  { id: 'peach',      nameEn: 'Peach',        nameAr: 'خوخ' },
-  { id: 'blueberry',  nameEn: 'Blueberry',    nameAr: 'توت' },
-  { id: 'cherry',     nameEn: 'Cherry',       nameAr: 'كرز' },
-  { id: 'apple',      nameEn: 'Apple',        nameAr: 'تفاح' },
-  { id: 'grape',      nameEn: 'Grape',        nameAr: 'عنب' },
-  { id: 'orange',     nameEn: 'Orange',       nameAr: 'برتقال' },
-]
-
-const mixFlavors = [
-  { id: 'hazelnut',   nameEn: 'Hazelnut',   nameAr: 'بندق' },
-  { id: 'caramel',    nameEn: 'Caramel',    nameAr: 'كراميل' },
-  { id: 'vanilla',    nameEn: 'Vanilla',    nameAr: 'فانيليا' },
-  { id: 'chocolate',  nameEn: 'Chocolate',  nameAr: 'شوكولاتة' },
-  { id: 'lotus',      nameEn: 'Lotus',      nameAr: 'لوتس' },
-  { id: 'oreo',       nameEn: 'Oreo',       nameAr: 'أوريو' },
-  { id: 'strawberry', nameEn: 'Strawberry', nameAr: 'فراولة' },
-  { id: 'mocha',      nameEn: 'Mocha',      nameAr: 'موكا' },
-  { id: 'nutella',    nameEn: 'Nutella',    nameAr: 'نوتيلا' },
-  { id: 'cinnabon',   nameEn: 'Cinnabon',   nameAr: 'سينابون' },
-  { id: 'coconut',    nameEn: 'Coconut',    nameAr: 'جوز الهند' },
-]
 
 const customFlavorOptions: FlavorAdditionOption[] = DEFAULT_FLAVOR_ADDITIONS
 
@@ -148,87 +111,93 @@ const IMG_CM   = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w
 const IMG_HC   = 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800'
 
 const allProducts: Product[] = [
-  mkProduct('tc-1','turkish-morning-strength','Morning Strength','قوة الصباح',
-    'Strong robusta with light sweetness, high caffeine',
-    'روبوستا قوي مع حلاوة خفيفة — كافيين عالي، مناسب لبداية يومك',
-    'turkish-coffee',[125,240,460],{ images:[IMG_TC], is_featured:true, is_best_seller:true, flavor_notes:['Robusta','Strong'] }),
-  mkProduct('tc-2','turkish-perfect-balance','Perfect Balance','التوازن المثالي',
-    'Light floral notes with robusta body, great for hotels',
-    'فلورال خفيف مع ثقل الروبوستا — مناسب للفنادق والكافيهات',
-    'turkish-coffee',[170,320,600],{ images:[IMG_TC], is_featured:true, flavor_notes:['Floral','Balanced'] }),
-  mkProduct('tc-3','turkish-professional-clean','Professional Clean Cup','النظافة المحترفة',
-    '65% arabica clean and consistent, clear chocolate notes',
-    'أرابيكا 65% نظيف ومتسق — شوكولاتة واضحة',
-    'turkish-coffee',[200,380,720],{ images:[IMG_TC], flavor_notes:['Chocolate','Arabica'] }),
-  mkProduct('tc-4','turkish-premium','Turkish Premium','البريميوم',
-    '90% arabica, true specialty floral-fruity profile',
-    'أرابيكا 90% — specialty coffee حقيقية، فلورال وفاكهي',
-    'turkish-coffee',[230,440,840],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral'] }),
+  // ── Turkish Coffee ───────────────────────────────────────────────────────────
+  // Prices: 250g = 1kg×0.25 rounded, 500g = 1kg×0.5 rounded, 1kg exact
+  mkProduct('tc-1','velvet-turkish','Velvet Turkish','فيلفيت تركي',
+    'Velvety smooth body with balanced bitterness and warm roast depth.',
+    'قوام مخملي ناعم مع مرارة متوازنة وعمق تحميص دافئ.',
+    'turkish-coffee',[200,401,802],{ images:[IMG_TC], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Velvety'] }),
+  mkProduct('tc-2','cairo-nights','Cairo Nights','ليالي القاهرة',
+    'Dark roast with deep caramel undertones — a cup that captures the night.',
+    'تحميص داكن مع نغمات كراميل عميقة — كوب يجسّد ليالي القاهرة.',
+    'turkish-coffee',[220,439,877],{ images:[IMG_TC], is_featured:true, flavor_notes:['Caramel','Dark Roast'] }),
+  mkProduct('tc-3','midnight-turkish','Midnight Turkish','ميدنايت تركي',
+    'Rich and full-bodied with a smoky chocolate finish.',
+    'غني وثقيل القوام مع نهاية شوكولاتة مدخنة.',
+    'turkish-coffee',[235,468,934],{ images:[IMG_TC], flavor_notes:['Chocolate','Smoky'] }),
+  mkProduct('tc-4','royal-line','Royal Line','رويال لاين',
+    'A premium specialty blend of finest arabica — floral, fruity, and refined.',
+    'توليفة specialty من أجود الأرابيكا — فلورال وفاكهي وراقي.',
+    'turkish-coffee',[411,823,1646],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral','Fruity'] }),
 
-  mkProduct('esp-1','espresso-economy-crema','Economy Crema','الكريمة الاقتصادية',
-    'Excellent crema and high strength, ideal for large volumes',
-    'كريمة ممتازة وقوة عالية — للكميات الكبيرة والماكينات المكتبية',
-    'espresso',[135,260,500],{ images:[IMG_ESP], is_best_seller:true, flavor_notes:['Crema','Strong'] }),
-  mkProduct('esp-2','espresso-classic-italian','Classic Italian','الكلاسيك الإيطالي',
-    'Chocolate and caramel with rich crema, best for cappuccino & latte',
-    'شوكولاتة وكراميل، كريمة غنية — للكابتشينو واللاتيه',
-    'espresso',[200,380,720],{ images:[IMG_ESP], is_featured:true, flavor_notes:['Chocolate','Caramel'] }),
-  mkProduct('esp-3','espresso-specialty-floral','Specialty Floral','الفلورال الـ Specialty',
-    'Floral and fruity, best for direct espresso shots',
-    'فلورال وفاكهي — للشوت المباشر',
-    'espresso',[210,400,760],{ images:[IMG_ESP], is_new:true, flavor_notes:['Floral','Fruity'] }),
-  mkProduct('esp-4','espresso-premium-vip','Premium VIP','بريميوم VIP',
-    '90% arabica, golden crema, for 5-star hotels',
-    'أرابيكا 90%، كريمة ذهبية — للفنادق 5 نجوم',
-    'espresso',[255,490,940],{ images:[IMG_ESP], flavor_notes:['Premium','Arabica'] }),
+  // ── Espresso ─────────────────────────────────────────────────────────────────
+  mkProduct('esp-1','line-crema','Line Crema','لاين كريما',
+    'Excellent crema and high strength — ideal for espresso machines and large volumes.',
+    'كريمة ممتازة وقوة عالية — مثالي لماكينات الإسبريسو والكميات الكبيرة.',
+    'espresso',[164,328,656],{ images:[IMG_ESP], is_best_seller:true, flavor_notes:['Crema','Strong'] }),
+  mkProduct('esp-2','first-line','First Line','فيرست لاين',
+    'Chocolate and caramel balance with rich crema — perfect for cappuccino and latte.',
+    'توازن شوكولاتة وكراميل مع كريمة غنية — مثالي للكابتشينو واللاتيه.',
+    'espresso',[188,378,755],{ images:[IMG_ESP], is_featured:true, flavor_notes:['Chocolate','Caramel'] }),
+  mkProduct('esp-3','headshot','HEADSHOT','هيد شوت',
+    'Precision-roasted espresso with bright acidity and clean body.',
+    'إسبريسو محمص بدقة مع حموضة نابضة وقوام نظيف.',
+    'espresso',[191,382,763],{ images:[IMG_ESP], is_new:true, flavor_notes:['Bright','Clean'] }),
+  mkProduct('esp-4','gold-shot','Gold Shot','جولد شوت',
+    'Single-origin specialty espresso — golden crema and complex florals.',
+    'إسبريسو specialty أحادي المصدر — كريمة ذهبية وفلورال معقد.',
+    'espresso',[263,525,1050],{ images:[IMG_ESP], flavor_notes:['Specialty','Floral'] }),
 
-  ...coffeeFlavors.map((f, i) => mkProduct(
-    `fc-${f.id}`, `flavored-coffee-${f.id}`,
-    `${f.nameEn} Coffee`, `قهوة ${f.nameAr}`,
-    `${f.nameEn.toLowerCase()} flavored coffee`, `قهوة بنكهة ${f.nameAr}`,
-    'flavored-coffee', [100, 190, 360],
-    { images:[IMG_FC], is_featured: i < 3, is_best_seller: i < 5, flavor_notes:[f.nameEn] }
-  )),
+  // ── Flavored Coffee (French Coffee) ─────────────────────────────────────────
+  mkProduct('fc-1','french-coffee','French Coffee','قهوة فرنسية',
+    'Classic French-roast coffee blend — bold, smooth, and full-bodied.',
+    'توليفة قهوة فرنسي كلاسيك — جريئة وناعمة وثقيلة القوام.',
+    'flavored-coffee',[87,174,349],{ images:[IMG_FC], is_featured:true, is_best_seller:true, flavor_notes:['French Roast','Bold'] }),
+  mkProduct('fc-2','french-coffee-flavored','Flavored French Coffee','قهوة فرنسية بالنكهات',
+    'French roast coffee with premium added flavor — a refined sensory experience.',
+    'قهوة فرنسي بنكهة مضافة فاخرة — تجربة حسية راقية.',
+    'flavored-coffee',[87,174,349],{ images:[IMG_FC], is_featured:true, flavor_notes:['French Roast','Flavored'] }),
+  mkProduct('fc-3','french-coffee-pieces','French Coffee with Pieces','قهوة فرنسية بقطع',
+    'French roast coffee enriched with real chocolate or hazelnut pieces.',
+    'قهوة فرنسي مع قطع شوكولاتة أو بندق حقيقية.',
+    'flavored-coffee',[107,214,429],{ images:[IMG_FC], flavor_notes:['French Roast','Pieces'] }),
 
-  mkProduct('cm-original','coffee-mix-original','Coffee Mix Original','كوفي ميكس أوريجنال',
-    'Classic 3-in-1 coffee mix','كوفي ميكس كلاسيك 3 في 1',
-    'coffee-mix',[55,100,180],{ images:[IMG_CM], is_featured:true, is_best_seller:true } as any),
-  ...mixFlavors.map((f, i) => mkProduct(
-    `cm-${f.id}`, `coffee-mix-${f.id}`,
-    `${f.nameEn} Coffee Mix`, `كوفي ميكس ${f.nameAr}`,
-    `${f.nameEn.toLowerCase()} coffee mix`, `كوفي ميكس ${f.nameAr}`,
-    'coffee-mix', [65, 120, 220],
-    { images:[IMG_CM], subcategory:'coffee-mix', is_featured: i < 2, flavor_notes:[f.nameEn] } as any
-  )),
+  // ── Coffee Mix ───────────────────────────────────────────────────────────────
+  mkProduct('cm-1','coffee-mix-original','Original Coffee Mix','كوفي ميكس أوريجينال',
+    'Classic balanced coffee mix — smooth, creamy, and consistently satisfying.',
+    'كوفي ميكس كلاسيك متوازن — ناعم وكريمي ومُرضٍ على الدوام.',
+    'coffee-mix',[88,176,352],{ images:[IMG_CM], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Creamy'] }),
+  mkProduct('cm-2','coffee-mix-flavored','Flavored Coffee Mix','كوفي ميكس نكهات',
+    'Coffee mix infused with premium flavors — a richer, more aromatic experience.',
+    'كوفي ميكس بنكهات فاخرة مضافة — تجربة أغنى وأكثر عطراً.',
+    'coffee-mix',[108,216,432],{ images:[IMG_CM], is_featured:true, flavor_notes:['Flavored','Aromatic'] }),
 
-  mkProduct('cap-original','cappuccino-original','Cappuccino Original','كابتشينو أوريجنال',
-    'Classic creamy cappuccino','كابتشينو كلاسيك كريمي',
-    'cappuccino',[65,120,220],{ images:[IMG_CAP], is_featured:true, is_best_seller:true }),
-  ...mixFlavors.map((f, i) => mkProduct(
-    `cap-${f.id}`, `cappuccino-${f.id}`,
-    `${f.nameEn} Cappuccino`, `كابتشينو ${f.nameAr}`,
-    `${f.nameEn.toLowerCase()} cappuccino`, `كابتشينو ${f.nameAr}`,
-    'cappuccino', [75, 140, 260],
-    { images:[IMG_CAP], is_featured: i < 2, flavor_notes:[f.nameEn] }
-  )),
+  // ── Cappuccino ───────────────────────────────────────────────────────────────
+  mkProduct('cap-1','cappuccino-original','Original Cappuccino','كابتشينو أوريجينال',
+    'Classic creamy cappuccino mix — perfectly balanced foam and espresso.',
+    'كابتشينو كريمي كلاسيك — توازن مثالي بين الرغوة والإسبريسو.',
+    'cappuccino',[108,216,432],{ images:[IMG_CAP], is_featured:true, is_best_seller:true, flavor_notes:['Creamy','Classic'] }),
+  mkProduct('cap-2','cappuccino-flavored','Flavored Cappuccino','كابتشينو نكهات',
+    'Premium cappuccino mix with an added layer of flavor complexity.',
+    'كابتشينو فاخر مع طبقة إضافية من تعقيد النكهة.',
+    'cappuccino',[128,256,512],{ images:[IMG_CAP], is_featured:true, flavor_notes:['Flavored','Premium'] }),
 
-  mkProduct('hc-original','hot-chocolate-original','Hot Chocolate Original','هوت شوكلت أوريجنال',
-    'Rich and creamy hot chocolate','هوت شوكلت غني وكريمي',
-    'hot-chocolate',[60,110,200],{ images:[IMG_HC], is_featured:true, is_best_seller:true }),
-  ...mixFlavors.map((f, i) => mkProduct(
-    `hc-${f.id}`, `hot-chocolate-${f.id}`,
-    `${f.nameEn} Hot Chocolate`, `هوت شوكلت ${f.nameAr}`,
-    `${f.nameEn.toLowerCase()} hot chocolate`, `هوت شوكلت ${f.nameAr}`,
-    'hot-chocolate', [70, 130, 240],
-    { images:[IMG_HC], is_featured: i < 2, flavor_notes:[f.nameEn] }
-  )),
+  // ── Nescafe ──────────────────────────────────────────────────────────────────
+  mkProduct('nc-1','nescafe-classic','Classic Nescafe','نسكافيه كلاسيك',
+    'The original instant coffee — rich and satisfying every time.',
+    'القهوة الفورية الأصلية — غنية ومُرضية في كل مرة.',
+    'nescafe',[244,488,976],{ images:[IMG_CM], is_best_seller:true, flavor_notes:['Classic','Rich'] }),
+  mkProduct('nc-2','nescafe-gold','Gold Nescafe','نسكافيه جولد',
+    'Premium gold-blend instant coffee — smoother, more refined, and aromatic.',
+    'قهوة فورية جولد فاخرة — أكثر نعومة وأرقى عطراً.',
+    'nescafe',[284,568,1136],{ images:[IMG_CM], is_featured:true, flavor_notes:['Premium','Smooth'] }),
 
-  mkProduct('nc-1','nescafe-classic','Nescafe Classic','نسكافيه كلاسيك',
-    'Classic instant coffee blend','نسكافيه كلاسيك سريع التحضير',
-    'nescafe',[75,140,260],{ images:[IMG_CM], is_best_seller:true }),
-  mkProduct('nc-2','nescafe-gold','Nescafe Gold','نسكافيه جولد',
-    'Premium gold instant coffee','نسكافيه جولد الفاخر',
-    'nescafe',[90,170,320],{ images:[IMG_CM], is_featured:true }),
+  // ── Hot Chocolate ─────────────────────────────────────────────────────────────
+  // Prices not yet confirmed — products are hidden until admin sets correct prices
+  mkProduct('hc-1','hot-chocolate-original','Hot Chocolate','هوت شوكليت',
+    'Rich and creamy hot chocolate — coming soon.',
+    'هوت شوكليت غني وكريمي — قريباً.',
+    'hot-chocolate',[0,0,0],{ images:[IMG_HC], is_visible:false }),
 ]
 
 // ─── Flavor base options for customize-flavor ──────────────────────────────────
@@ -598,6 +567,12 @@ function CustomizeFlavor() {
   const [selectedSize, setSelectedSize] = useState<PackageSize>('250g')
   const [valveBag, setValveBag] = useState(false)
 
+  const filteredAdditions = useMemo(() => {
+    return additionOptions.filter(
+      (flavor) => !flavor.bases || flavor.bases.includes(selectedBase.id)
+    )
+  }, [additionOptions, selectedBase.id])
+
   const totalPrice = selectedBase
     ? calculateFlavorPrice(selectedBase.price, selectedFlavors, selectedSize, valveBag)
     : 0
@@ -702,7 +677,12 @@ function CustomizeFlavor() {
                   <button
                     type="button"
                     key={base.id}
-                    onClick={() => setSelectedBase(base)}
+                    onClick={() => {
+                    setSelectedBase(base)
+                    setSelectedFlavors((prev) =>
+                      prev.filter((f) => !f.bases || f.bases.includes(base.id))
+                    )
+                  }}
                     className={cn(
                       'relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1',
                       selected
@@ -740,7 +720,7 @@ function CustomizeFlavor() {
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              {additionOptions.map((flavor) => {
+              {filteredAdditions.map((flavor) => {
                 const selected = selectedFlavors.some((item) => item.id === flavor.id)
                 const disabled = !selected && selectedFlavors.length >= 3
                 return (

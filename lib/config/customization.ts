@@ -27,6 +27,8 @@ export type FlavorAdditionOption = {
   nameEn: string
   type: FlavorAdditionType
   price: number
+  /** Which base IDs this flavor applies to. Undefined = all bases. */
+  bases?: string[]
 }
 
 export const CUSTOM_BLEND_BEANS_KEY = 'custom_blend_beans'
@@ -41,7 +43,7 @@ export const VALVE_BAG_COST = 5
 export const PROFIT_MARGIN = 1.6
 
 export const FLAVOR_BASES: FlavorBaseOption[] = [
-  { id: 'turkish', nameAr: 'تركي', nameEn: 'Turkish', price: 400 },
+  { id: 'turkish', nameAr: 'القهوة التركي', nameEn: 'Turkish Coffee', price: 400 },
   { id: 'coffee-mix', nameAr: 'كوفي ميكس', nameEn: 'Coffee Mix', price: 220 },
   { id: 'cappuccino', nameAr: 'كابتشينو', nameEn: 'Cappuccino', price: 270 },
 ]
@@ -51,29 +53,47 @@ export const FLAVOR_ADDITION_PRICES: Record<FlavorAdditionType, number> = {
   chunks: 70,
 }
 
+// Flavors available for all three bases
+const ALL_BASES = ['turkish', 'coffee-mix', 'cappuccino']
+// Flavors available for Turkish + Coffee Mix (not Cappuccino)
+const TK_CM = ['turkish', 'coffee-mix']
+// Flavors exclusive to Turkish
+const TK_ONLY = ['turkish']
+
 export const DEFAULT_FLAVOR_ADDITIONS: FlavorAdditionOption[] = [
-  { id: 'hazelnut', nameEn: 'Hazelnut', nameAr: 'بندق', type: 'standard', price: 50 },
-  { id: 'hazelnut-chunks', nameEn: 'Hazelnut Chunks', nameAr: 'بندق قطع', type: 'chunks', price: 70 },
-  { id: 'almond', nameEn: 'Almond', nameAr: 'لوز', type: 'standard', price: 50 },
-  { id: 'pistachio', nameEn: 'Pistachio', nameAr: 'فستق', type: 'standard', price: 50 },
-  { id: 'chocolate', nameEn: 'Chocolate', nameAr: 'شوكولاتة', type: 'standard', price: 50 },
-  { id: 'chocolate-chunks', nameEn: 'Chocolate Chunks', nameAr: 'شوكولاتة قطع', type: 'chunks', price: 70 },
-  { id: 'nutella', nameEn: 'Nutella', nameAr: 'نوتيلا', type: 'standard', price: 50 },
-  { id: 'oreo', nameEn: 'Oreo', nameAr: 'أوريو', type: 'standard', price: 50 },
-  { id: 'lotus', nameEn: 'Lotus', nameAr: 'لوتس', type: 'standard', price: 50 },
-  { id: 'cinnabon', nameEn: 'Cinnabon', nameAr: 'سينابون', type: 'standard', price: 50 },
-  { id: 'coconut', nameEn: 'Coconut', nameAr: 'جوز الهند', type: 'standard', price: 50 },
-  { id: 'vanilla', nameEn: 'Vanilla', nameAr: 'فانيليا', type: 'standard', price: 50 },
-  { id: 'caramel', nameEn: 'Caramel', nameAr: 'كراميل', type: 'standard', price: 50 },
-  { id: 'strawberry', nameEn: 'Strawberry', nameAr: 'فراولة', type: 'standard', price: 50 },
-  { id: 'banana', nameEn: 'Banana', nameAr: 'موز', type: 'standard', price: 50 },
-  { id: 'mango', nameEn: 'Mango', nameAr: 'مانجو', type: 'standard', price: 50 },
-  { id: 'peach', nameEn: 'Peach', nameAr: 'خوخ', type: 'standard', price: 50 },
-  { id: 'blueberry', nameEn: 'Blueberry', nameAr: 'توت أزرق', type: 'standard', price: 50 },
-  { id: 'cherry', nameEn: 'Cherry', nameAr: 'كرز', type: 'standard', price: 50 },
-  { id: 'apple', nameEn: 'Apple', nameAr: 'تفاح', type: 'standard', price: 50 },
-  { id: 'grape', nameEn: 'Grape', nameAr: 'عنب', type: 'standard', price: 50 },
-  { id: 'mocha', nameEn: 'Mocha', nameAr: 'موكا', type: 'standard', price: 50 },
+  // ── Nuts & classics (all bases) ──────────────────────────────
+  { id: 'hazelnut',         nameEn: 'Hazelnut',          nameAr: 'بندق',          type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'hazelnut-chunks',  nameEn: 'Hazelnut Chunks',   nameAr: 'بندق قطع',      type: 'chunks',   price: 70, bases: ALL_BASES },
+  { id: 'almond',           nameEn: 'Almond',            nameAr: 'لوز',           type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'pistachio',        nameEn: 'Pistachio',         nameAr: 'فستق',          type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'chocolate',        nameEn: 'Chocolate',         nameAr: 'شوكولاتة',      type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'chocolate-chunks', nameEn: 'Chocolate Chunks',  nameAr: 'شوكولاتة قطع', type: 'chunks',   price: 70, bases: ALL_BASES },
+  { id: 'nutella',          nameEn: 'Nutella',           nameAr: 'نوتيلا',        type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'oreo',             nameEn: 'Oreo',              nameAr: 'أوريو',         type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'lotus',            nameEn: 'Lotus',             nameAr: 'لوتس',          type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'cinnabon',         nameEn: 'Cinnabon',          nameAr: 'سينابون',       type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'coconut',          nameEn: 'Coconut',           nameAr: 'جوز الهند',     type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'vanilla',          nameEn: 'Vanilla',           nameAr: 'فانيليا',       type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'caramel',          nameEn: 'Caramel',           nameAr: 'كراميل',        type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'mocha',            nameEn: 'Mocha',             nameAr: 'موكا',          type: 'standard', price: 50, bases: ALL_BASES },
+  // ── Common fruits (all bases) ────────────────────────────────
+  { id: 'strawberry',       nameEn: 'Strawberry',        nameAr: 'فراولة',        type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'banana',           nameEn: 'Banana',            nameAr: 'موز',           type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'mango',            nameEn: 'Mango',             nameAr: 'مانجو',         type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'peach',            nameEn: 'Peach',             nameAr: 'خوخ',           type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'blueberry',        nameEn: 'Blueberry',         nameAr: 'توت',           type: 'standard', price: 50, bases: ALL_BASES },
+  { id: 'cherry',           nameEn: 'Cherry',            nameAr: 'كرز',           type: 'standard', price: 50, bases: ALL_BASES },
+  // ── Tropical & seasonal fruits (Turkish + Coffee Mix) ────────
+  { id: 'apple',            nameEn: 'Apple',             nameAr: 'تفاح',          type: 'standard', price: 50, bases: TK_CM },
+  { id: 'grape',            nameEn: 'Grape',             nameAr: 'عنب',           type: 'standard', price: 50, bases: TK_CM },
+  { id: 'orange',           nameEn: 'Orange',            nameAr: 'برتقال',        type: 'standard', price: 50, bases: TK_CM },
+  { id: 'watermelon',       nameEn: 'Watermelon',        nameAr: 'بطيخ',          type: 'standard', price: 50, bases: TK_CM },
+  { id: 'guava',            nameEn: 'Guava',             nameAr: 'جوافة',         type: 'standard', price: 50, bases: TK_CM },
+  { id: 'pineapple',        nameEn: 'Pineapple',         nameAr: 'أناناس',        type: 'standard', price: 50, bases: TK_CM },
+  // ── Turkish-exclusive specialty flavors ──────────────────────
+  { id: 'apple-hookah',     nameEn: 'Apple Hookah',      nameAr: 'شيشة تفاح',    type: 'standard', price: 50, bases: TK_ONLY },
+  { id: 'grape-hookah',     nameEn: 'Grape Hookah',      nameAr: 'شيشة عنب',     type: 'standard', price: 50, bases: TK_ONLY },
+  { id: 'hot-cider',        nameEn: 'Hot Cider',         nameAr: 'هوت سيدر',     type: 'standard', price: 50, bases: TK_ONLY },
 ]
 
 export const DEFAULT_CUSTOM_BLEND_BEANS: CoffeeBeanOption[] = [
@@ -200,7 +220,7 @@ export const DEFAULT_CUSTOM_BLEND_BEANS: CoffeeBeanOption[] = [
   },
   {
     id: 'indian-robusta',
-    nameAr: 'هندي',
+    nameAr: 'هندي روبوستا',
     nameEn: 'Indian Robusta',
     descAr: 'روبوستا غني بكريمة واضحة ومرارة متوازنة.',
     descEn: 'Rich robusta with crema and balanced bitterness.',
