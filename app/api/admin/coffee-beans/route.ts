@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
       origin: body.origin?.trim() || null,
       description_en: body.description_en?.trim() || null,
       description_ar: body.description_ar?.trim() || null,
+      family: body.family || 'other',
+      price: Number(body.price || 0),
       is_active: body.is_active ?? true,
       sort_order: body.sort_order ?? 0,
     })

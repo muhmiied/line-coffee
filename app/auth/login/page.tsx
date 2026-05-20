@@ -28,6 +28,7 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (message === 'check-email') {
@@ -41,6 +42,22 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const errors: Record<string, string> = {}
+    if (!email.trim()) errors.email = t('Please enter your email', 'من فضلك أدخل بريدك الإلكتروني')
+    else if (!/^\S+@\S+\.\S+$/.test(email.trim())) errors.email = t('Please enter a valid email', 'من فضلك أدخل بريد إلكتروني صحيح')
+    if (!password) errors.password = t('Please enter your password', 'من فضلك أدخل كلمة المرور')
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      toast.error(t('Please fix the highlighted fields', 'يرجى تصحيح الحقول المحددة'))
+      requestAnimationFrame(() => {
+        document.querySelector('[aria-invalid="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+      return
+    }
+
+    setFieldErrors({})
     setIsLoading(true)
 
     try {
@@ -89,11 +106,13 @@ function LoginForm() {
                 type="email"
                 placeholder={t('Enter your email', 'أدخل بريدك الإلكتروني')}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
+                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: '' })) }}
+                aria-invalid={Boolean(fieldErrors.email)}
+                className={cn('pl-10', fieldErrors.email && 'border-destructive')}
                 required
               />
             </div>
+            {fieldErrors.email && <p className="text-destructive text-xs">{fieldErrors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -113,8 +132,9 @@ function LoginForm() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder={t('Enter your password', 'أدخل كلمة المرور')}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 pr-10"
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: '' })) }}
+                aria-invalid={Boolean(fieldErrors.password)}
+                className={cn('pl-10 pr-10', fieldErrors.password && 'border-destructive')}
                 required
               />
               <button
@@ -125,6 +145,7 @@ function LoginForm() {
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
+            {fieldErrors.password && <p className="text-destructive text-xs">{fieldErrors.password}</p>}
           </div>
 
           <Button type="submit" className="w-full" size="lg" disabled={isLoading}>

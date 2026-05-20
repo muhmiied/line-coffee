@@ -33,25 +33,56 @@ export default function SignupPage() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }))
+    setFieldErrors(prev => {
+      if (!prev[name]) return prev
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
+  }
+
+  const showValidationErrors = (errors: Record<string, string>) => {
+    setFieldErrors(errors)
+    toast.error(t('Please fix the highlighted fields', 'يرجى تصحيح الحقول المحددة'))
+    requestAnimationFrame(() => {
+      document.querySelector('[aria-invalid="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validation
+    const errors: Record<string, string> = {}
+    if (!formData.firstName.trim()) errors.firstName = t('First name is required', 'الاسم الأول مطلوب')
+    if (!formData.lastName.trim()) errors.lastName = t('Last name is required', 'الاسم الأخير مطلوب')
+    if (!formData.email.trim()) errors.email = t('Email is required', 'البريد الإلكتروني مطلوب')
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email.trim())) errors.email = t('Please enter a valid email', 'من فضلك أدخل بريد إلكتروني صحيح')
+    if (!formData.phone.trim()) errors.phone = t('Phone number is required', 'رقم الهاتف مطلوب')
+    if (!formData.whatsapp.trim()) errors.whatsapp = t('WhatsApp number is required', 'رقم الواتساب مطلوب')
+    if (!formData.address.trim()) errors.address = t('Address is required', 'العنوان مطلوب')
+    if (!formData.password) errors.password = t('Password is required', 'كلمة المرور مطلوبة')
+    if (!formData.confirmPassword) errors.confirmPassword = t('Please confirm your password', 'من فضلك أكد كلمة المرور')
+
+    if (Object.keys(errors).length > 0) {
+      showValidationErrors(errors)
+      return
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      toast.error(t('Passwords do not match', 'كلمات المرور غير متطابقة'))
+      showValidationErrors({ confirmPassword: t('Passwords do not match', 'كلمات المرور غير متطابقة') })
       return
     }
 
     if (formData.password.length < 6) {
-      toast.error(t('Password must be at least 6 characters', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'))
+      showValidationErrors({ password: t('Password must be at least 6 characters', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل') })
       return
     }
 
@@ -176,10 +207,12 @@ export default function SignupPage() {
                   placeholder={t('First name', 'الاسم الأول')}
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                  aria-invalid={Boolean(fieldErrors.firstName)}
+                  className={cn('pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.firstName && 'border-destructive')}
                   required
                 />
               </div>
+              {fieldErrors.firstName && <p className="text-destructive text-xs">{fieldErrors.firstName}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">{t('Last Name', 'الاسم الأخير')}</Label>
@@ -190,9 +223,11 @@ export default function SignupPage() {
                 placeholder={t('Last name', 'الاسم الأخير')}
                 value={formData.lastName}
                 onChange={handleChange}
-                className="border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                aria-invalid={Boolean(fieldErrors.lastName)}
+                className={cn('border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.lastName && 'border-destructive')}
                 required
               />
+              {fieldErrors.lastName && <p className="text-destructive text-xs">{fieldErrors.lastName}</p>}
             </div>
           </div>
 
@@ -208,10 +243,12 @@ export default function SignupPage() {
                 placeholder={t('Enter your email', 'أدخل بريدك الإلكتروني')}
                 value={formData.email}
                 onChange={handleChange}
-                className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                aria-invalid={Boolean(fieldErrors.email)}
+                className={cn('pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.email && 'border-destructive')}
                 required
               />
             </div>
+            {fieldErrors.email && <p className="text-destructive text-xs">{fieldErrors.email}</p>}
           </div>
 
           {/* Phone Numbers */}
@@ -227,10 +264,12 @@ export default function SignupPage() {
                   placeholder={t('+20 100 000 0000', '+20 100 000 0000')}
                   value={formData.phone}
                   onChange={handleChange}
-                  className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                  aria-invalid={Boolean(fieldErrors.phone)}
+                  className={cn('pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.phone && 'border-destructive')}
                   required
                 />
               </div>
+              {fieldErrors.phone && <p className="text-destructive text-xs">{fieldErrors.phone}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="whatsapp">{t('WhatsApp Number', 'رقم الواتساب')}</Label>
@@ -241,9 +280,11 @@ export default function SignupPage() {
                 placeholder={t('+20 100 000 0000', '+20 100 000 0000')}
                 value={formData.whatsapp}
                 onChange={handleChange}
-                className="border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                aria-invalid={Boolean(fieldErrors.whatsapp)}
+                className={cn('border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.whatsapp && 'border-destructive')}
                 required
               />
+              {fieldErrors.whatsapp && <p className="text-destructive text-xs">{fieldErrors.whatsapp}</p>}
             </div>
           </div>
 
@@ -258,11 +299,13 @@ export default function SignupPage() {
                 placeholder={t('Enter your full address', 'أدخل عنوانك الكامل')}
                 value={formData.address}
                 onChange={handleChange}
-                className="pl-10 resize-none border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                aria-invalid={Boolean(fieldErrors.address)}
+                className={cn('pl-10 resize-none border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.address && 'border-destructive')}
                 rows={2}
                 required
               />
             </div>
+            {fieldErrors.address && <p className="text-destructive text-xs">{fieldErrors.address}</p>}
           </div>
 
           {/* Location Link */}
@@ -297,7 +340,8 @@ export default function SignupPage() {
                 placeholder={t('Create a password', 'أنشئ كلمة مرور')}
                 value={formData.password}
                 onChange={handleChange}
-                className="pl-10 pr-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                aria-invalid={Boolean(fieldErrors.password)}
+                className={cn('pl-10 pr-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.password && 'border-destructive')}
                 required
               />
               <button
@@ -308,6 +352,7 @@ export default function SignupPage() {
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
+            {fieldErrors.password && <p className="text-destructive text-xs">{fieldErrors.password}</p>}
           </div>
 
           {/* Confirm Password */}
@@ -322,10 +367,12 @@ export default function SignupPage() {
                 placeholder={t('Confirm your password', 'أكد كلمة المرور')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]"
+                aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                className={cn('pl-10 border-[rgba(182,136,94,0.35)] focus:border-[#B6885E]', fieldErrors.confirmPassword && 'border-destructive')}
                 required
               />
             </div>
+            {fieldErrors.confirmPassword && <p className="text-destructive text-xs">{fieldErrors.confirmPassword}</p>}
           </div>
 
           <Button type="submit" className="w-full" size="lg" disabled={isLoading}>

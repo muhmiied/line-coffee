@@ -21,7 +21,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('flavor_bases')
-    .select('*, options:flavor_options(id, name_en, name_ar, is_active, sort_order)')
+    .select('*, options:flavor_options(id, name_en, name_ar, price_delta, option_type, is_active, sort_order)')
     .order('sort_order', { ascending: true })
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
@@ -47,7 +47,14 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await admin
     .from('flavor_bases')
-    .insert({ name_en: body.name_en.trim(), name_ar: body.name_ar.trim(), is_active: body.is_active ?? true, sort_order: body.sort_order ?? 0 })
+    .insert({
+      name_en: body.name_en.trim(),
+      name_ar: body.name_ar.trim(),
+      price: Number(body.price || 0),
+      type: body.type || 'base',
+      is_active: body.is_active ?? true,
+      sort_order: body.sort_order ?? 0,
+    })
     .select()
     .single()
 

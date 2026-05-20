@@ -14,7 +14,6 @@ import {
   ShoppingBag,
   Tag,
   Users,
-  BarChart2,
   Star,
   Percent,
   FileText,
@@ -39,11 +38,10 @@ const nav = [
   { href: '/dashboard/admin/flavors',      labelEn: 'Flavors',       labelAr: 'النكهات',          icon: Sparkles },
   { href: '/dashboard/admin/customers',    labelEn: 'Customers',     labelAr: 'العملاء',          icon: Users },
   { href: '/dashboard/admin/contact-messages', labelEn: 'Contact',   labelAr: 'رسائل التواصل',    icon: MessageSquare },
-  { href: '/dashboard/admin/analytics',    labelEn: 'Analytics',     labelAr: 'التحليلات',        icon: BarChart2 },
   { href: '/dashboard/admin/reviews',      labelEn: 'Reviews',       labelAr: 'المراجعات',        icon: Star },
   { href: '/dashboard/admin/discounts',    labelEn: 'Discounts',     labelAr: 'الخصومات',         icon: Percent },
   { href: '/dashboard/admin/blog',         labelEn: 'Blog',          labelAr: 'المدونة',          icon: FileText },
-  { href: '/dashboard/admin/banners',      labelEn: 'Banners',       labelAr: 'البانرات',         icon: ImageIcon },
+  { href: '/dashboard/admin/banners',      labelEn: 'Media',         labelAr: 'الوسائط',          icon: ImageIcon },
   { href: '/dashboard/admin/settings',     labelEn: 'Settings',      labelAr: 'الإعدادات',        icon: Settings },
 ]
 
@@ -56,11 +54,10 @@ const pageTitles: Record<string, { en: string; ar: string }> = {
   '/dashboard/admin/flavors':      { en: 'Flavors',       ar: 'النكهات' },
   '/dashboard/admin/customers':    { en: 'Customers',     ar: 'العملاء' },
   '/dashboard/admin/contact-messages': { en: 'Contact Messages', ar: 'رسائل التواصل' },
-  '/dashboard/admin/analytics':    { en: 'Analytics',     ar: 'التحليلات' },
   '/dashboard/admin/reviews':      { en: 'Reviews',       ar: 'المراجعات' },
   '/dashboard/admin/discounts':    { en: 'Discounts',     ar: 'الخصومات' },
   '/dashboard/admin/blog':         { en: 'Blog',          ar: 'المدونة' },
-  '/dashboard/admin/banners':      { en: 'Banners',       ar: 'البانرات' },
+  '/dashboard/admin/banners':      { en: 'Media Manager', ar: 'مدير الوسائط' },
   '/dashboard/admin/settings':     { en: 'Settings',      ar: 'الإعدادات' },
 }
 

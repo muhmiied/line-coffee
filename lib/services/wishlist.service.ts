@@ -9,6 +9,30 @@
 import { createClient } from '@/lib/supabase/server'
 import type { WishlistItem, WishlistItemWithProduct } from '@/lib/types/database'
 
+type StoreWishlistItem = {
+  productId: string
+  name_en: string
+  name_ar: string
+  slug: string
+  image: string
+  price: number
+}
+
+export function mapWishlistItemToStoreItem(item: WishlistItemWithProduct): StoreWishlistItem | null {
+  if (!item.product) return null
+
+  const firstAvailableSize = item.product.sizes?.find((size) => size.is_available) ?? item.product.sizes?.[0]
+
+  return {
+    productId: item.product_id,
+    name_en: item.product.name_en,
+    name_ar: item.product.name_ar,
+    slug: item.product.slug,
+    image: item.product.images?.[0] ?? '',
+    price: Number(firstAvailableSize?.price ?? 0),
+  }
+}
+
 // ==========================================
 // GET WISHLIST - جلب المفضلة
 // ==========================================
@@ -35,6 +59,11 @@ export async function getWishlist(userId: string) {
   }
   
   return data as WishlistItemWithProduct[]
+}
+
+export async function getStoreWishlist(userId: string) {
+  const items = await getWishlist(userId)
+  return items.map(mapWishlistItemToStoreItem).filter(Boolean) as StoreWishlistItem[]
 }
 
 // ==========================================
@@ -131,6 +160,16 @@ export async function toggleWishlist(userId: string, productId: string) {
     await addToWishlist(userId, productId)
     return { added: true }
   }
+}
+
+export async function mergeWishlistItems(userId: string, items: StoreWishlistItem[]) {
+  for (const item of items) {
+    if (item.productId) {
+      await addToWishlist(userId, item.productId)
+    }
+  }
+
+  return getStoreWishlist(userId)
 }
 
 // ==========================================

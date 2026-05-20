@@ -135,6 +135,21 @@ export default function CheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    setFieldErrors(prev => {
+      if (!prev[name]) return prev
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
+  }
+
+  const scrollToFirstInvalid = () => {
+    requestAnimationFrame(() => {
+      document.querySelector('[aria-invalid="true"]')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,11 +164,14 @@ export default function CheckoutPage() {
     if (!formData.firstName.trim()) errors.firstName = t('Please enter your first name', 'من فضلك ادخل اسمك الأول')
     if (!formData.lastName.trim()) errors.lastName = t('Please enter your last name', 'من فضلك ادخل اسمك الأخير')
     if (!formData.phone.trim()) errors.phone = t('Please enter your phone number', 'من فضلك ادخل رقم تليفونك')
+    if (formData.email.trim() && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) errors.email = t('Please enter a valid email', 'من فضلك أدخل بريد إلكتروني صحيح')
     if (!formData.address.trim()) errors.address = t('Please enter your address', 'من فضلك ادخل عنوانك')
     if (!formData.city.trim()) errors.city = t('Please enter your city', 'من فضلك ادخل مدينتك')
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
+      toast.error(t('Please fix the highlighted fields', 'يرجى تصحيح الحقول المحددة'))
+      scrollToFirstInvalid()
       return
     }
     setFieldErrors({})
@@ -178,6 +196,7 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             unit_price: item.price,
             total_price: item.price * item.quantity,
+            customizations: item.customizations ?? null,
           })),
           subtotal,
           shipping_cost: shipping,
@@ -387,6 +406,7 @@ export default function CheckoutPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
+                      aria-invalid={Boolean(fieldErrors.firstName)}
                       className={fieldErrors.firstName ? 'border-destructive' : ''}
                     />
                     {fieldErrors.firstName && (
@@ -400,6 +420,7 @@ export default function CheckoutPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
+                      aria-invalid={Boolean(fieldErrors.lastName)}
                       className={fieldErrors.lastName ? 'border-destructive' : ''}
                     />
                     {fieldErrors.lastName && (
@@ -417,7 +438,12 @@ export default function CheckoutPage() {
                       type="email"
                       value={formData.email}
                       onChange={handleInputChange}
+                      aria-invalid={Boolean(fieldErrors.email)}
+                      className={fieldErrors.email ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.email && (
+                      <p className="text-destructive text-xs mt-1">{fieldErrors.email}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="phone">
@@ -430,6 +456,7 @@ export default function CheckoutPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={handleInputChange}
+                      aria-invalid={Boolean(fieldErrors.phone)}
                       className={fieldErrors.phone ? 'border-destructive' : ''}
                     />
                     {fieldErrors.phone && (
@@ -468,6 +495,7 @@ export default function CheckoutPage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       placeholder={t('Street address, building, apartment', 'الشارع، المبنى، الشقة')}
+                      aria-invalid={Boolean(fieldErrors.address)}
                       className={fieldErrors.address ? 'border-destructive' : ''}
                     />
                     {fieldErrors.address && (
@@ -482,6 +510,7 @@ export default function CheckoutPage() {
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
+                        aria-invalid={Boolean(fieldErrors.city)}
                         className={fieldErrors.city ? 'border-destructive' : ''}
                       />
                       {fieldErrors.city && (

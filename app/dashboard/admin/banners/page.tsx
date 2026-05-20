@@ -116,8 +116,8 @@ export default function BannersPage() {
     <div className="min-h-screen bg-[#0f0900] p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-white font-bold text-lg">{t('Banners', 'البانرات')}</h2>
-          <p className="text-white/30 text-xs mt-0.5">{banners.length} {t('banners', 'بانر')} · {activeCount} {t('active', 'نشط')}</p>
+          <h2 className="text-white font-bold text-lg">{t('Media Manager', 'مدير الوسائط')}</h2>
+          <p className="text-white/30 text-xs mt-0.5">{banners.length} {t('media items', 'عنصر وسائط')} · {activeCount} {t('active', 'نشط')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={load} aria-label={t('Refresh', 'تحديث')}
@@ -127,7 +127,7 @@ export default function BannersPage() {
           <button type="button" onClick={openAdd}
             className="flex items-center gap-2 h-9 px-4 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all">
             <Plus className="h-4 w-4" />
-            {t('Add Banner', 'إضافة بانر')}
+            {t('Add Media', 'إضافة وسائط')}
           </button>
         </div>
       </div>
@@ -151,9 +151,9 @@ export default function BannersPage() {
       ) : banners.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24">
           <ImageIcon className="h-12 w-12 mb-3 text-[#c8941a]/20" />
-          <p className="text-white/30 text-sm">{t('No banners yet', 'لا توجد بانرات بعد')}</p>
+          <p className="text-white/30 text-sm">{t('No media yet', 'لا توجد وسائط بعد')}</p>
           <button type="button" onClick={openAdd} className="mt-4 text-[#c8941a] text-sm hover:opacity-70 transition-opacity">
-            + {t('Add your first banner', 'أضف أول بانر')}
+            + {t('Add your first media item', 'أضف أول عنصر وسائط')}
           </button>
         </div>
       ) : (
@@ -273,7 +273,7 @@ export default function BannersPage() {
               </button>
               <button type="button" onClick={save} disabled={saving}
                 className="px-5 py-2 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all disabled:opacity-50">
-                {saving ? t('Saving...', 'جارٍ الحفظ...') : editing ? t('Save Changes', 'حفظ التغييرات') : t('Add Banner', 'إضافة البانر')}
+                {saving ? t('Saving...', 'جارٍ الحفظ...') : editing ? t('Save Changes', 'حفظ التغييرات') : t('Add Media', 'إضافة وسائط')}
               </button>
             </div>
           </div>

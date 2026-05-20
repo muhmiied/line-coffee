@@ -12,6 +12,7 @@ export interface CartItem {
   price: number
   quantity: number
   image: string
+  customizations?: Record<string, unknown>
 }
 
 interface CartStore {
@@ -22,6 +23,7 @@ interface CartStore {
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
+  replaceItems: (items: CartItem[]) => void
   resetForGuest: () => void
   syncOwner: (ownerId: string | null) => void
   openCart: () => void
@@ -29,6 +31,54 @@ interface CartStore {
   toggleCart: () => void
   getTotalItems: () => number
   getTotal: () => number
+}
+
+function canSync(ownerId: string | null) {
+  return Boolean(ownerId) && typeof window !== 'undefined'
+}
+
+function syncAddItem(item: CartItem, quantity: number, ownerId: string | null) {
+  if (!canSync(ownerId)) return
+
+  void fetch('/api/cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      clientItemId: item.id,
+      productId: item.product_id,
+      size: item.size,
+      quantity,
+      name_en: item.name_en,
+      name_ar: item.name_ar,
+      price: item.price,
+      image: item.image,
+      customizations: item.customizations ?? null,
+    }),
+  }).catch(() => {})
+}
+
+function syncQuantity(id: string, quantity: number, ownerId: string | null) {
+  if (!canSync(ownerId)) return
+
+  void fetch(`/api/cart/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  }).catch(() => {})
+}
+
+function syncRemoveItem(id: string, ownerId: string | null) {
+  if (!canSync(ownerId)) return
+
+  void fetch(`/api/cart/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  }).catch(() => {})
+}
+
+function syncClearCart(ownerId: string | null) {
+  if (!canSync(ownerId)) return
+
+  void fetch('/api/cart', { method: 'DELETE' }).catch(() => {})
 }
 
 export const useCartStore = create<CartStore>()(
@@ -39,26 +89,29 @@ export const useCartStore = create<CartStore>()(
       ownerId: null,
 
       addItem: (item) => {
+        const quantityToAdd = item.quantity || 1
         set((state) => {
           const existingIndex = state.items.findIndex((i) => i.id === item.id)
 
           if (existingIndex >= 0) {
             const newItems = [...state.items]
-            newItems[existingIndex].quantity += item.quantity || 1
+            newItems[existingIndex].quantity += quantityToAdd
             return { items: newItems, isOpen: true }
           }
 
           return {
-            items: [...state.items, { ...item, quantity: item.quantity || 1 }],
+            items: [...state.items, { ...item, quantity: quantityToAdd }],
             isOpen: true,
           }
         })
+        syncAddItem(item, quantityToAdd, get().ownerId)
       },
 
       removeItem: (id) => {
         set((state) => ({
           items: state.items.filter((i) => i.id !== id),
         }))
+        syncRemoveItem(id, get().ownerId)
       },
 
       updateQuantity: (id, quantity) => {
@@ -72,23 +125,19 @@ export const useCartStore = create<CartStore>()(
             item.id === id ? { ...item, quantity } : item
           ),
         }))
+        syncQuantity(id, quantity, get().ownerId)
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => {
+        set({ items: [] })
+        syncClearCart(get().ownerId)
+      },
+
+      replaceItems: (items) => set({ items }),
 
       resetForGuest: () => set({ items: [], isOpen: false, ownerId: null }),
 
-      syncOwner: (ownerId) => {
-        set((state) => {
-          if (state.ownerId === ownerId) return state
-
-          if (state.ownerId === null && ownerId && state.items.length > 0) {
-            return { ownerId }
-          }
-
-          return { ownerId, items: [], isOpen: false }
-        })
-      },
+      syncOwner: (ownerId) => set({ ownerId }),
 
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),

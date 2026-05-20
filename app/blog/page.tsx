@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Calendar, FileText } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
-import { FileText, Calendar } from 'lucide-react'
 
 type Post = {
   id: string
@@ -24,91 +24,85 @@ export default function BlogListPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/blog/public')
-      .then(r => r.json())
-      .then(json => setPosts(json.data || []))
+    fetch('/api/blog/public', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((json) => setPosts(json.data || []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
   return (
-    <div className="min-h-screen py-16 bg-[#faf7f2]">
-      <div className="container mx-auto px-4 max-w-4xl">
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#1a0a00] mb-3">
+    <div className="min-h-screen bg-[#0B0806] py-20 md:py-24">
+      <div className="container mx-auto max-w-5xl px-4">
+        <div className="mb-12 text-center">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]">
+            {t('Coffee Journal', 'مجلة القهوة')}
+          </p>
+          <h1 className="mb-3 font-serif text-4xl font-bold leading-[1.18] text-[#F5E6D8] md:text-5xl">
             {t('Blog', 'المدونة')}
           </h1>
-          <p className="text-[#7a5c3a] text-lg">
+          <p className="text-lg text-[#D6B79A]/72">
             {t('Coffee stories, brewing guides & more', 'قصص القهوة، أدلة التحضير والمزيد')}
           </p>
         </div>
 
         {loading ? (
-          <div className="grid md:grid-cols-2 gap-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white rounded-2xl overflow-hidden border border-[#e8ddd5]">
-                <div className="h-48 bg-[#f0e8e0]" />
-                <div className="p-6 space-y-3">
-                  <div className="h-5 bg-[#f0e8e0] rounded w-3/4" />
-                  <div className="h-4 bg-[#f0e8e0] rounded w-1/2" />
+          <div className="grid gap-6 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse overflow-hidden rounded-2xl border border-[#B6885E]/12 bg-[#120D09]">
+                <div className="h-48 bg-[#B6885E]/8" />
+                <div className="space-y-3 p-6">
+                  <div className="h-5 w-3/4 rounded bg-[#B6885E]/8" />
+                  <div className="h-4 w-1/2 rounded bg-[#B6885E]/8" />
                 </div>
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-24">
-            <FileText className="h-16 w-16 mx-auto mb-4 text-[#c8941a]/30" />
-            <h2 className="text-xl font-semibold text-[#7a5c3a] mb-2">{t('No posts yet', 'لا توجد مقالات بعد')}</h2>
-            <p className="text-[#a07850]">{t('Check back soon!', 'تابعنا قريباً!')}</p>
+          <div className="py-24 text-center">
+            <FileText className="mx-auto mb-4 h-16 w-16 text-[#B6885E]/30" />
+            <h2 className="mb-2 text-xl font-semibold text-[#F5E6D8]">{t('No posts yet', 'لا توجد مقالات بعد')}</h2>
+            <p className="text-[#D6B79A]/70">{t('Check back soon!', 'تابعنا قريباً!')}</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-8">
-            {posts.map(post => {
+          <div className="grid gap-6 md:grid-cols-2">
+            {posts.map((post) => {
               const title = language === 'ar' ? post.title_ar : post.title_en
               const excerpt = language === 'ar' ? post.content_ar : post.content_en
               const date = post.published_at || post.created_at
+
               return (
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
-                  className="group bg-white rounded-2xl overflow-hidden border border-[#e8ddd5] hover:border-[#c8941a]/40 hover:shadow-lg transition-all duration-300"
+                  className="group overflow-hidden rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/72 transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35"
                 >
-                  {/* Cover image */}
-                  <div className="relative h-48 bg-[#f5ede4] overflow-hidden">
+                  <div className="relative h-48 overflow-hidden bg-[#1A120D]">
                     {post.cover_image ? (
-                      <Image
-                        src={post.cover_image}
-                        alt={title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        unoptimized
-                      />
+                      <Image src={post.cover_image} alt={title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <FileText className="h-12 w-12 text-[#c8941a]/30" />
+                      <div className="flex h-full items-center justify-center">
+                        <FileText className="h-12 w-12 text-[#B6885E]/35" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/70 to-transparent" />
                   </div>
 
-                  {/* Content */}
                   <div className="p-6">
-                    <div className="flex items-center gap-1.5 text-[#a07850] text-xs mb-3">
+                    <div className="mb-3 flex items-center gap-1.5 text-xs text-[#D6B79A]/58">
                       <Calendar className="h-3.5 w-3.5" />
                       {new Date(date).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </div>
-                    <h2 className="font-serif text-xl font-bold text-[#1a0a00] mb-2 group-hover:text-[#522500] transition-colors line-clamp-2">
+                    <h2 className="mb-2 line-clamp-2 font-serif text-xl font-bold leading-snug text-[#F5E6D8] transition-colors group-hover:text-[#D6A373]">
                       {title}
                     </h2>
                     {excerpt && (
-                      <p className="text-[#7a5c3a] text-sm leading-relaxed line-clamp-3">
+                      <p className="line-clamp-3 text-sm leading-relaxed text-[#D6B79A]/68">
                         {excerpt.replace(/<[^>]*>/g, '')}
                       </p>
                     )}
-                    <p className="text-[#c8941a] text-sm font-semibold mt-4 group-hover:underline">
-                      {t('Read more →', 'اقرأ المزيد ←')}
+                    <p className="mt-4 text-sm font-semibold text-[#D6A373] group-hover:underline">
+                      {t('Read more', 'اقرأ المزيد')}
                     </p>
                   </div>
                 </Link>

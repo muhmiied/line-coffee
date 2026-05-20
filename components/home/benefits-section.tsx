@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Truck, Shield, RefreshCw, Coffee, Clock, Headphones } from 'lucide-react'
+import { Coffee, Headphones, ShieldCheck, Truck } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 
 export function BenefitsSection() {
@@ -9,72 +9,52 @@ export function BenefitsSection() {
 
   const benefits = [
     {
+      icon: Headphones,
+      titleEn: '24/7 Support',
+      titleAr: 'دعم على مدار الساعة',
+      descEn: 'Responsive help whenever your coffee ritual needs care',
+      descAr: 'مساعدة سريعة كلما احتجت دعماً لتجربة قهوتك',
+    },
+    {
       icon: Truck,
-      titleEn: 'Free Shipping',
-      titleAr: 'شحن مجاني',
-      descEn: 'Free delivery on orders over 200 SAR',
-      descAr: 'توصيل مجاني للطلبات فوق 200 ريال',
+      titleEn: 'Fast Delivery',
+      titleAr: 'توصيل سريع',
+      descEn: 'Carefully packed orders delivered across Egypt',
+      descAr: 'طلبات مغلفة بعناية وتصل بسرعة داخل مصر',
     },
     {
       icon: Coffee,
       titleEn: 'Freshly Roasted',
-      titleAr: 'محمصة طازجة',
-      descEn: 'Roasted to order for peak freshness',
-      descAr: 'محمصة عند الطلب لأعلى درجات النضارة',
+      titleAr: 'تحميص طازج',
+      descEn: 'Coffee prepared to preserve aroma, body, and freshness',
+      descAr: 'قهوة مجهزة للحفاظ على الرائحة والقوام والطزاجة',
     },
     {
-      icon: Shield,
-      titleEn: 'Quality Guarantee',
-      titleAr: 'ضمان الجودة',
-      descEn: '100% satisfaction or your money back',
-      descAr: 'رضا 100% أو استرداد أموالك',
-    },
-    {
-      icon: Clock,
-      titleEn: 'Fast Delivery',
-      titleAr: 'توصيل سريع',
-      descEn: '1-3 day delivery across Saudi Arabia',
-      descAr: 'توصيل خلال 1-3 أيام في جميع أنحاء المملكة',
-    },
-    {
-      icon: RefreshCw,
-      titleEn: 'Easy Returns',
-      titleAr: 'إرجاع سهل',
-      descEn: '30-day hassle-free return policy',
-      descAr: 'سياسة إرجاع سهلة لمدة 30 يوماً',
-    },
-    {
-      icon: Headphones,
-      titleEn: '24/7 Support',
-      titleAr: 'دعم على مدار الساعة',
-      descEn: 'Expert help whenever you need it',
-      descAr: 'مساعدة متخصصة متى احتجت إليها',
+      icon: ShieldCheck,
+      titleEn: 'Premium Quality',
+      titleAr: 'حفظ الجودة',
+      descEn: 'Selected beans and packaging that protect every blend',
+      descAr: 'حبوب مختارة وتغليف يحافظ على جودة كل خلطة',
     },
   ]
 
   return (
-    <section className="cinematic-section relative py-20 md:py-28 overflow-hidden" style={{ background: '#0F0A07' }}>
-      {/* Ambient glow */}
+    <section className="cinematic-section relative overflow-hidden py-20 md:py-28" style={{ background: '#0F0A07' }}>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.05)_0%,_transparent_70%)]" />
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
-      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
 
-      <div className="container mx-auto px-4 relative z-10">
-
-        {/* Section label */}
-        <div className="text-center mb-14">
-          <div className="flex items-center justify-center gap-3 mb-3">
+      <div className="container relative z-10 mx-auto px-4">
+        <div className="mb-14 text-center">
+          <div className="mb-3 flex items-center justify-center gap-3">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#B6885E]/60" />
-            <span
-              className="text-[11px] tracking-[0.24em] uppercase font-semibold"
-              style={{ color: '#B6885E' }}
-            >
+            <span className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: '#B6885E' }}>
               {t('Why Line Coffee?', 'لماذا لاين كوفي؟')}
             </span>
             <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#B6885E]/60" />
           </div>
-          <h2 className="font-serif text-2xl md:text-3xl font-bold" style={{ color: '#F5E6D8' }}>
-            {t('More Than Just Coffee', 'أكثر من مجرد قهوة')}
+          <h2 className="font-serif text-2xl font-bold leading-[1.22] md:text-3xl" style={{ color: '#F5E6D8' }}>
+            {t('Care In Every Detail', 'عناية في كل تفصيلة')}
           </h2>
         </div>
 
@@ -83,44 +63,26 @@ export function BenefitsSection() {
           whileInView="visible"
           viewport={{ once: true }}
           variants={{ visible: { transition: { staggerChildren: 0.09 } } }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
-          {benefits.map((benefit, index) => (
+          {benefits.map((benefit) => (
             <motion.div
-              key={index}
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-              className="premium-info-card text-center group"
+              key={benefit.titleEn}
+              variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } }}
+              className="group rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/70 p-6 text-center shadow-[0_18px_55px_rgba(0,0,0,0.18)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/32 hover:bg-[#1A120D]/78"
             >
-              <div
-                className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 transition-all duration-400 group-hover:scale-110"
-                style={{
-                  background: 'rgba(182,136,94,0.08)',
-                  border: '1px solid rgba(182,136,94,0.2)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(182,136,94,0.18)'
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(182,136,94,0.2)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(182,136,94,0.08)'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                <benefit.icon className="h-5 w-5" strokeWidth={1.5} style={{ color: '#B6885E' }} />
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#B6885E]/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_28px_rgba(182,136,94,0.18)]">
+                <benefit.icon className="h-6 w-6 text-[#D6A373]" strokeWidth={1.5} />
               </div>
-              <h3
-                className="font-semibold text-sm md:text-base mb-1.5 transition-colors duration-300 group-hover:text-[#D6A373]"
-                style={{ color: '#F5E6D8' }}
-              >
+              <h3 className="mb-2 font-serif text-lg font-bold text-[#F5E6D8] transition-colors duration-300 group-hover:text-[#D6A373]">
                 {t(benefit.titleEn, benefit.titleAr)}
               </h3>
-              <p className="text-xs leading-relaxed" style={{ color: 'rgba(183,155,133,0.65)' }}>
+              <p className="mx-auto max-w-[15rem] text-sm leading-relaxed text-[#D6B79A]/68">
                 {t(benefit.descEn, benefit.descAr)}
               </p>
             </motion.div>
           ))}
         </motion.div>
-
       </div>
     </section>
   )

@@ -13,8 +13,8 @@ import {
   Plus,
   ChevronRight,
   Truck,
-  Shield,
-  RefreshCw,
+  Coffee,
+  Headphones,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -385,33 +385,33 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
           </div>
 
-          {/* Benefits */}
+          {/* Product assurances */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
             <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Truck className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">{t('Free Shipping', 'شحن مجاني')}</p>
-                <p className="text-xs text-muted-foreground">{t('Over 200 EGP', 'فوق 200 ج.م')}</p>
+                <p className="font-medium text-sm">{t('Fast Delivery', 'توصيل سريع')}</p>
+                <p className="text-xs text-muted-foreground">{t('Across Egypt', 'داخل مصر')}</p>
               </div>
             </div>
             <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-primary" />
+                <Coffee className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">{t('Quality Guarantee', 'ضمان الجودة')}</p>
-                <p className="text-xs text-muted-foreground">{t('100% Satisfaction', 'رضا 100%')}</p>
+                <p className="font-medium text-sm">{t('Freshly Roasted', 'تحميص طازج')}</p>
+                <p className="text-xs text-muted-foreground">{t('Packed with care', 'تغليف بعناية')}</p>
               </div>
             </div>
             <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <RefreshCw className="h-5 w-5 text-primary" />
+                <Headphones className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">{t('Easy Returns', 'إرجاع سهل')}</p>
-                <p className="text-xs text-muted-foreground">{t('30 Days', '30 يوم')}</p>
+                <p className="font-medium text-sm">{t('24/7 Support', 'دعم على مدار الساعة')}</p>
+                <p className="text-xs text-muted-foreground">{t('Here when needed', 'معك عند الحاجة')}</p>
               </div>
             </div>
           </div>

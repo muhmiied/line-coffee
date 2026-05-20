@@ -90,7 +90,7 @@ export function CategoriesSection() {
             </div>
           </FadeUp>
           <FadeUp>
-            <h2 className="premium-heading-shimmer font-serif text-4xl md:text-5xl font-bold" style={{ color: '#F5E6D8' }}>
+            <h2 className="premium-heading-shimmer font-serif text-4xl md:text-5xl font-bold leading-[1.18]" style={{ color: '#F5E6D8' }}>
               <WordByWord text={t('Shop by Category', 'تسوق حسب الفئة')} />
             </h2>
           </FadeUp>

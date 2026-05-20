@@ -224,7 +224,7 @@
     color: var(--cream);
     font-optical-sizing: auto;
     letter-spacing: 0;
-    line-height: 1.08;
+    line-height: 1.16;
     text-wrap: balance;
   }
 
@@ -333,7 +333,8 @@
 .premium-heading-shimmer {
   position: relative;
   display: inline-block;
-  overflow: hidden;
+  overflow: visible;
+  padding-bottom: 0.08em;
   color: var(--cream);
   text-shadow: 0 0 28px rgba(214, 163, 115, 0.12);
 }

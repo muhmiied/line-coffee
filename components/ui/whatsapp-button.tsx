@@ -18,7 +18,7 @@ export function WhatsAppButton() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       onClick={handleClick}
-      className="fixed bottom-6 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl group sm:right-6 sm:h-14 sm:w-14"
+      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl group sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
       aria-label="Contact us on WhatsApp"
     >
       <MessageCircle className="h-6 w-6 transition-transform group-hover:scale-110 sm:h-7 sm:w-7" />

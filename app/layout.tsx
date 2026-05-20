@@ -11,7 +11,6 @@ import { Footer } from '@/components/layout/footer'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { WishlistDrawer } from '@/components/wishlist/wishlist-drawer'
 import { WhatsAppButton } from '@/components/ui/whatsapp-button'
-import { AIChatbot } from '@/components/ui/ai-chatbot'
 import { ScrollProgress } from '@/components/ui/scroll-progress'
 import { DiscountBanner } from '@/components/ui/discount-banner'
 
@@ -106,7 +105,6 @@ export default async function RootLayout({
             <CartDrawer />
             <WishlistDrawer />
             <WhatsAppButton />
-            <AIChatbot />
             <DiscountBanner />
             <Toaster position="top-center" richColors />
           </AuthProvider>

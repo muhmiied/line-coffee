@@ -32,7 +32,9 @@ export {
 // Cart - السلة
 export {
   getCartItems,
+  getStoreCartItems,
   addToCart,
+  mergeCartItems,
   updateCartItem,
   removeFromCart,
   clearCart,
@@ -46,16 +48,19 @@ export {
   getOrderById,
   getOrderByNumber,
   createOrder,
-  cancelOrder
+  cancelOrder,
+  restoreOrderStock
 } from './orders.service'
 
 // Wishlist - المفضلة
 export {
   getWishlist,
+  getStoreWishlist,
   addToWishlist,
   removeFromWishlist,
   isInWishlist,
   toggleWishlist,
+  mergeWishlistItems,
   getWishlistCount
 } from './wishlist.service'
 

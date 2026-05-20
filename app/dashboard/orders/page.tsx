@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, CreditCard, MapPin, Package, ReceiptText } from 'lucide-react'
+import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 import { Button } from '@/components/ui/button'
 
@@ -45,6 +46,8 @@ type Order = {
   customer_phone?: string | null
   shipping_address?: ShippingAddress | null
   created_at: string
+  cancelled_at?: string | null
+  cancellation_initiated_by?: 'customer' | 'admin' | null
   items?: OrderItem[]
 }
 
@@ -124,11 +127,19 @@ export default function DashboardOrdersPage() {
   }, [])
 
   const cancelOrder = async (orderId: string) => {
-    await fetch(`/api/orders/${orderId}`, {
+    const response = await fetch(`/api/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'cancel' }),
     })
+    const json = await response.json()
+
+    if (!response.ok || !json.success) {
+      toast.error(json?.error || t('Failed to cancel order', 'فشل إلغاء الطلب'))
+      return
+    }
+
+    toast.success(t('Order cancelled', 'تم إلغاء الطلب'))
     await loadOrders()
   }
 
@@ -172,6 +183,10 @@ export default function DashboardOrdersPage() {
                   shipping?.email,
                 ].filter(Boolean)
                 const customerName = order.customer_name || [shipping?.first_name, shipping?.last_name].filter(Boolean).join(' ')
+                const hoursSinceOrder = (Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60)
+                const statusAllowsCancel = ['pending', 'confirmed', 'processing'].includes(order.status)
+                const canCancel = statusAllowsCancel && hoursSinceOrder <= 24
+                const cancellationExpired = statusAllowsCancel && hoursSinceOrder > 24
 
                 return (
                   <motion.div
@@ -197,12 +212,18 @@ export default function DashboardOrdersPage() {
                       <Button variant="outline" size="sm" onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}>
                         {expandedId === order.id ? t('Hide details', 'إخفاء التفاصيل') : t('View details', 'عرض التفاصيل')}
                       </Button>
-                      {['pending', 'confirmed', 'processing'].includes(order.status) && (
+                      {canCancel && (
                         <Button variant="destructive" size="sm" onClick={() => cancelOrder(order.id)}>
                           {t('Cancel order', 'إلغاء الطلب')}
                         </Button>
                       )}
                     </div>
+
+                    {cancellationExpired && (
+                      <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+                        {t('Online cancellation is available for 24 hours only. Please contact support for help.', 'الإلغاء من الحساب متاح خلال 24 ساعة فقط. يرجى التواصل مع الدعم للمساعدة.')}
+                      </p>
+                    )}
 
                     {expandedId === order.id && (
                       <div className="mt-5 space-y-5 border-t border-border pt-5">

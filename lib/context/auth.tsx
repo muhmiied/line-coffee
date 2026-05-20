@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore } from '@/lib/store/wishlist'
 
 interface AuthContextType {
   user: User | null
@@ -48,7 +49,11 @@ export function AuthProvider({
   const [profile, setProfile] = useState<Profile | null>(initialProfile)
   const [isLoading, setIsLoading] = useState(false)
   const cartSyncOwner = useCartStore((state) => state.syncOwner)
+  const replaceCartItems = useCartStore((state) => state.replaceItems)
   const resetCartForGuest = useCartStore((state) => state.resetForGuest)
+  const wishlistSyncOwner = useWishlistStore((state) => state.syncOwner)
+  const replaceWishlistItems = useWishlistStore((state) => state.replaceItems)
+  const resetWishlistForGuest = useWishlistStore((state) => state.resetForGuest)
 
   useEffect(() => {
     setUser(initialUser)
@@ -80,8 +85,64 @@ export function AuthProvider({
   }, [fetchProfile, user])
 
   useEffect(() => {
-    cartSyncOwner(user?.id ?? null)
-  }, [cartSyncOwner, user?.id])
+    let cancelled = false
+    const userId = user?.id ?? null
+
+    if (!userId) {
+      cartSyncOwner(null)
+      wishlistSyncOwner(null)
+      return
+    }
+
+    const currentCartState = useCartStore.getState()
+    const currentWishlistState = useWishlistStore.getState()
+    const guestCartItems = currentCartState.ownerId === userId ? [] : currentCartState.items
+    const guestWishlistItems = currentWishlistState.ownerId === userId ? [] : currentWishlistState.items
+
+    cartSyncOwner(userId)
+    wishlistSyncOwner(userId)
+
+    async function syncPersistedState() {
+      try {
+        const [cartResponse, wishlistResponse] = await Promise.all([
+          fetch('/api/cart', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: guestCartItems }),
+          }),
+          fetch('/api/wishlist', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: guestWishlistItems }),
+          }),
+        ])
+
+        if (cancelled) return
+
+        if (cartResponse.ok) {
+          const json = await cartResponse.json()
+          if (Array.isArray(json?.data?.store_items)) {
+            replaceCartItems(json.data.store_items)
+          }
+        }
+
+        if (wishlistResponse.ok) {
+          const json = await wishlistResponse.json()
+          if (Array.isArray(json?.data?.store_items)) {
+            replaceWishlistItems(json.data.store_items)
+          }
+        }
+      } catch {
+        // Keep the local cart/wishlist usable if sync is temporarily unavailable.
+      }
+    }
+
+    void syncPersistedState()
+
+    return () => {
+      cancelled = true
+    }
+  }, [cartSyncOwner, replaceCartItems, replaceWishlistItems, user?.id, wishlistSyncOwner])
 
   useEffect(() => {
     if (!supabase) {
@@ -145,6 +206,7 @@ export function AuthProvider({
       setUser(null)
       setProfile(null)
       resetCartForGuest()
+      resetWishlistForGuest()
       router.replace('/')
       router.refresh()
       return
@@ -154,6 +216,7 @@ export function AuthProvider({
     setProfile(null)
     setIsLoading(false)
     resetCartForGuest()
+    resetWishlistForGuest()
 
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -162,7 +225,7 @@ export function AuthProvider({
 
     router.replace('/')
     router.refresh()
-  }, [resetCartForGuest, router, supabase])
+  }, [resetCartForGuest, resetWishlistForGuest, router, supabase])
 
   return (
     <AuthContext.Provider

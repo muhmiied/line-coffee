@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useLanguage } from '@/lib/context/language'
 import { ArrowLeft, ArrowRight, Calendar, FileText } from 'lucide-react'
+import { useLanguage } from '@/lib/context/language'
 
 type Post = {
   id: string
@@ -27,9 +27,9 @@ export default function BlogPostPage() {
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    fetch('/api/blog/public')
-      .then(r => r.json())
-      .then(json => {
+    fetch('/api/blog/public', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((json) => {
         const found = (json.data || []).find((p: Post) => p.slug === slug)
         if (found) setPost(found)
         else setNotFound(true)
@@ -40,13 +40,13 @@ export default function BlogPostPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#faf7f2] py-16">
-        <div className="container mx-auto px-4 max-w-3xl">
+      <div className="min-h-screen bg-[#0B0806] py-20 md:py-24">
+        <div className="container mx-auto max-w-3xl px-4">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-[#f0e8e0] rounded w-3/4" />
-            <div className="h-64 bg-[#f0e8e0] rounded-2xl" />
+            <div className="h-8 w-3/4 rounded bg-[#B6885E]/10" />
+            <div className="h-72 rounded-2xl bg-[#B6885E]/10" />
             <div className="space-y-3">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-4 bg-[#f0e8e0] rounded" />)}
+              {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-4 rounded bg-[#B6885E]/10" />)}
             </div>
           </div>
         </div>
@@ -56,11 +56,11 @@ export default function BlogPostPage() {
 
   if (notFound || !post) {
     return (
-      <div className="min-h-screen bg-[#faf7f2] flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#0B0806]">
         <div className="text-center">
-          <FileText className="h-16 w-16 mx-auto mb-4 text-[#c8941a]/30" />
-          <h1 className="text-2xl font-bold text-[#1a0a00] mb-2">{t('Post not found', 'المقال غير موجود')}</h1>
-          <Link href="/blog" className="text-[#c8941a] hover:underline">{t('← Back to Blog', '→ العودة للمدونة')}</Link>
+          <FileText className="mx-auto mb-4 h-16 w-16 text-[#B6885E]/30" />
+          <h1 className="mb-2 text-2xl font-bold text-[#F5E6D8]">{t('Post not found', 'المقال غير موجود')}</h1>
+          <Link href="/blog" className="text-[#D6A373] hover:underline">{t('Back to Blog', 'العودة للمدونة')}</Link>
         </div>
       </div>
     )
@@ -71,53 +71,47 @@ export default function BlogPostPage() {
   const date = post.published_at || post.created_at
 
   return (
-    <div className="min-h-screen bg-[#faf7f2] py-16" dir={dir}>
-      <div className="container mx-auto px-4 max-w-3xl">
-
-        {/* Back link */}
-        <Link href="/blog" className="inline-flex items-center gap-1.5 text-[#7a5c3a] hover:text-[#c8941a] text-sm mb-8 transition-colors">
+    <div className="min-h-screen bg-[#0B0806] py-20 md:py-24" dir={dir}>
+      <article className="container mx-auto max-w-3xl px-4">
+        <Link href="/blog" className="mb-8 inline-flex items-center gap-1.5 text-sm text-[#D6B79A]/72 transition-colors hover:text-[#D6A373]">
           {dir === 'rtl' ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
           {t('Back to Blog', 'العودة للمدونة')}
         </Link>
 
-        {/* Cover image */}
         {post.cover_image && (
-          <div className="relative h-72 md:h-96 rounded-2xl overflow-hidden mb-8">
+          <div className="relative mb-8 h-72 overflow-hidden rounded-2xl border border-[#B6885E]/14 md:h-96">
             <Image src={post.cover_image} alt={title} fill className="object-cover" unoptimized />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/72 to-transparent" />
           </div>
         )}
 
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-1.5 text-[#a07850] text-sm mb-4">
+        <header className="mb-8">
+          <div className="mb-4 flex items-center gap-1.5 text-sm text-[#D6B79A]/58">
             <Calendar className="h-4 w-4" />
             {new Date(date).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#1a0a00] leading-tight">
+          <h1 className="font-serif text-3xl font-bold leading-[1.16] text-[#F5E6D8] md:text-5xl">
             {title}
           </h1>
-        </div>
+        </header>
 
-        {/* Content */}
-        <div className="prose prose-lg max-w-none text-[#4a3020] leading-relaxed">
+        <div className="rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/58 p-5 text-[#F5E6D8]/84 md:p-7">
           {content ? (
             content.split('\n').map((para, i) =>
-              para.trim() ? <p key={i} className="mb-4">{para}</p> : <br key={i} />
+              para.trim() ? <p key={i} className="mb-5 text-base leading-8 text-[#F5E6D8]/84">{para}</p> : <br key={i} />
             )
           ) : (
-            <p className="text-[#a07850] italic">{t('No content available.', 'لا يوجد محتوى.')}</p>
+            <p className="italic text-[#D6B79A]/70">{t('No content available.', 'لا يوجد محتوى.')}</p>
           )}
         </div>
 
-        {/* Footer nav */}
-        <div className="border-t border-[#e8ddd5] mt-12 pt-8">
-          <Link href="/blog" className="inline-flex items-center gap-1.5 text-[#c8941a] hover:underline font-medium">
+        <div className="mt-10 border-t border-[#B6885E]/14 pt-8">
+          <Link href="/blog" className="inline-flex items-center gap-1.5 font-medium text-[#D6A373] hover:underline">
             {dir === 'rtl' ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
             {t('All Posts', 'كل المقالات')}
           </Link>
         </div>
-      </div>
+      </article>
     </div>
   )
 }

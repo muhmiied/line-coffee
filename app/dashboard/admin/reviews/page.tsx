@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Star, Eye, EyeOff, Trash2, RefreshCw, Search, MessageSquare } from 'lucide-react'
+import { BadgeCheck, Star, Eye, EyeOff, Trash2, RefreshCw, Search, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
@@ -12,6 +12,9 @@ type Review = {
   content_en: string | null
   rating: number
   is_visible: boolean
+  is_featured?: boolean
+  is_approved?: boolean
+  customer_avatar?: string | null
   created_at: string
 }
 
@@ -77,6 +80,25 @@ export default function ReviewsPage() {
       if (!json.success) throw new Error(json.error)
       setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_visible: !r.is_visible } : r))
       toast.success(!review.is_visible ? t('Review shown', 'تم إظهار المراجعة') : t('Review hidden', 'تم إخفاء المراجعة'))
+    } catch {
+      toast.error(t('Failed to update', 'فشل التحديث'))
+    } finally {
+      setToggling(null)
+    }
+  }
+
+  const patchReview = async (review: Review, payload: Partial<Pick<Review, 'is_visible' | 'is_featured' | 'is_approved'>>) => {
+    setToggling(review.id)
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: review.id, ...payload }),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setReviews(prev => prev.map(r => r.id === review.id ? { ...r, ...payload } : r))
+      toast.success(t('Review updated', 'تم تحديث المراجعة'))
     } catch {
       toast.error(t('Failed to update', 'فشل التحديث'))
     } finally {
@@ -222,6 +244,32 @@ export default function ReviewsPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => patchReview(review, { is_approved: !review.is_approved })}
+                    disabled={toggling === review.id}
+                    aria-label={review.is_approved ? t('Unapprove', 'إلغاء الاعتماد') : t('Approve', 'اعتماد')}
+                    className={`h-7 w-7 rounded-lg border flex items-center justify-center transition-all disabled:opacity-40 ${
+                      review.is_approved
+                        ? 'bg-emerald-500/12 border-emerald-500/20 text-emerald-400'
+                        : 'bg-white/[0.04] border-white/[0.06] text-white/30 hover:text-white/60'
+                    }`}
+                  >
+                    <BadgeCheck className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => patchReview(review, { is_featured: !review.is_featured })}
+                    disabled={toggling === review.id}
+                    aria-label={review.is_featured ? t('Unfeature', 'إلغاء التمييز') : t('Feature', 'تمييز')}
+                    className={`h-7 w-7 rounded-lg border flex items-center justify-center transition-all disabled:opacity-40 ${
+                      review.is_featured
+                        ? 'bg-[#c8941a]/15 border-[#c8941a]/25 text-[#c8941a]'
+                        : 'bg-white/[0.04] border-white/[0.06] text-white/30 hover:text-white/60'
+                    }`}
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => del(review.id)}
                     disabled={deleting === review.id}
                     aria-label={t('Delete', 'حذف')}
@@ -241,7 +289,7 @@ export default function ReviewsPage() {
               </p>
 
               {/* Visibility badge */}
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
                   review.is_visible
                     ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
@@ -250,6 +298,17 @@ export default function ReviewsPage() {
                   {review.is_visible ? <Eye className="h-2.5 w-2.5" /> : <EyeOff className="h-2.5 w-2.5" />}
                   {review.is_visible ? t('Visible on site', 'ظاهر في الموقع') : t('Hidden', 'مخفي')}
                 </span>
+                {review.is_featured && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#c8941a]/20 bg-[#c8941a]/15 px-2 py-0.5 text-[10px] font-medium text-[#c8941a]">
+                    <Star className="h-2.5 w-2.5" />
+                    {t('Featured', 'مميز')}
+                  </span>
+                )}
+                {review.is_approved === false && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+                    {t('Needs approval', 'بانتظار الاعتماد')}
+                  </span>
+                )}
               </div>
             </div>
           ))}

@@ -144,6 +144,10 @@ export interface Order {
   payment_status: PaymentStatus
   // Misc
   status: OrderStatus
+  cancelled_at?: string | null
+  cancellation_initiated_by?: 'customer' | 'admin' | null
+  cancellation_reason?: string | null
+  stock_restored_at?: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -189,7 +193,13 @@ export interface OrderItem {
 export interface CartItem {
   id: string
   user_id: string
-  product_id: string
+  product_id: string | null
+  client_item_id: string | null
+  name_en: string | null
+  name_ar: string | null
+  image: string | null
+  unit_price: number | null
+  customizations: Record<string, unknown> | null
   size: string
   quantity: number
   created_at: string
@@ -197,8 +207,8 @@ export interface CartItem {
 }
 
 export interface CartItemWithProduct extends CartItem {
-  product: Product
-  product_size: ProductSize
+  product: Product | null
+  product_size: ProductSize | null
 }
 
 // ==========================================
@@ -229,6 +239,7 @@ export interface Testimonial {
   rating: number
   is_featured: boolean
   is_visible: boolean
+  is_approved?: boolean
   created_at: string
 }
 
@@ -241,6 +252,8 @@ export interface CoffeeBean {
   name_en: string
   name_ar: string
   origin: string | null
+  family?: 'arabica' | 'robusta' | 'other'
+  price?: number
   description_en: string | null
   description_ar: string | null
   is_active: boolean
@@ -257,6 +270,8 @@ export interface FlavorBase {
   id: string
   name_en: string
   name_ar: string
+  price?: number
+  type?: string
   is_active: boolean
   sort_order: number
   created_at: string
@@ -269,6 +284,8 @@ export interface FlavorOption {
   base_id: string
   name_en: string
   name_ar: string
+  price_delta?: number
+  option_type?: string
   is_active: boolean
   sort_order: number
   created_at: string

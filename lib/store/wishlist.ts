@@ -15,6 +15,7 @@ export interface WishlistItem {
 interface WishlistStore {
   items: WishlistItem[]
   isOpen: boolean
+  ownerId: string | null
   addItem: (item: WishlistItem) => void
   removeItem: (productId: string) => void
   toggleItem: (item: WishlistItem) => void
@@ -22,6 +23,23 @@ interface WishlistStore {
   openWishlist: () => void
   closeWishlist: () => void
   clearWishlist: () => void
+  replaceItems: (items: WishlistItem[]) => void
+  resetForGuest: () => void
+  syncOwner: (ownerId: string | null) => void
+}
+
+function canSync(ownerId: string | null) {
+  return Boolean(ownerId) && typeof window !== 'undefined'
+}
+
+function syncToggle(productId: string, ownerId: string | null) {
+  if (!canSync(ownerId)) return
+
+  void fetch('/api/wishlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId }),
+  }).catch(() => {})
 }
 
 export const useWishlistStore = create<WishlistStore>()(
@@ -29,6 +47,7 @@ export const useWishlistStore = create<WishlistStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      ownerId: null,
 
       addItem: (item) => {
         set((state) => {
@@ -36,12 +55,14 @@ export const useWishlistStore = create<WishlistStore>()(
           if (exists) return state
           return { items: [...state.items, item] }
         })
+        syncToggle(item.productId, get().ownerId)
       },
 
       removeItem: (productId) => {
         set((state) => ({
           items: state.items.filter((i) => i.productId !== productId),
         }))
+        syncToggle(productId, get().ownerId)
       },
 
       toggleItem: (item) => {
@@ -60,10 +81,13 @@ export const useWishlistStore = create<WishlistStore>()(
       openWishlist: () => set({ isOpen: true }),
       closeWishlist: () => set({ isOpen: false }),
       clearWishlist: () => set({ items: [] }),
+      replaceItems: (items) => set({ items }),
+      resetForGuest: () => set({ items: [], isOpen: false, ownerId: null }),
+      syncOwner: (ownerId) => set({ ownerId }),
     }),
     {
       name: 'line-coffee-wishlist',
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({ items: state.items, ownerId: state.ownerId }),
     }
   )
 )

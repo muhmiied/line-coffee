@@ -13,6 +13,7 @@ import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_ORDER_PHONE_E164 } from '@/lib/c
 export default function ContactPage() {
   const { t } = useLanguage()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -23,6 +24,22 @@ export default function ContactPage() {
       email: String(formData.get('email') || '').trim(),
       subject: String(formData.get('subject') || '').trim(),
       message: String(formData.get('message') || '').trim(),
+    }
+
+    const errors: Record<string, string> = {}
+    if (!payload.name) errors.name = t('Name is required', 'الاسم مطلوب')
+    if (!payload.email) errors.email = t('Email is required', 'البريد الإلكتروني مطلوب')
+    else if (!/^\S+@\S+\.\S+$/.test(payload.email)) errors.email = t('Please enter a valid email', 'من فضلك أدخل بريد إلكتروني صحيح')
+    if (!payload.subject) errors.subject = t('Subject is required', 'الموضوع مطلوب')
+    if (!payload.message) errors.message = t('Message is required', 'الرسالة مطلوبة')
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      toast.error(t('Please fix the highlighted fields', 'يرجى تصحيح الحقول المحددة'))
+      requestAnimationFrame(() => {
+        document.querySelector('[aria-invalid="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+      return
     }
 
     setIsSubmitting(true)
@@ -50,6 +67,7 @@ export default function ContactPage() {
       }
 
       form.reset()
+      setFieldErrors({})
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('Failed to send message', 'فشل إرسال الرسالة'))
     } finally {
@@ -211,12 +229,15 @@ export default function ContactPage() {
                       name="name"
                       required
                       placeholder={t('Your name', 'اسمك')}
+                      aria-invalid={Boolean(fieldErrors.name)}
+                      onChange={() => setFieldErrors(prev => ({ ...prev, name: '' }))}
                       style={{
                         background: 'rgba(182,136,94,0.07)',
                         border: '1px solid rgba(182,136,94,0.18)',
                         color: '#F5E6D8',
                       }}
                     />
+                    {fieldErrors.name && <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>}
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-2 block" style={{ color: 'rgba(183,155,133,0.8)' }}>
@@ -227,12 +248,15 @@ export default function ContactPage() {
                       type="email"
                       required
                       placeholder={t('your@email.com', 'بريدك@الإلكتروني.com')}
+                      aria-invalid={Boolean(fieldErrors.email)}
+                      onChange={() => setFieldErrors(prev => ({ ...prev, email: '' }))}
                       style={{
                         background: 'rgba(182,136,94,0.07)',
                         border: '1px solid rgba(182,136,94,0.18)',
                         color: '#F5E6D8',
                       }}
                     />
+                    {fieldErrors.email && <p className="mt-1 text-xs text-destructive">{fieldErrors.email}</p>}
                   </div>
                 </div>
                 <div>
@@ -243,12 +267,15 @@ export default function ContactPage() {
                     name="subject"
                     required
                     placeholder={t('How can we help?', 'كيف يمكننا مساعدتك؟')}
+                    aria-invalid={Boolean(fieldErrors.subject)}
+                    onChange={() => setFieldErrors(prev => ({ ...prev, subject: '' }))}
                     style={{
                       background: 'rgba(182,136,94,0.07)',
                       border: '1px solid rgba(182,136,94,0.18)',
                       color: '#F5E6D8',
-                    }}
-                  />
+                  }}
+                />
+                  {fieldErrors.subject && <p className="mt-1 text-xs text-destructive">{fieldErrors.subject}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block" style={{ color: 'rgba(183,155,133,0.8)' }}>
@@ -260,12 +287,15 @@ export default function ContactPage() {
                     rows={5}
                     className="resize-none"
                     placeholder={t('Your message...', 'رسالتك...')}
+                    aria-invalid={Boolean(fieldErrors.message)}
+                    onChange={() => setFieldErrors(prev => ({ ...prev, message: '' }))}
                     style={{
                       background: 'rgba(182,136,94,0.07)',
                       border: '1px solid rgba(182,136,94,0.18)',
                       color: '#F5E6D8',
-                    }}
-                  />
+                  }}
+                />
+                  {fieldErrors.message && <p className="mt-1 text-xs text-destructive">{fieldErrors.message}</p>}
                 </div>
                 <Button
                   type="submit"

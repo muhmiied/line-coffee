@@ -31,7 +31,15 @@ export async function PATCH(
     }
     const { data, error } = await admin
       .from('flavor_options')
-      .insert({ base_id: id, name_en: body.name_en.trim(), name_ar: body.name_ar.trim(), is_active: body.is_active ?? true, sort_order: body.sort_order ?? 0 })
+      .insert({
+        base_id: id,
+        name_en: body.name_en.trim(),
+        name_ar: body.name_ar.trim(),
+        price_delta: Number(body.price_delta ?? body.price ?? 50),
+        option_type: body.option_type || 'standard',
+        is_active: body.is_active ?? true,
+        sort_order: body.sort_order ?? 0,
+      })
       .select()
       .single()
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
@@ -40,7 +48,7 @@ export async function PATCH(
 
   // ── Update an existing flavor ──────────────────────────────────────────
   if (body.action === 'update_flavor' && body.flavor_id) {
-    const allowed = ['name_en', 'name_ar', 'is_active', 'sort_order']
+    const allowed = ['name_en', 'name_ar', 'price_delta', 'option_type', 'is_active', 'sort_order']
     const payload: Record<string, unknown> = {}
     for (const key of allowed) { if (key in body) payload[key] = body[key] }
     const { data, error } = await admin
@@ -62,7 +70,7 @@ export async function PATCH(
   }
 
   // ── Update the category (base) itself ─────────────────────────────────
-  const allowed = ['name_en', 'name_ar', 'is_active', 'sort_order']
+  const allowed = ['name_en', 'name_ar', 'price', 'type', 'is_active', 'sort_order']
   const payload: Record<string, unknown> = {}
   for (const key of allowed) { if (key in body) payload[key] = body[key] }
   const { data, error } = await admin.from('flavor_bases').update(payload).eq('id', id).select().single()

@@ -198,7 +198,7 @@ export function Header() {
         )}
 
         <div className="container mx-auto px-3 sm:px-4 relative z-10">
-          <div className="flex items-center justify-between h-16 sm:h-[4.5rem] md:h-24 relative">
+          <div className="flex items-center justify-between h-14 sm:h-16 md:h-24 relative">
 
             {/* Thin gold underline on transparent state */}
             {!showGlass && (
@@ -213,7 +213,7 @@ export function Header() {
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="relative h-12 w-36 sm:h-14 sm:w-44 md:h-20 md:w-[15rem]"
+                className="relative h-10 w-28 sm:h-12 sm:w-36 md:h-20 md:w-[15rem]"
               >
                 <Image
                   src="/brand/logo-white.svg"
@@ -536,7 +536,7 @@ export function Header() {
               exit={{ x: language === 'ar' ? -300 : 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={cn(
-                'absolute top-16 bottom-0 w-[min(18rem,calc(100vw-1rem))] shadow-2xl p-5 overflow-y-auto pb-[calc(1.25rem+env(safe-area-inset-bottom))]',
+                'absolute top-14 bottom-0 w-[min(18rem,calc(100vw-1rem))] shadow-2xl p-5 overflow-y-auto pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:top-16',
                 language === 'ar' ? 'left-0' : 'right-0'
               )}
               style={{

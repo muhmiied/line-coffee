@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
+import { restoreOrderStock } from '@/lib/services'
 
 const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
 
@@ -70,6 +71,15 @@ export async function PATCH(
     updatePayload.notes = existingNotes
       ? `${existingNotes}\n\nسبب الإلغاء: ${reason}`
       : `سبب الإلغاء: ${reason}`
+  }
+
+  if (body.status === 'cancelled') {
+    await restoreOrderStock(orderId)
+    updatePayload.cancelled_at = new Date().toISOString()
+    updatePayload.cancellation_initiated_by = 'admin'
+    if (body.cancellation_reason) {
+      updatePayload.cancellation_reason = String(body.cancellation_reason).trim()
+    }
   }
 
   if (Object.keys(updatePayload).length === 0) {

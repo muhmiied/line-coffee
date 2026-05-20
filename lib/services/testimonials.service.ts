@@ -18,6 +18,7 @@ export async function getTestimonials(featured?: boolean) {
     .from('testimonials')
     .select('*')
     .eq('is_visible', true)
+    .eq('is_approved', true)
     .order('created_at', { ascending: false })
   
   if (featured) {
@@ -45,6 +46,7 @@ export async function getFeaturedTestimonials(limit: number = 5) {
     .from('testimonials')
     .select('*')
     .eq('is_visible', true)
+    .eq('is_approved', true)
     .eq('is_featured', true)
     .order('created_at', { ascending: false })
     .limit(limit)

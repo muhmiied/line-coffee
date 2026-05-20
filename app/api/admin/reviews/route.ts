@@ -15,7 +15,7 @@ export async function GET() {
 
   const { data } = await admin
     .from('testimonials')
-    .select('id, customer_name, content_ar, content_en, rating, is_visible, created_at')
+    .select('id, customer_name, customer_avatar, content_ar, content_en, rating, is_visible, is_featured, is_approved, created_at')
     .order('created_at', { ascending: false })
 
   return NextResponse.json({ success: true, data: data || [] })
@@ -31,10 +31,15 @@ export async function PATCH(request: Request) {
   const admin = createAdminClient()
   if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
 
-  const { id, is_visible } = await request.json()
+  const { id, is_visible, is_featured, is_approved } = await request.json()
+  const payload: Record<string, unknown> = {}
+  if (is_visible !== undefined) payload.is_visible = is_visible
+  if (is_featured !== undefined) payload.is_featured = is_featured
+  if (is_approved !== undefined) payload.is_approved = is_approved
+
   const { error } = await admin
     .from('testimonials')
-    .update({ is_visible })
+    .update(payload)
     .eq('id', id)
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 400 })
