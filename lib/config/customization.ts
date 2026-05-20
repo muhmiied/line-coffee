@@ -43,9 +43,9 @@ export const VALVE_BAG_COST = 5
 export const PROFIT_MARGIN = 1.6
 
 export const FLAVOR_BASES: FlavorBaseOption[] = [
-  { id: 'turkish', nameAr: 'القهوة التركي', nameEn: 'Turkish Coffee', price: 400 },
-  { id: 'coffee-mix', nameAr: 'كوفي ميكس', nameEn: 'Coffee Mix', price: 220 },
-  { id: 'cappuccino', nameAr: 'كابتشينو', nameEn: 'Cappuccino', price: 270 },
+  { id: 'turkish-coffee', nameAr: 'القهوة التركي', nameEn: 'Turkish Coffee', price: 400 },
+  { id: 'coffee-mix',     nameAr: 'كوفي ميكس',    nameEn: 'Coffee Mix',     price: 220 },
+  { id: 'cappuccino',     nameAr: 'كابتشينو',      nameEn: 'Cappuccino',     price: 270 },
 ]
 
 export const FLAVOR_ADDITION_PRICES: Record<FlavorAdditionType, number> = {
@@ -54,11 +54,11 @@ export const FLAVOR_ADDITION_PRICES: Record<FlavorAdditionType, number> = {
 }
 
 // Flavors available for all three bases
-const ALL_BASES = ['turkish', 'coffee-mix', 'cappuccino']
+const ALL_BASES = ['turkish-coffee', 'coffee-mix', 'cappuccino']
 // Flavors available for Turkish + Coffee Mix (not Cappuccino)
-const TK_CM = ['turkish', 'coffee-mix']
+const TK_CM = ['turkish-coffee', 'coffee-mix']
 // Flavors exclusive to Turkish
-const TK_ONLY = ['turkish']
+const TK_ONLY = ['turkish-coffee']
 
 export const DEFAULT_FLAVOR_ADDITIONS: FlavorAdditionOption[] = [
   // ── Nuts & classics (all bases) ──────────────────────────────

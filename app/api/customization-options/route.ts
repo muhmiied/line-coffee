@@ -66,43 +66,75 @@ export async function GET() {
     ? DEFAULT_CUSTOM_BLEND_BEANS
     : parseBeanOptions(settingsData?.value)
 
+  // ── Flavor bases (active only) ──────────────────────────────
   const { data: flavorBaseRows } = await admin
     .from('flavor_bases')
-    .select('*')
+    .select('id, name_en, name_ar, price')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
+
+  // Build a UUID → slug map so flavor options can reference their base by slug
+  const baseUuidToSlug = new Map<string, string>(
+    (flavorBaseRows ?? []).map((b) => [
+      String(b.id),
+      slugifyOptionId(String(b.name_en || '')),
+    ])
+  )
+
+  const activeBaseUuids = [...baseUuidToSlug.keys()]
 
   const flavorBases = Array.isArray(flavorBaseRows)
     ? flavorBaseRows
-      .map((base): FlavorBaseOption => ({
-        id: slugifyOptionId(String(base.name_en || base.id)),
-        nameEn: String(base.name_en || ''),
-        nameAr: String(base.name_ar || ''),
-        price: Number(base.price || 0),
-      }))
-      .filter((base) => base.nameEn && base.nameAr && base.price > 0)
+        .map((base): FlavorBaseOption => ({
+          id: slugifyOptionId(String(base.name_en || base.id)),
+          nameEn: String(base.name_en || ''),
+          nameAr: String(base.name_ar || ''),
+          price: Number(base.price || 0),
+        }))
+        .filter((base) => base.nameEn && base.nameAr && base.price > 0)
     : []
 
-  const { data: flavorOptionRows } = await admin
-    .from('flavor_options')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+  // ── Flavor options: only from active bases, deduplicated ────
+  // Each flavor may appear in multiple bases (one DB row per base).
+  // We group by (name_en + option_type) and collect base slugs into bases[].
+  const flavorOptionMap = new Map<string, FlavorAdditionOption>()
 
-  const flavorAdditions = Array.isArray(flavorOptionRows)
-    ? flavorOptionRows
-      .map((flavor): FlavorAdditionOption => {
-        const type = normalizeAdditionType(flavor.option_type)
-        return {
-          id: slugifyOptionId(String(flavor.name_en || flavor.id)),
-          nameEn: String(flavor.name_en || ''),
-          nameAr: String(flavor.name_ar || ''),
-          type,
-          price: Number(flavor.price_delta || (type === 'chunks' ? 70 : 50)),
+  if (activeBaseUuids.length > 0) {
+    const { data: flavorOptionRows } = await admin
+      .from('flavor_options')
+      .select('*')
+      .eq('is_active', true)
+      .in('base_id', activeBaseUuids)
+      .order('sort_order', { ascending: true })
+
+    for (const row of flavorOptionRows ?? []) {
+      const baseSlug = baseUuidToSlug.get(String(row.base_id))
+      if (!baseSlug) continue  // skip orphaned rows
+
+      const type = normalizeAdditionType(row.option_type)
+      const mapKey = `${String(row.name_en).toLowerCase()}|${type}`
+
+      if (flavorOptionMap.has(mapKey)) {
+        const existing = flavorOptionMap.get(mapKey)!
+        if (!(existing.bases ?? []).includes(baseSlug)) {
+          existing.bases = [...(existing.bases ?? []), baseSlug]
         }
-      })
-      .filter((flavor) => flavor.nameEn && flavor.nameAr)
-    : []
+      } else {
+        flavorOptionMap.set(mapKey, {
+          id: slugifyOptionId(String(row.name_en || row.id)),
+          nameEn: String(row.name_en || ''),
+          nameAr: String(row.name_ar || ''),
+          type,
+          price: Number(row.price_delta || (type === 'chunks' ? 70 : 50)),
+          bases: [baseSlug],
+        })
+      }
+    }
+  }
+
+  const flavorAdditions = [...flavorOptionMap.values()].filter(
+    (f) => f.nameEn && f.nameAr
+  )
 
   const beans = dbBeans.length > 0 ? dbBeans : settingsBeans
 

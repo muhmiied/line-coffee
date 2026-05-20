@@ -206,7 +206,7 @@ const flavorBaseOptions = FLAVOR_BASES
 const SIZE_OPTIONS: PackageSize[] = ['250g', '500g', '1kg']
 
 function getFlavorBaseImage(baseId: string) {
-  if (baseId === 'turkish') return IMG_TC
+  if (baseId === 'turkish-coffee') return IMG_TC
   if (baseId === 'cappuccino') return IMG_CAP
   return IMG_CM
 }
