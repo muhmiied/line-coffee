@@ -9,15 +9,12 @@
 -- contact messages, or site_settings.
 --
 -- Inspected schema columns used by this script:
--- categories: slug, name_en, name_ar, description_en, description_ar,
---   image_url, sort_order, is_visible, updated_at
+-- categories: slug, name_en, name_ar, image_url, sort_order, is_visible
 -- products: slug, name_en, name_ar, description_en, description_ar,
 --   short_description_en, short_description_ar, category_id, images,
 --   origin, roast_level, flavor_notes, is_featured, is_best_seller,
---   is_new, is_visible, stock_quantity, low_stock_threshold,
---   created_at, updated_at
--- product_sizes: product_id, size, price, compare_at_price, sku,
---   is_available
+--   is_new, is_visible, stock_quantity, low_stock_threshold, created_at
+-- product_sizes: product_id, size, price, is_available
 -- coffee_beans: name_en, name_ar, origin, description_en,
 --   description_ar, family, price, is_active, sort_order, updated_at
 -- flavor_bases: name_en, name_ar, price, type, is_active, sort_order,
@@ -42,30 +39,24 @@ INSERT INTO public.categories (
   slug,
   name_en,
   name_ar,
-  description_en,
-  description_ar,
   image_url,
   sort_order,
-  is_visible,
-  updated_at
+  is_visible
 )
 VALUES
-  ('turkish-coffee', 'Turkish Coffee', 'القهوة التركي', 'Traditional Turkish coffee blends.', 'خلطات القهوة التركي.', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop', 1, true, now()),
-  ('espresso', 'Espresso', 'الإسبريسو', 'Espresso blends for rich coffee shots.', 'خلطات إسبريسو لقهوة غنية.', 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop', 2, true, now()),
-  ('flavored-coffee', 'Flavored Coffee', 'القهوة بالنكهات', 'Flavored coffee products.', 'منتجات القهوة بالنكهات.', 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop', 3, true, now()),
-  ('coffee-mix', 'Coffee Mix', 'كوفي ميكس', 'Coffee mix products.', 'منتجات كوفي ميكس.', 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&h=1000&fit=crop', 4, true, now()),
-  ('cappuccino', 'Cappuccino', 'كابتشينو', 'Cappuccino products.', 'منتجات الكابتشينو.', 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&h=1000&fit=crop', 5, true, now()),
-  ('hot-chocolate', 'Hot Chocolate', 'هوت شوكلت', 'Hot chocolate products.', 'منتجات الهوت شوكلت.', 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800&h=1000&fit=crop', 6, true, now()),
-  ('nescafe', 'Nescafe', 'نسكافيه', 'Nescafe products.', 'منتجات النسكافيه.', 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=800&h=1000&fit=crop', 7, true, now())
+  ('turkish-coffee', 'Turkish Coffee', 'القهوة التركي', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop', 1, true),
+  ('espresso', 'Espresso', 'الإسبريسو', 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop', 2, true),
+  ('flavored-coffee', 'Flavored Coffee', 'القهوة بالنكهات', 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop', 3, true),
+  ('coffee-mix', 'Coffee Mix', 'كوفي ميكس', 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&h=1000&fit=crop', 4, true),
+  ('cappuccino', 'Cappuccino', 'كابتشينو', 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&h=1000&fit=crop', 5, true),
+  ('hot-chocolate', 'Hot Chocolate', 'هوت شوكلت', 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800&h=1000&fit=crop', 6, true),
+  ('nescafe', 'Nescafe', 'نسكافيه', 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=800&h=1000&fit=crop', 7, true)
 ON CONFLICT (slug) DO UPDATE SET
   name_en = EXCLUDED.name_en,
   name_ar = EXCLUDED.name_ar,
-  description_en = EXCLUDED.description_en,
-  description_ar = EXCLUDED.description_ar,
   image_url = EXCLUDED.image_url,
   sort_order = EXCLUDED.sort_order,
-  is_visible = true,
-  updated_at = now();
+  is_visible = true;
 
 -- 2. Products and product sizes
 WITH flavor_catalog (
@@ -213,7 +204,7 @@ seed_products (
     'medium',
     ARRAY[group_name_en, flavor_name_en]::text[],
     false,
-    flavor_order IN (1, 2, 11),
+    flavor_order IN (2, 11),
     false,
     100,
     10,
@@ -221,6 +212,7 @@ seed_products (
     240::numeric,
     480::numeric
   FROM flavor_catalog
+  WHERE flavor_order > 1
 
   UNION ALL
 
@@ -238,7 +230,7 @@ seed_products (
     'medium',
     ARRAY[group_name_en, flavor_name_en]::text[],
     false,
-    flavor_order IN (1, 2, 11),
+    flavor_order IN (2, 11),
     false,
     100,
     10,
@@ -246,6 +238,7 @@ seed_products (
     300::numeric,
     600::numeric
   FROM flavor_catalog
+  WHERE flavor_order > 1
 
   UNION ALL
 
@@ -263,7 +256,7 @@ seed_products (
     'medium',
     ARRAY[group_name_en, flavor_name_en]::text[],
     false,
-    flavor_order IN (1, 2, 11),
+    flavor_order IN (2, 11),
     false,
     100,
     10,
@@ -271,6 +264,7 @@ seed_products (
     240::numeric,
     480::numeric
   FROM flavor_catalog
+  WHERE flavor_order > 1
 ),
 upserted_products AS (
   INSERT INTO public.products (
@@ -292,8 +286,7 @@ upserted_products AS (
     is_visible,
     stock_quantity,
     low_stock_threshold,
-    created_at,
-    updated_at
+    created_at
   )
   SELECT
     seed_products.slug,
@@ -314,8 +307,7 @@ upserted_products AS (
     true,
     seed_products.stock_quantity,
     seed_products.low_stock_threshold,
-    timestamptz '2026-01-01 00:00:00+00' - (seed_products.sort_index::double precision * interval '1 second'),
-    now()
+    timestamptz '2026-01-01 00:00:00+00' - (seed_products.sort_index::double precision * interval '1 second')
   FROM seed_products
   JOIN public.categories
     ON categories.slug = seed_products.category_slug
@@ -337,8 +329,7 @@ upserted_products AS (
     is_visible = true,
     stock_quantity = EXCLUDED.stock_quantity,
     low_stock_threshold = EXCLUDED.low_stock_threshold,
-    created_at = EXCLUDED.created_at,
-    updated_at = now()
+    created_at = EXCLUDED.created_at
   RETURNING id, slug
 ),
 product_refs AS (
@@ -366,16 +357,14 @@ updated_sizes AS (
   UPDATE public.product_sizes
   SET
     price = expected_sizes.price,
-    compare_at_price = NULL,
-    sku = NULL,
     is_available = true
   FROM expected_sizes
   WHERE product_sizes.product_id = expected_sizes.product_id
     AND product_sizes.size = expected_sizes.size
   RETURNING product_sizes.product_id, product_sizes.size
 )
-INSERT INTO public.product_sizes (product_id, size, price, compare_at_price, sku, is_available)
-SELECT expected_sizes.product_id, expected_sizes.size, expected_sizes.price, NULL, NULL, true
+INSERT INTO public.product_sizes (product_id, size, price, is_available)
+SELECT expected_sizes.product_id, expected_sizes.size, expected_sizes.price, true
 FROM expected_sizes
 WHERE NOT EXISTS (
   SELECT 1
@@ -387,7 +376,7 @@ WHERE NOT EXISTS (
 -- Safety: if any old catalog rows survived manual cleanup, hide/deactivate them
 -- without deleting data. A clean database should update zero rows here.
 UPDATE public.products
-SET is_visible = false, is_featured = false, is_best_seller = false, is_new = false, updated_at = now()
+SET is_visible = false, is_featured = false, is_best_seller = false, is_new = false
 WHERE lower(name_en) IN (
     'morning strength',
     'perfect balance',
@@ -614,7 +603,7 @@ FROM public.categories;
 
 -- Expected visible product counts:
 -- Turkish Coffee 4, Espresso 4, Flavored Coffee 30,
--- Coffee Mix 31, Cappuccino 31, Hot Chocolate 31, Nescafe 0.
+-- Coffee Mix 30, Cappuccino 30, Hot Chocolate 30, Nescafe 0.
 SELECT
   categories.slug,
   categories.name_en,
@@ -626,7 +615,7 @@ LEFT JOIN public.products
 GROUP BY categories.slug, categories.name_en, categories.sort_order
 ORDER BY categories.sort_order;
 
--- Product size rows should be 393 for 131 products x 3 sizes.
+-- Product size rows should be 384 for 128 products x 3 sizes.
 SELECT count(*) AS product_sizes_count
 FROM public.product_sizes;
 

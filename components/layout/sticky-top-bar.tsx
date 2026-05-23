@@ -9,7 +9,7 @@ const DEFAULT_TEXT = '🚀 توصيل مجاني على الطلبات فوق 20
 
 export function StickyTopBar() {
   const pathname = usePathname()
-  const [annVisible, setAnnVisible] = useState(false)
+  const [annVisible, setAnnVisible] = useState(true)
   const [annText, setAnnText] = useState(DEFAULT_TEXT)
 
   useEffect(() => {
