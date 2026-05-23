@@ -102,7 +102,7 @@ function mkProduct(
   }
 }
 
-// ─── Fallback hardcoded products (used when DB returns no products) ─────────────
+// Last-resort fallback products used only when API products are unavailable.
 const IMG_TC   = 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800'
 const IMG_ESP  = 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800'
 const IMG_FC   = 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800'
@@ -110,43 +110,43 @@ const IMG_CAP  = 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w
 const IMG_CM   = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800'
 const IMG_HC   = 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800'
 
-const allProducts: Product[] = [
+const LAST_RESORT_PRODUCTS: Product[] = [
   // ── Turkish Coffee ───────────────────────────────────────────────────────────
-  // Prices: 250g = 1kg×0.25 rounded, 500g = 1kg×0.5 rounded, 1kg exact
+  // Prices mirror the expected public catalog fallback values.
   mkProduct('tc-1','velvet-turkish','Velvet Turkish','فيلفيت تركي',
     'Velvety smooth body with balanced bitterness and warm roast depth.',
     'قوام مخملي ناعم مع مرارة متوازنة وعمق تحميص دافئ.',
-    'turkish-coffee',[200,401,802],{ images:[IMG_TC], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Velvety'] }),
+    'turkish-coffee',[200,400,800],{ images:[IMG_TC], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Velvety'] }),
   mkProduct('tc-2','cairo-nights','Cairo Nights','ليالي القاهرة',
     'Dark roast with deep caramel undertones — a cup that captures the night.',
     'تحميص داكن مع نغمات كراميل عميقة — كوب يجسّد ليالي القاهرة.',
-    'turkish-coffee',[220,439,877],{ images:[IMG_TC], is_featured:true, flavor_notes:['Caramel','Dark Roast'] }),
+    'turkish-coffee',[220,440,880],{ images:[IMG_TC], is_featured:true, flavor_notes:['Caramel','Dark Roast'] }),
   mkProduct('tc-3','midnight-turkish','Midnight Turkish','ميدنايت تركي',
     'Rich and full-bodied with a smoky chocolate finish.',
     'غني وثقيل القوام مع نهاية شوكولاتة مدخنة.',
-    'turkish-coffee',[235,468,934],{ images:[IMG_TC], flavor_notes:['Chocolate','Smoky'] }),
+    'turkish-coffee',[235,470,940],{ images:[IMG_TC], flavor_notes:['Chocolate','Smoky'] }),
   mkProduct('tc-4','royal-line','Royal Line','رويال لاين',
     'A premium specialty blend of finest arabica — floral, fruity, and refined.',
     'توليفة specialty من أجود الأرابيكا — فلورال وفاكهي وراقي.',
-    'turkish-coffee',[411,823,1646],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral','Fruity'] }),
+    'turkish-coffee',[410,825,1650],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral','Fruity'] }),
 
   // ── Espresso ─────────────────────────────────────────────────────────────────
   mkProduct('esp-1','line-crema','Line Crema','لاين كريما',
     'Excellent crema and high strength — ideal for espresso machines and large volumes.',
     'كريمة ممتازة وقوة عالية — مثالي لماكينات الإسبريسو والكميات الكبيرة.',
-    'espresso',[164,328,656],{ images:[IMG_ESP], is_best_seller:true, flavor_notes:['Crema','Strong'] }),
+    'espresso',[165,330,660],{ images:[IMG_ESP], is_best_seller:true, flavor_notes:['Crema','Strong'] }),
   mkProduct('esp-2','first-line','First Line','فيرست لاين',
     'Chocolate and caramel balance with rich crema — perfect for cappuccino and latte.',
     'توازن شوكولاتة وكراميل مع كريمة غنية — مثالي للكابتشينو واللاتيه.',
-    'espresso',[188,378,755],{ images:[IMG_ESP], is_featured:true, flavor_notes:['Chocolate','Caramel'] }),
+    'espresso',[190,380,760],{ images:[IMG_ESP], is_featured:true, flavor_notes:['Chocolate','Caramel'] }),
   mkProduct('esp-3','headshot','HEADSHOT','هيد شوت',
     'Precision-roasted espresso with bright acidity and clean body.',
     'إسبريسو محمص بدقة مع حموضة نابضة وقوام نظيف.',
-    'espresso',[191,382,763],{ images:[IMG_ESP], is_new:true, flavor_notes:['Bright','Clean'] }),
+    'espresso',[190,380,760],{ images:[IMG_ESP], is_new:true, flavor_notes:['Bright','Clean'] }),
   mkProduct('esp-4','gold-shot','Gold Shot','جولد شوت',
     'Single-origin specialty espresso — golden crema and complex florals.',
     'إسبريسو specialty أحادي المصدر — كريمة ذهبية وفلورال معقد.',
-    'espresso',[263,525,1050],{ images:[IMG_ESP], flavor_notes:['Specialty','Floral'] }),
+    'espresso',[260,520,1040],{ images:[IMG_ESP], flavor_notes:['Specialty','Floral'] }),
 
   // ── Flavored Coffee (French Coffee) ─────────────────────────────────────────
   mkProduct('fc-1','french-coffee','French Coffee','قهوة فرنسية',
@@ -823,8 +823,8 @@ function ProductsPageInner() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'all')
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(allProducts)
-  const [dbProducts, setDbProducts] = useState<Product[] | null>(null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
 
   // Fetch categories from DB; fall back to hardcoded if DB is empty or unreachable
@@ -838,12 +838,41 @@ function ProductsPageInner() {
       .catch(() => setDbCategories(FALLBACK_DB_CATEGORIES))
   }, [])
 
-  // Fetch products from DB; fall back to hardcoded allProducts if DB is empty
+  // Fetch products from API first; use fallback only as a last-resort recovery path.
   useEffect(() => {
-    fetch('/api/products?limit=300')
-      .then(r => r.json())
-      .then(d => { if (d.success && d.data?.length > 0) setDbProducts(d.data) })
-      .catch(() => { /* keep allProducts fallback */ })
+    let cancelled = false
+    const controller = new AbortController()
+
+    const loadProducts = async () => {
+      setProductsLoading(true)
+
+      try {
+        const response = await fetch('/api/products?limit=300', {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error('Products API failed')
+
+        const data = await response.json()
+        if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
+          throw new Error('Products API returned no products')
+        }
+
+        if (!cancelled) setProducts(data.data)
+      } catch (error) {
+        if (cancelled || (error instanceof Error && error.name === 'AbortError')) return
+        setProducts(LAST_RESORT_PRODUCTS)
+      } finally {
+        if (!cancelled) setProductsLoading(false)
+      }
+    }
+
+    loadProducts()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
   }, [])
 
   // Build sidebar categories from DB, injecting special UI entries
@@ -861,21 +890,28 @@ function ProductsPageInner() {
   const isCustomizeFlavor = currentCat?.isCustomizeFlavor
   const isCustomize = isCustomizeBlend || isCustomizeFlavor
 
-  useEffect(() => {
-    const sourceProducts = dbProducts ?? allProducts
+  const categorySlugById = useMemo(() => {
+    const map = new Map<string, string>()
+    dbCategories.forEach((category) => map.set(category.id, category.slug))
+    return map
+  }, [dbCategories])
 
-    if (isCustomize) { setFilteredProducts([]); return }
-    let products = [...sourceProducts]
+  const filteredProducts = useMemo(() => {
+    if (isCustomize) return []
+    let nextProducts = [...products]
 
     if (activeCategory !== 'all') {
-      products = products.filter((p) => {
-        const catSlug = (p as any).category?.slug ?? p.category_id
+      nextProducts = nextProducts.filter((product) => {
+        const catSlug =
+          product.category?.slug ??
+          (product.category_id ? categorySlugById.get(product.category_id) : undefined) ??
+          product.category_id
         return catSlug === activeCategory
       })
     }
 
     // Classic / Original always sorts first within a category
-    products.sort((a, b) => {
+    nextProducts.sort((a, b) => {
       const aFirst = /classic|original/i.test(a.name_en) ? 0 : 1
       const bFirst = /classic|original/i.test(b.name_en) ? 0 : 1
       return aFirst - bFirst
@@ -883,11 +919,11 @@ function ProductsPageInner() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
-      products = products.filter((p) => p.name_en.toLowerCase().includes(q) || p.name_ar.includes(searchQuery))
+      nextProducts = nextProducts.filter((product) => product.name_en.toLowerCase().includes(q) || product.name_ar.includes(searchQuery))
     }
 
-    setFilteredProducts(products)
-  }, [activeCategory, searchQuery, isCustomize, dbProducts, dbCategories])
+    return nextProducts
+  }, [activeCategory, searchQuery, isCustomize, products, categorySlugById])
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
@@ -965,7 +1001,20 @@ function ProductsPageInner() {
                   <p className="text-sm text-muted-foreground">{t(`Showing ${filteredProducts.length} products`, `عرض ${filteredProducts.length} منتج`)}</p>
                 </div>
 
-                {filteredProducts.length === 0 ? (
+                {productsLoading ? (
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div key={index} className="luxury-card overflow-hidden rounded-xl border border-[#B6885E]/[16%] bg-[#120D09]/70">
+                        <div className="h-32 animate-pulse bg-[#2A1810]/60 min-[380px]:h-36 sm:h-40 lg:h-44" />
+                        <div className="space-y-3 p-3 sm:p-4">
+                          <div className="h-4 w-2/3 animate-pulse rounded-full bg-[#2A1810]/70" />
+                          <div className="h-3 w-full animate-pulse rounded-full bg-[#2A1810]/50" />
+                          <div className="h-3 w-3/4 animate-pulse rounded-full bg-[#2A1810]/50" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredProducts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <PackageSearch className="h-16 w-16 text-muted-foreground/30 mb-4" />
                     <h3 className="font-serif text-xl font-semibold mb-2">{t('No products found', 'لم يتم العثور على منتجات')}</h3>

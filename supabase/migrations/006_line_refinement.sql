@@ -1,15 +1,53 @@
 -- Line Coffee refinement: synced custom carts, dynamic customization pricing, reviews, blog, media, cancellations.
 
+CREATE TABLE IF NOT EXISTS cart_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  product_id uuid NULL REFERENCES products(id) ON DELETE CASCADE,
+  size text,
+  quantity integer NOT NULL DEFAULT 1,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS user_id uuid;
+ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS product_id uuid NULL;
 ALTER TABLE IF EXISTS cart_items ALTER COLUMN product_id DROP NOT NULL;
+ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS size text;
+ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS quantity integer DEFAULT 1;
 ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS client_item_id text;
 ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS name_en text;
 ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS name_ar text;
 ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS image text;
 ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS unit_price numeric(10,2);
 ALTER TABLE IF EXISTS cart_items ADD COLUMN IF NOT EXISTS customizations jsonb DEFAULT '{}'::jsonb;
-CREATE UNIQUE INDEX IF NOT EXISTS cart_items_user_client_item_unique
-  ON cart_items(user_id, client_item_id)
-  WHERE client_item_id IS NOT NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_index i
+    JOIN pg_class t ON t.oid = i.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = 'cart_items'
+      AND i.indisunique
+      AND pg_get_indexdef(i.indexrelid) ILIKE '%(user_id, client_item_id)%'
+  ) THEN
+    IF EXISTS (
+      SELECT 1
+      FROM cart_items
+      WHERE client_item_id IS NOT NULL
+      GROUP BY user_id, client_item_id
+      HAVING count(*) > 1
+    ) THEN
+      RAISE NOTICE 'Skipping unique index on cart_items(user_id, client_item_id): duplicate rows exist.';
+    ELSE
+      CREATE UNIQUE INDEX cart_items_user_client_item_unique
+        ON cart_items(user_id, client_item_id)
+        WHERE client_item_id IS NOT NULL;
+    END IF;
+  END IF;
+END $$;
 
 ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS cancelled_at timestamptz;
 ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS cancellation_initiated_by text;
