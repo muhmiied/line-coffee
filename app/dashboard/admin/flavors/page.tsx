@@ -1,14 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { Sparkles, Plus, Pencil, Trash2, Eye, EyeOff, Save, X, ChevronDown, ChevronUp, RefreshCw, Tag } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Sparkles, Plus, Pencil, Eye, EyeOff, Save, X, ChevronDown, ChevronUp, RefreshCw, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
+type FlavorOptionType = 'standard' | 'chunks'
+
 interface FlavorOption {
   id: string
+  base_id?: string
   name_en: string
   name_ar: string
+  price_delta: number | null
+  option_type: FlavorOptionType | string | null
   is_active: boolean
   sort_order: number
 }
@@ -17,28 +22,55 @@ interface FlavorBase {
   id: string
   name_en: string
   name_ar: string
+  price: number | null
+  type: string | null
   is_active: boolean
   sort_order: number
   options: FlavorOption[]
 }
 
-const EMPTY_BASE = { name_en: '', name_ar: '', is_active: true, sort_order: 0 }
-const EMPTY_FLAVOR = { name_en: '', name_ar: '', is_active: true, sort_order: 0 }
+interface FlavorForm {
+  name_en: string
+  name_ar: string
+  is_active: boolean
+  sort_order: number
+  price_delta: number
+  option_type: FlavorOptionType
+}
+
+const EMPTY_FLAVOR: FlavorForm = {
+  name_en: '',
+  name_ar: '',
+  is_active: true,
+  sort_order: 0,
+  price_delta: 50,
+  option_type: 'standard',
+}
+
+const FLAVOR_GROUPS = [
+  { key: 'original', nameEn: 'Original LINE', nameAr: 'الأساسي', min: 1, max: 1 },
+  { key: 'sweets', nameEn: 'sweets LINE', nameAr: 'حلويات', min: 2, max: 8 },
+  { key: 'nuts', nameEn: 'Nuts', nameAr: 'مكسرات', min: 9, max: 12 },
+  { key: 'fruits', nameEn: 'Fruits', nameAr: 'فواكه', min: 13, max: 24 },
+  { key: 'special', nameEn: 'Special Order', nameAr: 'سيبشيل أوردر', min: 25, max: 30 },
+  { key: 'extra', nameEn: 'Extra', nameAr: 'إضافي', min: 31, max: Number.POSITIVE_INFINITY },
+]
+
+function normalizeOptionType(value: unknown): FlavorOptionType {
+  return value === 'chunks' ? 'chunks' : 'standard'
+}
+
+function getFlavorGroup(sortOrder: number) {
+  return FLAVOR_GROUPS.find((group) => sortOrder >= group.min && sortOrder <= group.max) || FLAVOR_GROUPS[5]
+}
 
 export default function AdminFlavorsPage() {
   const { t } = useLanguage()
   const [bases, setBases] = useState<FlavorBase[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-
-  // Category (base) editing
-  const [editingBaseId, setEditingBaseId] = useState<string | 'new' | null>(null)
-  const [baseForm, setBaseForm] = useState(EMPTY_BASE)
-  const [savingBase, setSavingBase] = useState(false)
-
-  // Individual flavor editing
   const [editingFlavor, setEditingFlavor] = useState<{ baseId: string; flavorId: string | 'new' } | null>(null)
-  const [flavorForm, setFlavorForm] = useState(EMPTY_FLAVOR)
+  const [flavorForm, setFlavorForm] = useState<FlavorForm>({ ...EMPTY_FLAVOR })
   const [savingFlavor, setSavingFlavor] = useState(false)
 
   const load = useCallback(async () => {
@@ -46,7 +78,12 @@ export default function AdminFlavorsPage() {
     try {
       const res = await fetch('/api/admin/flavors', { cache: 'no-store' })
       const json = await res.json()
-      setBases(json.data || [])
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to load flavors')
+      }
+      const nextBases = Array.isArray(json.data) ? json.data : []
+      setBases(nextBases)
+      setExpandedId((current) => current || nextBases[0]?.id || null)
     } catch {
       toast.error(t('Failed to load flavors', 'فشل تحميل النكهات'))
     } finally {
@@ -54,86 +91,98 @@ export default function AdminFlavorsPage() {
     }
   }, [t])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [load])
 
-  // ── Category actions ─────────────────────────────────────────────────────────
-  const saveBase = async () => {
-    if (!baseForm.name_en.trim() || !baseForm.name_ar.trim()) {
-      toast.error(t('Both names are required', 'الاسمان مطلوبان'))
-      return
-    }
-    setSavingBase(true)
-    try {
-      const isNew = editingBaseId === 'new'
-      const url = isNew ? '/api/admin/flavors' : `/api/admin/flavors/${editingBaseId}`
-      const res = await fetch(url, {
-        method: isNew ? 'POST' : 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(baseForm),
-      })
-      const json = await res.json()
-      if (!json.success) { toast.error(json.error); return }
-      toast.success(isNew ? t('Category added', 'تمت إضافة الفئة') : t('Category updated', 'تم تحديث الفئة'))
-      setEditingBaseId(null)
-      setBaseForm(EMPTY_BASE)
-      load()
-    } catch {
-      toast.error(t('Save failed', 'فشل الحفظ'))
-    } finally {
-      setSavingBase(false)
-    }
+  const totalFlavors = bases.reduce((sum, base) => sum + (base.options?.length || 0), 0)
+  const activeFlavors = bases.reduce((sum, base) => sum + (base.options?.filter(option => option.is_active)?.length || 0), 0)
+
+  const groupedByBase = useMemo(() => {
+    return bases.reduce<Record<string, Array<{ group: typeof FLAVOR_GROUPS[number]; options: FlavorOption[] }>>>((acc, base) => {
+      acc[base.id] = FLAVOR_GROUPS
+        .map((group) => ({
+          group,
+          options: [...(base.options || [])]
+            .filter((option) => {
+              const sortOrder = Number(option.sort_order || 0)
+              return getFlavorGroup(sortOrder).key === group.key
+            })
+            .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)),
+        }))
+        .filter((entry) => entry.options.length > 0 || entry.group.key !== 'extra')
+      return acc
+    }, {})
+  }, [bases])
+
+  const openNewFlavor = (base: FlavorBase) => {
+    setFlavorForm({
+      ...EMPTY_FLAVOR,
+      sort_order: (base.options?.length || 0) + 1,
+    })
+    setEditingFlavor({ baseId: base.id, flavorId: 'new' })
+    setExpandedId(base.id)
   }
 
-  const deleteBase = async (id: string) => {
-    if (!window.confirm(t('Delete this category and all its flavors?', 'حذف هذه الفئة وجميع نكهاتها؟'))) return
-    try {
-      await fetch(`/api/admin/flavors/${id}`, { method: 'DELETE' })
-      setBases(p => p.filter(b => b.id !== id))
-      toast.success(t('Category deleted', 'تم حذف الفئة'))
-    } catch {
-      toast.error(t('Delete failed', 'فشل الحذف'))
-    }
+  const openEditFlavor = (baseId: string, flavor: FlavorOption) => {
+    setFlavorForm({
+      name_en: flavor.name_en,
+      name_ar: flavor.name_ar,
+      is_active: flavor.is_active,
+      sort_order: Number(flavor.sort_order || 0),
+      price_delta: Number(flavor.price_delta || (normalizeOptionType(flavor.option_type) === 'chunks' ? 70 : 50)),
+      option_type: normalizeOptionType(flavor.option_type),
+    })
+    setEditingFlavor({ baseId, flavorId: flavor.id })
+    setExpandedId(baseId)
   }
 
-  const toggleBase = async (base: FlavorBase) => {
-    try {
-      await fetch(`/api/admin/flavors/${base.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !base.is_active }),
-      })
-      setBases(p => p.map(b => b.id === base.id ? { ...b, is_active: !b.is_active } : b))
-      toast.success(!base.is_active ? t('Category activated', 'تم التفعيل') : t('Category hidden', 'تم الإخفاء'))
-    } catch {
-      toast.error(t('Update failed', 'فشل التحديث'))
-    }
+  const closeFlavorForm = () => {
+    setEditingFlavor(null)
+    setFlavorForm({ ...EMPTY_FLAVOR })
   }
 
-  // ── Flavor actions ────────────────────────────────────────────────────────────
   const saveFlavor = async () => {
     if (!editingFlavor) return
+
     if (!flavorForm.name_en.trim() || !flavorForm.name_ar.trim()) {
-      toast.error(t('Both names are required', 'الاسمان مطلوبان'))
+      toast.error(t('English and Arabic names are required', 'الاسم بالإنجليزية والعربية مطلوب'))
       return
     }
+
+    if (!Number.isFinite(flavorForm.price_delta) || flavorForm.price_delta < 0) {
+      toast.error(t('Price delta must be zero or greater', 'إضافة السعر يجب أن تكون صفر أو أكثر'))
+      return
+    }
+
     setSavingFlavor(true)
     try {
       const isNew = editingFlavor.flavorId === 'new'
+      const payload = {
+        action: isNew ? 'add_flavor' : 'update_flavor',
+        flavor_id: isNew ? undefined : editingFlavor.flavorId,
+        name_en: flavorForm.name_en.trim(),
+        name_ar: flavorForm.name_ar.trim(),
+        price_delta: Number(flavorForm.price_delta),
+        option_type: flavorForm.option_type,
+        is_active: flavorForm.is_active,
+        sort_order: Number(flavorForm.sort_order) || 0,
+      }
+
       const res = await fetch(`/api/admin/flavors/${editingFlavor.baseId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: isNew ? 'add_flavor' : 'update_flavor',
-          flavor_id: isNew ? undefined : editingFlavor.flavorId,
-          ...flavorForm,
-        }),
+        body: JSON.stringify(payload),
       })
       const json = await res.json()
-      if (!json.success) { toast.error(json.error); return }
+      if (!res.ok || !json.success) {
+        toast.error(json.error || t('Save failed', 'فشل الحفظ'))
+        return
+      }
+
       toast.success(isNew ? t('Flavor added', 'تمت إضافة النكهة') : t('Flavor updated', 'تم تحديث النكهة'))
-      setEditingFlavor(null)
-      setFlavorForm(EMPTY_FLAVOR)
-      load()
+      closeFlavorForm()
+      await load()
     } catch {
       toast.error(t('Save failed', 'فشل الحفظ'))
     } finally {
@@ -141,261 +190,247 @@ export default function AdminFlavorsPage() {
     }
   }
 
-  const deleteFlavor = async (baseId: string, flavorId: string) => {
-    if (!window.confirm(t('Delete this flavor?', 'حذف هذه النكهة؟'))) return
+  const toggleBase = async (base: FlavorBase) => {
     try {
-      await fetch(`/api/admin/flavors/${baseId}`, {
+      const res = await fetch(`/api/admin/flavors/${base.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_flavor', flavor_id: flavorId }),
+        body: JSON.stringify({ is_active: !base.is_active }),
       })
-      setBases(p => p.map(b => b.id === baseId ? { ...b, options: b.options.filter(o => o.id !== flavorId) } : b))
-      toast.success(t('Flavor deleted', 'تم حذف النكهة'))
-    } catch {
-      toast.error(t('Delete failed', 'فشل الحذف'))
-    }
-  }
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || 'Update failed')
 
-  const toggleFlavor = async (baseId: string, flavor: FlavorOption) => {
-    try {
-      await fetch(`/api/admin/flavors/${baseId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_flavor', flavor_id: flavor.id, is_active: !flavor.is_active }),
-      })
-      setBases(p => p.map(b => b.id === baseId
-        ? { ...b, options: b.options.map(o => o.id === flavor.id ? { ...o, is_active: !o.is_active } : o) }
-        : b
-      ))
+      setBases(prev => prev.map(item => item.id === base.id ? { ...item, is_active: !item.is_active } : item))
+      toast.success(!base.is_active ? t('Base activated', 'تم تفعيل القاعدة') : t('Base hidden', 'تم إخفاء القاعدة'))
     } catch {
       toast.error(t('Update failed', 'فشل التحديث'))
     }
   }
 
-  const totalFlavors = bases.reduce((sum, b) => sum + (b.options?.length || 0), 0)
-  const activeFlavors = bases.reduce((sum, b) => sum + (b.options?.filter(o => o.is_active)?.length || 0), 0)
+  const toggleFlavor = async (baseId: string, flavor: FlavorOption) => {
+    try {
+      const res = await fetch(`/api/admin/flavors/${baseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_flavor', flavor_id: flavor.id, is_active: !flavor.is_active }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || 'Update failed')
+
+      setBases(prev => prev.map(base => base.id === baseId
+        ? { ...base, options: base.options.map(option => option.id === flavor.id ? { ...option, is_active: !option.is_active } : option) }
+        : base
+      ))
+      toast.success(!flavor.is_active ? t('Flavor activated', 'تم تفعيل النكهة') : t('Flavor hidden', 'تم إخفاء النكهة'))
+    } catch {
+      toast.error(t('Update failed', 'فشل التحديث'))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0900] p-6">
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-white font-bold text-lg flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
             <Sparkles className="h-5 w-5 text-[#c8941a]" />
-            {t('Flavor Manager', 'إدارة النكهات')}
+            {t('Flavor Manager', 'إدارة نكهات التخصيص')}
           </h2>
-          <p className="text-white/30 text-xs mt-0.5">
-            {bases.length} {t('categories', 'فئة')} · {activeFlavors}/{totalFlavors} {t('flavors active', 'نكهة نشطة')}
+          <p className="mt-0.5 text-xs text-white/35">
+            {t('Manage flavors for Customize Flavor', 'إدارة نكهات التخصيص')} · {bases.length}/4 {t('bases', 'قواعد')} · {activeFlavors}/{totalFlavors} {t('flavors active', 'نكهة نشطة')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={load}
-            aria-label={t('Refresh', 'تحديث')}
-            className="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 hover:text-white/70 transition-all"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => { setBaseForm({ ...EMPTY_BASE, sort_order: bases.length + 1 }); setEditingBaseId('new') }}
-            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all"
-          >
-            <Plus className="h-4 w-4" />
-            {t('Add Category', 'إضافة فئة')}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={load}
+          aria-label={t('Refresh', 'تحديث')}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.04] text-white/40 transition-all hover:text-white/70"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* New / Edit Category Form */}
-      {editingBaseId && (
-        <div className="mb-6 bg-[#180d04] border border-[#c8941a]/20 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold text-sm">
-              {editingBaseId === 'new' ? t('New Flavor Category', 'فئة نكهة جديدة') : t('Edit Category', 'تعديل الفئة')}
-            </h3>
-            <button type="button" aria-label={t('Close', 'إغلاق')} onClick={() => { setEditingBaseId(null); setBaseForm(EMPTY_BASE) }} className="text-white/30 hover:text-white/60 transition-colors">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white/40 text-xs mb-1.5">{t('English Name *', 'الاسم بالإنجليزية *')}</label>
-              <input
-                value={baseForm.name_en}
-                onChange={e => setBaseForm(p => ({ ...p, name_en: e.target.value }))}
-                placeholder="e.g. Fruit Flavors"
-                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-white/40 text-xs mb-1.5">{t('Arabic Name *', 'الاسم بالعربية *')}</label>
-              <input
-                value={baseForm.name_ar}
-                onChange={e => setBaseForm(p => ({ ...p, name_ar: e.target.value }))}
-                dir="rtl"
-                placeholder="مثال: نكهات الفواكه"
-                className="w-full bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-3 mt-5">
-            <button
-              type="button"
-              onClick={saveBase}
-              disabled={savingBase}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#c8941a] hover:bg-[#b8840f] text-black font-semibold text-sm transition-all disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              {savingBase ? t('Saving...', 'جاري...') : t('Save', 'حفظ')}
-            </button>
-            <button type="button" onClick={() => { setEditingBaseId(null); setBaseForm(EMPTY_BASE) }} className="px-5 py-2 rounded-xl text-white/40 hover:text-white/60 text-sm transition-colors">
-              {t('Cancel', 'إلغاء')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Categories List */}
       {loading ? (
         <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-[#180d04] rounded-2xl h-16 border border-[#c8941a]/5" />
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-2xl border border-[#c8941a]/5 bg-[#180d04]" />
           ))}
         </div>
       ) : bases.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24">
-          <div className="h-16 w-16 rounded-2xl bg-[#c8941a]/10 border border-[#c8941a]/20 flex items-center justify-center mb-4">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#c8941a]/20 bg-[#c8941a]/10">
             <Sparkles className="h-7 w-7 text-[#c8941a]" />
           </div>
-          <p className="text-white/40 text-sm">{t('No flavor categories yet', 'لا توجد فئات نكهات بعد')}</p>
+          <p className="text-sm text-white/40">{t('No Customize Flavor bases found', 'لا توجد قواعد تخصيص النكهات')}</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {bases.map((base) => {
             const isExpanded = expandedId === base.id
-            const activeCount = base.options?.filter(o => o.is_active).length || 0
+            const activeCount = base.options?.filter(option => option.is_active).length || 0
             const totalCount = base.options?.length || 0
 
             return (
-              <div
+              <section
                 key={base.id}
-                className={`bg-[#180d04] border rounded-2xl overflow-hidden transition-all ${
-                  base.is_active ? 'border-[#c8941a]/10' : 'border-white/[0.04] opacity-60'
+                className={`overflow-hidden rounded-2xl border bg-[#180d04] transition-all ${
+                  base.is_active ? 'border-[#c8941a]/10' : 'border-white/[0.04] opacity-65'
                 }`}
               >
-                {/* Category header row */}
-                <div className="flex items-center gap-3 px-5 py-4">
-                  <div className="h-8 w-8 rounded-xl bg-[#c8941a]/10 border border-[#c8941a]/20 flex items-center justify-center shrink-0">
-                    <Tag className="h-3.5 w-3.5 text-[#c8941a]" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-white/80 text-sm">{base.name_en}</span>
-                      <span className="text-white/20">|</span>
-                      <span className="text-sm text-white/50">{base.name_ar}</span>
-                      {!base.is_active && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/10">
-                          {t('Hidden', 'مخفي')}
-                        </span>
-                      )}
+                <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#c8941a]/20 bg-[#c8941a]/10">
+                      <Tag className="h-3.5 w-3.5 text-[#c8941a]" />
                     </div>
-                    <p className="text-white/30 text-xs mt-0.5">
-                      {activeCount} / {totalCount} {t('flavors active', 'نكهة نشطة')}
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-white/85">{base.name_en}</h3>
+                        <span className="text-white/20">|</span>
+                        <span className="text-sm text-white/55">{base.name_ar}</span>
+                        {!base.is_active && (
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/35">
+                            {t('Hidden', 'مخفي')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-white/30">
+                        {activeCount} / {totalCount} {t('flavors active', 'نكهة نشطة')} · {Number(base.price || 0).toLocaleString('en-US')} {t('EGP/kg base', 'ج/كجم للقاعدة')}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setFlavorForm({ ...EMPTY_FLAVOR, sort_order: totalCount + 1 })
-                        setEditingFlavor({ baseId: base.id, flavorId: 'new' })
-                        setExpandedId(base.id)
-                      }}
-                      aria-label={t('Add flavor', 'إضافة نكهة')}
-                      className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#c8941a]/10 border border-[#c8941a]/20 text-[#c8941a] text-xs font-medium hover:bg-[#c8941a]/20 transition-colors"
+                      onClick={() => openNewFlavor(base)}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#c8941a]/20 bg-[#c8941a]/10 px-3 text-xs font-medium text-[#c8941a] transition-colors hover:bg-[#c8941a]/20"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      {t('Add', 'إضافة')}
+                      {t('Add Flavor', 'إضافة نكهة')}
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleBase(base)}
-                      aria-label={base.is_active ? t('Hide category', 'إخفاء الفئة') : t('Show category', 'إظهار الفئة')}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/30 hover:text-white/60 transition-colors"
+                      aria-label={base.is_active ? t('Hide base', 'إخفاء القاعدة') : t('Show base', 'إظهار القاعدة')}
+                      className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 text-xs text-white/40 transition-colors hover:text-white/70"
                     >
                       {base.is_active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setBaseForm({ name_en: base.name_en, name_ar: base.name_ar, is_active: base.is_active, sort_order: base.sort_order }); setEditingBaseId(base.id) }}
-                      aria-label={t('Edit category', 'تعديل الفئة')}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/30 hover:text-[#c8941a] hover:border-[#c8941a]/20 transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteBase(base.id)}
-                      aria-label={t('Delete category', 'حذف الفئة')}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      {base.is_active ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setExpandedId(isExpanded ? null : base.id)}
-                      aria-label={isExpanded ? t('Collapse', 'طيّ') : t('Expand', 'توسيع')}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/30 hover:text-white/60 transition-colors"
+                      aria-label={isExpanded ? t('Collapse', 'طي') : t('Expand', 'توسيع')}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04] text-white/35 transition-colors hover:text-white/65"
                     >
                       {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Expanded flavors panel */}
                 {isExpanded && (
-                  <div className="border-t border-[#c8941a]/10 px-5 py-4 bg-[#0f0900]">
-
-                    {/* Add / Edit flavor form */}
+                  <div className="border-t border-[#c8941a]/10 bg-[#0f0900] px-5 py-4">
                     {editingFlavor?.baseId === base.id && (
-                      <div className="bg-[#180d04] border border-[#c8941a]/20 rounded-xl p-4 mb-4">
-                        <p className="text-white/50 text-xs font-semibold mb-3">
-                          {editingFlavor.flavorId === 'new' ? t('Add Flavor', 'إضافة نكهة') : t('Edit Flavor', 'تعديل النكهة')}
-                        </p>
-                        <div className="grid sm:grid-cols-2 gap-3">
-                          <input
-                            value={flavorForm.name_en}
-                            onChange={e => setFlavorForm(p => ({ ...p, name_en: e.target.value }))}
-                            placeholder={t('English (e.g. Vanilla)', 'الإنجليزية (مثال: Vanilla)')}
-                            className="bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
-                          />
-                          <input
-                            value={flavorForm.name_ar}
-                            onChange={e => setFlavorForm(p => ({ ...p, name_ar: e.target.value }))}
-                            dir="rtl"
-                            placeholder={t('Arabic (e.g. فانيلا)', 'العربية (مثال: فانيلا)')}
-                            className="bg-[#0f0900] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#c8941a]/30 transition-all"
-                          />
+                      <div className="mb-5 rounded-xl border border-[#c8941a]/20 bg-[#180d04] p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-white/55">
+                            {editingFlavor.flavorId === 'new' ? t('Add Flavor', 'إضافة نكهة') : t('Edit Flavor', 'تعديل النكهة')}
+                          </p>
+                          <button type="button" onClick={closeFlavorForm} className="text-white/30 transition-colors hover:text-white/60">
+                            <X className="h-4 w-4" />
+                          </button>
                         </div>
-                        <div className="flex gap-2 mt-3">
+
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('English Name *', 'الاسم بالإنجليزية *')}</label>
+                            <input
+                              value={flavorForm.name_en}
+                              onChange={e => setFlavorForm(prev => ({ ...prev, name_en: e.target.value }))}
+                              placeholder="Chocolate"
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 placeholder-white/20 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('Arabic Name *', 'الاسم بالعربية *')}</label>
+                            <input
+                              value={flavorForm.name_ar}
+                              onChange={e => setFlavorForm(prev => ({ ...prev, name_ar: e.target.value }))}
+                              dir="rtl"
+                              placeholder="شوكولاتة"
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 placeholder-white/20 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('Option Type', 'نوع الإضافة')}</label>
+                            <select
+                              value={flavorForm.option_type}
+                              onChange={e => {
+                                const optionType = normalizeOptionType(e.target.value)
+                                setFlavorForm(prev => ({
+                                  ...prev,
+                                  option_type: optionType,
+                                  price_delta: optionType === 'chunks' ? 70 : 50,
+                                }))
+                              }}
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            >
+                              <option value="standard">{t('Standard', 'عادية')}</option>
+                              <option value="chunks">{t('Chunks', 'قطع')}</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('Price Delta', 'إضافة السعر')}</label>
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={flavorForm.price_delta}
+                              onChange={e => setFlavorForm(prev => ({ ...prev, price_delta: Number(e.target.value) }))}
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('Sort Order', 'ترتيب العرض')}</label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={flavorForm.sort_order}
+                              onChange={e => setFlavorForm(prev => ({ ...prev, sort_order: Number(e.target.value) }))}
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            />
+                            <p className="mt-1 text-[11px] text-white/25">
+                              {t('Groups are derived from sort order.', 'المجموعات تُحدد من ترتيب العرض.')}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2">
+                            <div>
+                              <p className="text-sm font-medium text-white/70">{t('Active', 'نشط')}</p>
+                              <p className="text-xs text-white/25">{t('Visible to customers', 'ظاهر للعملاء')}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFlavorForm(prev => ({ ...prev, is_active: !prev.is_active }))}
+                              className={`relative h-6 w-11 rounded-full transition-colors ${flavorForm.is_active ? 'bg-[#c8941a]' : 'bg-white/10'}`}
+                            >
+                              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${flavorForm.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
                           <button
                             type="button"
                             onClick={saveFlavor}
                             disabled={savingFlavor}
-                            className="flex items-center gap-1.5 bg-[#c8941a] hover:bg-[#b8840f] text-black px-4 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#c8941a] px-4 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-[#b8840f] disabled:opacity-50"
                           >
                             <Save className="h-3.5 w-3.5" />
                             {savingFlavor ? t('Saving...', 'جاري...') : t('Save', 'حفظ')}
                           </button>
                           <button
                             type="button"
-                            onClick={() => { setEditingFlavor(null); setFlavorForm(EMPTY_FLAVOR) }}
-                            className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.06] px-4 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60 transition-colors"
+                            onClick={closeFlavorForm}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.04] px-4 py-1.5 text-xs text-white/45 transition-colors hover:text-white/70"
                           >
                             <X className="h-3.5 w-3.5" />
                             {t('Cancel', 'إلغاء')}
@@ -404,68 +439,77 @@ export default function AdminFlavorsPage() {
                       </div>
                     )}
 
-                    {/* Flavors list */}
-                    {(base.options || []).length === 0 ? (
-                      <p className="text-white/25 text-xs text-center py-4">
-                        {t('No flavors yet — click Add above', 'لا توجد نكهات — اضغط إضافة بالأعلى')}
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {(base.options || []).map(flavor => (
-                          <div
-                            key={flavor.id}
-                            className={`group flex items-center gap-3 bg-[#180d04] border rounded-xl px-4 py-2.5 transition-all ${
-                              flavor.is_active ? 'border-[#c8941a]/10' : 'border-white/[0.04] opacity-50'
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 text-sm flex-wrap">
-                                <span className="font-medium text-white/70">{flavor.name_en}</span>
-                                <span className="text-white/20">|</span>
-                                <span className="text-white/50">{flavor.name_ar}</span>
-                                {!flavor.is_active && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/10">
-                                    {t('Hidden', 'مخفي')}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={() => toggleFlavor(base.id, flavor)}
-                                aria-label={flavor.is_active ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
-                                className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/30 hover:text-white/60 transition-colors"
-                              >
-                                {flavor.is_active ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFlavorForm({ name_en: flavor.name_en, name_ar: flavor.name_ar, is_active: flavor.is_active, sort_order: flavor.sort_order })
-                                  setEditingFlavor({ baseId: base.id, flavorId: flavor.id })
-                                }}
-                                aria-label={t('Edit', 'تعديل')}
-                                className="h-7 w-7 flex items-center justify-center rounded-lg bg-[#c8941a]/10 border border-[#c8941a]/20 text-[#c8941a] hover:bg-[#c8941a]/20 transition-colors"
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => deleteFlavor(base.id, flavor.id)}
-                                aria-label={t('Delete', 'حذف')}
-                                className="h-7 w-7 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
+                    <div className="space-y-5">
+                      {(groupedByBase[base.id] || []).map(({ group, options }) => (
+                        <div key={group.key}>
+                          <div className="mb-2 flex items-center justify-between gap-3">
+                            <h4 className="font-serif text-lg font-bold text-white/85">
+                              {t(group.nameEn, group.nameAr)}
+                            </h4>
+                            <span className="rounded-full border border-[#c8941a]/15 bg-[#c8941a]/8 px-2.5 py-1 text-[11px] text-[#e0ad72]">
+                              {options.filter(option => option.is_active).length}/{options.length}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <div className="grid gap-2 lg:grid-cols-2">
+                            {options.map((flavor) => (
+                              <article
+                                key={flavor.id}
+                                className={`group rounded-xl border bg-[#180d04] px-4 py-3 transition-all ${
+                                  flavor.is_active ? 'border-[#c8941a]/10' : 'border-white/[0.04] opacity-55'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#c8941a]/15 bg-[#c8941a]/5 text-xs font-bold text-[#c8941a]">
+                                    {Number(flavor.sort_order || 0)}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-sm font-semibold text-white/75">{flavor.name_en}</p>
+                                      <span className="text-white/20">|</span>
+                                      <p className="text-sm text-white/50">{flavor.name_ar}</p>
+                                      {!flavor.is_active && (
+                                        <span className="rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/30">
+                                          {t('Hidden', 'مخفي')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-white/38">
+                                      <span className="rounded-full bg-white/[0.04] px-2 py-0.5">
+                                        {normalizeOptionType(flavor.option_type) === 'chunks' ? t('Chunks', 'قطع') : t('Standard', 'عادية')}
+                                      </span>
+                                      <span className="rounded-full bg-white/[0.04] px-2 py-0.5">
+                                        +{Number(flavor.price_delta || 0)} {t('EGP/kg', 'ج/كجم')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-3 flex flex-wrap items-center gap-2 sm:justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleFlavor(base.id, flavor)}
+                                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.04] px-2.5 text-xs text-white/40 transition-colors hover:text-white/70"
+                                  >
+                                    {flavor.is_active ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                    {flavor.is_active ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditFlavor(base.id, flavor)}
+                                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[#c8941a]/20 bg-[#c8941a]/10 px-2.5 text-xs font-semibold text-[#c8941a] transition-colors hover:bg-[#c8941a]/20"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                    {t('Edit', 'تعديل')}
+                                  </button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
+              </section>
             )
           })}
         </div>

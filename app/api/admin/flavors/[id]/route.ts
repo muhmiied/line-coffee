@@ -3,6 +3,23 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
+type FlavorOptionType = 'standard' | 'chunks'
+
+function normalizeOptionType(value: unknown): FlavorOptionType {
+  return value === 'chunks' ? 'chunks' : 'standard'
+}
+
+function normalizeNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function isRemovedFlavor(nameEn: unknown, nameAr: unknown) {
+  const normalizedName = String(nameEn || '').trim().toLowerCase()
+  const arabicName = String(nameAr || '')
+  return normalizedName === 'sahlab' || normalizedName === 'salep' || arabicName.includes('سحلب')
+}
+
 async function guard() {
   const supabase = await createClient()
   if (!supabase) return { error: 'Not configured', status: 503 }
@@ -13,7 +30,6 @@ async function guard() {
   return { admin }
 }
 
-// PATCH — update base, or add/update/delete a flavor within it
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -22,35 +38,77 @@ export async function PATCH(
   if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.status })
   const { admin } = result
   const { id } = await params
-  const body = await request.json()
+  const body = await request.json().catch(() => null)
 
-  // ── Add a new flavor to this category ──────────────────────────────────
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 })
+  }
+
   if (body.action === 'add_flavor') {
-    if (!body.name_en?.trim() || !body.name_ar?.trim()) {
-      return NextResponse.json({ success: false, error: 'Both names are required' }, { status: 400 })
+    const nameEn = String(body.name_en || '').trim()
+    const nameAr = String(body.name_ar || '').trim()
+    if (!nameEn || !nameAr) {
+      return NextResponse.json({ success: false, error: 'English and Arabic names are required' }, { status: 400 })
     }
+    if (isRemovedFlavor(nameEn, nameAr)) {
+      return NextResponse.json({ success: false, error: 'This flavor is not part of the final Customize Flavor list' }, { status: 400 })
+    }
+
+    const priceDelta = normalizeNumber(body.price_delta ?? body.price ?? 50)
+    if (priceDelta < 0) {
+      return NextResponse.json({ success: false, error: 'Price delta must be zero or greater' }, { status: 400 })
+    }
+
     const { data, error } = await admin
       .from('flavor_options')
       .insert({
         base_id: id,
-        name_en: body.name_en.trim(),
-        name_ar: body.name_ar.trim(),
-        price_delta: Number(body.price_delta ?? body.price ?? 50),
-        option_type: body.option_type || 'standard',
-        is_active: body.is_active ?? true,
-        sort_order: body.sort_order ?? 0,
+        name_en: nameEn,
+        name_ar: nameAr,
+        price_delta: priceDelta,
+        option_type: normalizeOptionType(body.option_type),
+        is_active: body.is_active !== false,
+        sort_order: normalizeNumber(body.sort_order),
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single()
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+
+    if (error) return NextResponse.json({ success: false, error: 'Failed to save flavor' }, { status: 500 })
     return NextResponse.json({ success: true, data })
   }
 
-  // ── Update an existing flavor ──────────────────────────────────────────
   if (body.action === 'update_flavor' && body.flavor_id) {
-    const allowed = ['name_en', 'name_ar', 'price_delta', 'option_type', 'is_active', 'sort_order']
-    const payload: Record<string, unknown> = {}
-    for (const key of allowed) { if (key in body) payload[key] = body[key] }
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() }
+
+    if ('name_en' in body) {
+      const name = String(body.name_en || '').trim()
+      if (!name) return NextResponse.json({ success: false, error: 'English name is required' }, { status: 400 })
+      payload.name_en = name
+    }
+
+    if ('name_ar' in body) {
+      const name = String(body.name_ar || '').trim()
+      if (!name) return NextResponse.json({ success: false, error: 'Arabic name is required' }, { status: 400 })
+      payload.name_ar = name
+    }
+
+    if (isRemovedFlavor(payload.name_en ?? body.name_en, payload.name_ar ?? body.name_ar)) {
+      return NextResponse.json({ success: false, error: 'This flavor is not part of the final Customize Flavor list' }, { status: 400 })
+    }
+
+    if ('price_delta' in body) {
+      const priceDelta = normalizeNumber(body.price_delta)
+      if (priceDelta < 0) {
+        return NextResponse.json({ success: false, error: 'Price delta must be zero or greater' }, { status: 400 })
+      }
+      payload.price_delta = priceDelta
+    }
+
+    if ('option_type' in body) payload.option_type = normalizeOptionType(body.option_type)
+    if ('is_active' in body) payload.is_active = body.is_active === true
+    if ('sort_order' in body) payload.sort_order = normalizeNumber(body.sort_order)
+
     const { data, error } = await admin
       .from('flavor_options')
       .update(payload)
@@ -58,27 +116,52 @@ export async function PATCH(
       .eq('base_id', id)
       .select()
       .single()
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+
+    if (error) return NextResponse.json({ success: false, error: 'Failed to update flavor' }, { status: 500 })
     return NextResponse.json({ success: true, data })
   }
 
-  // ── Delete a flavor ────────────────────────────────────────────────────
   if (body.action === 'delete_flavor' && body.flavor_id) {
-    const { error } = await admin.from('flavor_options').delete().eq('id', body.flavor_id).eq('base_id', id)
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true })
+    const { data, error } = await admin
+      .from('flavor_options')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', body.flavor_id)
+      .eq('base_id', id)
+      .select()
+      .single()
+
+    if (error) return NextResponse.json({ success: false, error: 'Failed to hide flavor' }, { status: 500 })
+    return NextResponse.json({ success: true, data })
   }
 
-  // ── Update the category (base) itself ─────────────────────────────────
-  const allowed = ['name_en', 'name_ar', 'price', 'type', 'is_active', 'sort_order']
-  const payload: Record<string, unknown> = {}
-  for (const key of allowed) { if (key in body) payload[key] = body[key] }
-  const { data, error } = await admin.from('flavor_bases').update(payload).eq('id', id).select().single()
-  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  const payload: Record<string, unknown> = { updated_at: new Date().toISOString() }
+
+  if ('name_en' in body) {
+    const name = String(body.name_en || '').trim()
+    if (!name) return NextResponse.json({ success: false, error: 'English name is required' }, { status: 400 })
+    payload.name_en = name
+  }
+  if ('name_ar' in body) {
+    const name = String(body.name_ar || '').trim()
+    if (!name) return NextResponse.json({ success: false, error: 'Arabic name is required' }, { status: 400 })
+    payload.name_ar = name
+  }
+  if ('price' in body) payload.price = normalizeNumber(body.price)
+  if ('type' in body) payload.type = String(body.type || 'base')
+  if ('is_active' in body) payload.is_active = body.is_active === true
+  if ('sort_order' in body) payload.sort_order = normalizeNumber(body.sort_order)
+
+  const { data, error } = await admin
+    .from('flavor_bases')
+    .update(payload)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ success: false, error: 'Failed to update flavor base' }, { status: 500 })
   return NextResponse.json({ success: true, data })
 }
 
-// DELETE — remove a flavor category (cascades all its flavors)
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -87,7 +170,14 @@ export async function DELETE(
   if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.status })
   const { admin } = result
   const { id } = await params
-  const { error } = await admin.from('flavor_bases').delete().eq('id', id)
-  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+
+  const { data, error } = await admin
+    .from('flavor_bases')
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ success: false, error: 'Failed to hide flavor base' }, { status: 500 })
+  return NextResponse.json({ success: true, data })
 }

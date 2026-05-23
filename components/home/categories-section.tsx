@@ -8,13 +8,22 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
 import { SectionReveal, FadeUp, ImageReveal, StaggerContainer, WordByWord, viewportConfig } from '@/components/ui/motion-primitives'
+import { getMediaObjectPosition, mediaByUsage, type SiteMediaItem } from '@/lib/media'
 
 const CUSTOMIZE_ENTRY = {
-  slug: 'customize',
-  nameEn: 'Customize Your Product',
-  nameAr: 'صمم منتجك',
-  image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
+  slug: 'customize-blend',
+  nameEn: 'Make Your Espresso Blend',
+  nameAr: 'اصنع توليفة الإسبريسو الخاصة بك',
+  image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop',
   isCustomize: true,
+}
+
+const CUSTOMIZE_FLAVOR_ENTRY = {
+  slug: 'customize-flavor',
+  nameEn: 'Make Your Flavor',
+  nameAr: 'اصنع نكهتك الخاصة',
+  image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop',
+  isCustomizeFlavor: true,
 }
 
 type DbCategory = {
@@ -39,14 +48,22 @@ const FALLBACK_CATEGORIES = [
 export function CategoriesSection() {
   const { t, dir } = useLanguage()
   const [categories, setCategories] = useState<Array<{
-    slug: string; nameEn: string; nameAr: string; image: string; isCustomize?: boolean
+    slug: string; nameEn: string; nameAr: string; image: string; objectPosition?: string; isCustomize?: boolean; isCustomizeFlavor?: boolean
   }>>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    fetch('/api/categories')
-      .then((r) => r.json())
-      .then((res) => {
+    Promise.all([
+      fetch('/api/categories').then((r) => r.json()),
+      fetch('/api/media?media_type=category', { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ data: [] })),
+    ])
+      .then(([res, mediaRes]) => {
+        const sectionImages = mediaByUsage(Array.isArray(mediaRes?.data) ? mediaRes.data as SiteMediaItem[] : [])
+        const customBlendMedia = sectionImages.get('category:customize-blend')
+        const customFlavorMedia = sectionImages.get('category:customize-flavor')
+        const customBlendEntry = { ...CUSTOMIZE_ENTRY, image: customBlendMedia?.image_url || CUSTOMIZE_ENTRY.image, objectPosition: customBlendMedia ? getMediaObjectPosition(customBlendMedia) : undefined }
+        const customFlavorEntry = { ...CUSTOMIZE_FLAVOR_ENTRY, image: customFlavorMedia?.image_url || CUSTOMIZE_FLAVOR_ENTRY.image, objectPosition: customFlavorMedia ? getMediaObjectPosition(customFlavorMedia) : undefined }
+
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           const mapped = (res.data as DbCategory[])
             .filter((c) => c.is_visible)
@@ -54,15 +71,23 @@ export function CategoriesSection() {
               slug: c.slug,
               nameEn: c.name_en,
               nameAr: c.name_ar,
-              image: c.image_url ?? 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
+              image: sectionImages.get(`category:${c.slug}`)?.image_url
+                ?? c.image_url
+                ?? 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
+              objectPosition: sectionImages.get(`category:${c.slug}`) ? getMediaObjectPosition(sectionImages.get(`category:${c.slug}`) as SiteMediaItem) : undefined,
             }))
-          setCategories([...(mapped.length > 0 ? mapped : FALLBACK_CATEGORIES), CUSTOMIZE_ENTRY])
+          setCategories([...(mapped.length > 0 ? mapped : FALLBACK_CATEGORIES), customBlendEntry, customFlavorEntry])
         } else {
-          setCategories([...FALLBACK_CATEGORIES, CUSTOMIZE_ENTRY])
+          const fallback = FALLBACK_CATEGORIES.map((category) => ({
+            ...category,
+            image: sectionImages.get(`category:${category.slug}`)?.image_url || category.image,
+            objectPosition: sectionImages.get(`category:${category.slug}`) ? getMediaObjectPosition(sectionImages.get(`category:${category.slug}`) as SiteMediaItem) : undefined,
+          }))
+          setCategories([...fallback, customBlendEntry, customFlavorEntry])
         }
       })
       .catch(() => {
-        setCategories([...FALLBACK_CATEGORIES, CUSTOMIZE_ENTRY])
+        setCategories([...FALLBACK_CATEGORIES, CUSTOMIZE_ENTRY, CUSTOMIZE_FLAVOR_ENTRY])
       })
       .finally(() => setLoaded(true))
   }, [])
@@ -110,7 +135,7 @@ export function CategoriesSection() {
                   href={`/products?category=${category.slug}`}
                   className={cn(
                     'premium-image-card group relative block aspect-[3/4] overflow-hidden rounded-xl',
-                    category.isCustomize && 'ring-1 ring-[#B6885E]/50'
+                    (category.isCustomize || category.isCustomizeFlavor) && 'ring-1 ring-[#B6885E]/50'
                   )}
                 >
                   {/* Background Image */}
@@ -119,6 +144,7 @@ export function CategoriesSection() {
                     alt={t(category.nameEn, category.nameAr)}
                     fill
                     className="object-cover brightness-[0.82] contrast-[1.08] saturate-[1.04] transition-all duration-700 group-hover:scale-110 group-hover:brightness-[0.9]"
+                    style={{ objectPosition: category.objectPosition || 'center center' }}
                   />
 
                   {/* Cinematic overlay */}
@@ -128,13 +154,13 @@ export function CategoriesSection() {
                   {/* Bottom gradient */}
                   <div className={cn(
                     'absolute inset-0 bg-gradient-to-t from-[#0B0806]/92 via-[#0B0806]/30 to-transparent',
-                    category.isCustomize && 'from-[#1B0D05]/95 via-[#B6885E]/20'
+                    (category.isCustomize || category.isCustomizeFlavor) && 'from-[#1B0D05]/95 via-[#B6885E]/20'
                   )} />
                   {/* Gold border on hover */}
                   <div className="absolute inset-0 rounded-xl ring-0 group-hover:ring-1 ring-[#B6885E]/40 transition-all duration-400" />
 
                   {/* Customize Badge */}
-                  {category.isCustomize && (
+                  {(category.isCustomize || category.isCustomizeFlavor) && (
                     <div
                       className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.15em] uppercase flex items-center gap-1"
                       style={{
@@ -159,7 +185,7 @@ export function CategoriesSection() {
                       className="flex items-center justify-center gap-1 text-xs transition-all duration-300 group-hover:gap-2"
                       style={{ color: 'rgba(214,163,115,0.75)' }}
                     >
-                      <span>{category.isCustomize ? t('Create Now', 'ابدأ الآن') : t('Explore', 'استكشف')}</span>
+                      <span>{category.isCustomizeFlavor ? t('Make Your Flavor', 'اصنع نكهتك الخاصة') : category.isCustomize ? t('Create Blend', 'اصنع التوليفة') : t('Explore', 'استكشف')}</span>
                       <ArrowRight
                         className={cn(
                           'h-3.5 w-3.5 transition-transform group-hover:translate-x-1',

@@ -3,6 +3,32 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 
+type BeanFamily = 'arabica' | 'robusta'
+
+const COFFEE_BEAN_COLUMNS = `
+  id,
+  name_en,
+  name_ar,
+  origin,
+  description_en,
+  description_ar,
+  is_active,
+  sort_order,
+  family,
+  price,
+  created_at,
+  updated_at
+`
+
+function normalizeFamily(value: unknown): BeanFamily {
+  return value === 'robusta' ? 'robusta' : 'arabica'
+}
+
+function normalizeNumber(value: unknown): number {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : 0
+}
+
 async function guard() {
   const supabase = await createClient()
   if (!supabase) return { error: 'Not configured', status: 503 }
@@ -22,12 +48,12 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('coffee_beans')
-    .select('*')
+    .select(COFFEE_BEAN_COLUMNS)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
 
   if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to load coffee beans' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, data: data || [] })
@@ -40,11 +66,19 @@ export async function POST(request: NextRequest) {
   }
   const { admin } = result
 
-  const body = await request.json()
+  const body = await request.json().catch(() => null)
 
-  if (!body.name_en?.trim() || !body.name_ar?.trim()) {
+  if (!body?.name_en?.trim() || !body?.name_ar?.trim()) {
     return NextResponse.json(
-      { success: false, error: 'name_en and name_ar are required' },
+      { success: false, error: 'English and Arabic names are required' },
+      { status: 400 },
+    )
+  }
+
+  const price = normalizeNumber(body.price)
+  if (price <= 0) {
+    return NextResponse.json(
+      { success: false, error: 'Price per kg must be greater than zero' },
       { status: 400 },
     )
   }
@@ -57,16 +91,16 @@ export async function POST(request: NextRequest) {
       origin: body.origin?.trim() || null,
       description_en: body.description_en?.trim() || null,
       description_ar: body.description_ar?.trim() || null,
-      family: body.family || 'other',
-      price: Number(body.price || 0),
-      is_active: body.is_active ?? true,
-      sort_order: body.sort_order ?? 0,
+      family: normalizeFamily(body.family),
+      price,
+      is_active: body.is_active !== false,
+      sort_order: normalizeNumber(body.sort_order),
     })
-    .select()
+    .select(COFFEE_BEAN_COLUMNS)
     .single()
 
   if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to save coffee bean' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, data }, { status: 201 })

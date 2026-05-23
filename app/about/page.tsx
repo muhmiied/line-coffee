@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Coffee, Heart, Award, Users } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { getMediaObjectPosition, type SiteMediaItem } from '@/lib/media'
 
 const stats = [
   { icon: Coffee, valueEn: '50+', valueAr: '+٥٠', labelEn: 'Coffee Varieties', labelAr: 'نوع قهوة' },
@@ -14,6 +16,25 @@ const stats = [
 
 export default function AboutPage() {
   const { t } = useLanguage()
+  const [aboutTopMedia, setAboutTopMedia] = useState<SiteMediaItem | null>(null)
+  const [aboutLowerMedia, setAboutLowerMedia] = useState<SiteMediaItem | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+
+    Promise.all([
+      fetch('/api/media?usage_area=about_top', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
+      fetch('/api/media?usage_area=about_lower', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
+    ]).then(([topRes, lowerRes]) => {
+      if (!mounted) return
+      if (Array.isArray(topRes?.data) && topRes.data[0]?.image_url) setAboutTopMedia(topRes.data[0])
+      if (Array.isArray(lowerRes?.data) && lowerRes.data[0]?.image_url) setAboutLowerMedia(lowerRes.data[0])
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   return (
     <div className="min-h-screen" style={{ background: '#0B0806' }}>
@@ -24,10 +45,11 @@ export default function AboutPage() {
         style={{ background: '#0B0806' }}
       >
         <Image
-          src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600"
-          alt="About Line Coffee"
+          src={aboutTopMedia?.image_url || 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600'}
+          alt={t(aboutTopMedia?.alt_en || 'About Line Coffee', aboutTopMedia?.alt_ar || aboutTopMedia?.alt_en || 'About Line Coffee')}
           fill
           className="object-cover"
+          style={{ objectPosition: aboutTopMedia ? getMediaObjectPosition(aboutTopMedia) : 'center center' }}
           priority
         />
         <div className="absolute inset-0 bg-black/60" />
@@ -53,7 +75,7 @@ export default function AboutPage() {
             className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
             style={{ color: '#F5E6D8', textShadow: '0 4px 32px rgba(0,0,0,0.6)' }}
           >
-            {t('Our Story', 'قصتنا')}
+            {t(aboutTopMedia?.title_en || 'Our Story', aboutTopMedia?.title_ar || aboutTopMedia?.title_en || 'قصتنا')}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -62,7 +84,10 @@ export default function AboutPage() {
             className="text-lg md:text-xl max-w-2xl mx-auto"
             style={{ color: 'rgba(214,183,154,0.85)' }}
           >
-            {t('Crafting the perfect cup since 2019', 'نصنع الكوب المثالي منذ 2019')}
+            {t(
+              aboutTopMedia?.subtitle_en || 'Crafting the perfect cup since 2019',
+              aboutTopMedia?.subtitle_ar || aboutTopMedia?.subtitle_en || 'نصنع الكوب المثالي منذ 2019',
+            )}
           </motion.p>
         </div>
       </div>
@@ -159,10 +184,11 @@ export default function AboutPage() {
               style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(182,136,94,0.1)' }}
             >
               <Image
-                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800"
-                alt="Coffee beans"
+                src={aboutLowerMedia?.image_url || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800'}
+                alt={t(aboutLowerMedia?.alt_en || 'Coffee beans', aboutLowerMedia?.alt_ar || aboutLowerMedia?.alt_en || 'Coffee beans')}
                 fill
                 className="object-cover"
+                style={{ objectPosition: aboutLowerMedia ? getMediaObjectPosition(aboutLowerMedia) : 'center center' }}
               />
               <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/8 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0B0806]/40 to-transparent" />

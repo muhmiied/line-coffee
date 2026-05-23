@@ -10,8 +10,20 @@ import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
 import { WordByWord } from '@/components/ui/motion-primitives'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
+import { getMediaObjectPosition, type SiteMediaItem } from '@/lib/media'
 
-const slides = [
+type HeroSlide = {
+  image: string
+  headingEn: string
+  headingAr: string
+  subheadingEn: string
+  subheadingAr: string
+  altEn?: string | null
+  altAr?: string | null
+  objectPosition?: string
+}
+
+const fallbackSlides: HeroSlide[] = [
   {
     image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
     headingEn: 'Experience Coffee Like Never Before',
@@ -45,6 +57,7 @@ const slides = [
 export function HeroSection() {
   const { t, dir } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [slides, setSlides] = useState<HeroSlide[]>(fallbackSlides)
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -59,6 +72,39 @@ export function HeroSection() {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
     }, 6000)
     return () => clearInterval(timer)
+  }, [slides.length])
+
+  useEffect(() => {
+    let mounted = true
+
+    fetch('/api/media?usage_area=hero', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (!mounted || !Array.isArray(json?.data) || json.data.length === 0) return
+
+        const mediaSlides = (json.data as SiteMediaItem[])
+          .filter((item) => item.image_url)
+          .map((item, index): HeroSlide => ({
+            image: item.image_url,
+            headingEn: item.title_en || fallbackSlides[index % fallbackSlides.length].headingEn,
+            headingAr: item.title_ar || item.title_en || fallbackSlides[index % fallbackSlides.length].headingAr,
+            subheadingEn: item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingEn,
+            subheadingAr: item.subtitle_ar || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingAr,
+            altEn: item.alt_en,
+            altAr: item.alt_ar,
+            objectPosition: getMediaObjectPosition(item),
+          }))
+
+        if (mediaSlides.length > 0) {
+          setSlides(mediaSlides)
+          setCurrentSlide(0)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const goToSlide = (index: number) => setCurrentSlide(index)
@@ -67,6 +113,7 @@ export function HeroSection() {
 
   const headingText = t(slides[currentSlide].headingEn, slides[currentSlide].headingAr)
   const subheadingText = t(slides[currentSlide].subheadingEn, slides[currentSlide].subheadingAr)
+  const imageAlt = t(slides[currentSlide].altEn || 'Coffee background', slides[currentSlide].altAr || slides[currentSlide].altEn || 'Coffee background')
 
   return (
     <section
@@ -94,9 +141,10 @@ export function HeroSection() {
         >
           <Image
             src={slides[currentSlide].image}
-            alt="Coffee background"
+            alt={imageAlt}
             fill
             className="object-cover"
+            style={{ objectPosition: slides[currentSlide].objectPosition || 'center center' }}
             priority
           />
 

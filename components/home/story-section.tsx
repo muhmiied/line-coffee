@@ -1,15 +1,17 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Leaf, Award, Heart } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
+import { getMediaObjectPosition, type SiteMediaItem } from '@/lib/media'
 
 export function StorySection() {
   const { t, dir } = useLanguage()
+  const [storyMedia, setStoryMedia] = useState<SiteMediaItem | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -17,6 +19,23 @@ export function StorySection() {
   })
 
   const y = useTransform(scrollYProgress, [0, 1], ['20%', '-20%'])
+
+  useEffect(() => {
+    let mounted = true
+
+    fetch('/api/media?usage_area=about_lower', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (mounted && Array.isArray(json?.data) && json.data[0]?.image_url) {
+          setStoryMedia(json.data[0])
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const values = [
     {
@@ -162,12 +181,13 @@ export function StorySection() {
             <div className="absolute -inset-1 rounded-2xl border border-[#FFDCC2]/10" />
 
             <div className="premium-image-card group relative aspect-[3/4] overflow-hidden rounded-2xl border border-[#FFDCC2]/15 bg-[#120D09] shadow-2xl">
-              <Image
-                src="/images/story.jpg"
-                alt="Line Coffee premium Arabica and Robusta story"
+            <Image
+                src={storyMedia?.image_url || '/images/story.jpg'}
+                alt={t(storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story', storyMedia?.alt_ar || storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story')}
                 fill
                 sizes="(min-width: 1024px) 44vw, 92vw"
                 className="object-cover object-center brightness-[0.82] contrast-[1.12] saturate-[1.08] transition-transform duration-700 group-hover:scale-[1.035]"
+                style={{ objectPosition: storyMedia ? getMediaObjectPosition(storyMedia) : 'center center' }}
               />
               {/* Cinematic warm grade and soft vignette */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/78 via-[#0F0A07]/18 to-transparent" />

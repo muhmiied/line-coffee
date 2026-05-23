@@ -27,6 +27,7 @@ export type FlavorAdditionOption = {
   nameEn: string
   type: FlavorAdditionType
   price: number
+  sortOrder?: number
   /** Which base IDs this flavor applies to. Undefined = all bases. */
   bases?: string[]
 }
@@ -94,6 +95,48 @@ export const DEFAULT_FLAVOR_ADDITIONS: FlavorAdditionOption[] = [
   { id: 'apple-hookah',     nameEn: 'Apple Hookah',      nameAr: 'شيشة تفاح',    type: 'standard', price: 50, bases: TK_ONLY },
   { id: 'grape-hookah',     nameEn: 'Grape Hookah',      nameAr: 'شيشة عنب',     type: 'standard', price: 50, bases: TK_ONLY },
   { id: 'hot-cider',        nameEn: 'Hot Cider',         nameAr: 'هوت سيدر',     type: 'standard', price: 50, bases: TK_ONLY },
+]
+
+const ALL_CUSTOMIZE_FLAVOR_BASES = ['turkish-coffee', 'coffee-mix', 'cappuccino', 'hot-chocolate']
+
+export const CUSTOMIZE_FLAVOR_BASES: FlavorBaseOption[] = [
+  { id: 'turkish-coffee', nameAr: 'القهوة التركي', nameEn: 'Turkish Coffee', price: 400 },
+  { id: 'coffee-mix', nameAr: 'كوفي ميكس', nameEn: 'Coffee Mix', price: 430 },
+  { id: 'cappuccino', nameAr: 'كابتشينو', nameEn: 'Cappuccino', price: 530 },
+  { id: 'hot-chocolate', nameAr: 'هوت شوكلت', nameEn: 'Hot Chocolate', price: 430 },
+]
+
+export const CUSTOMIZE_FLAVOR_ADDITIONS: FlavorAdditionOption[] = [
+  { id: 'french-original', nameEn: 'French / Original', nameAr: 'فرنساوي / أوريجينال', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 1 },
+  { id: 'chocolate-chunks', nameEn: 'Chocolate Chunks', nameAr: 'شوكولاتة قطع', type: 'chunks', price: 70, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 2 },
+  { id: 'chocolate', nameEn: 'Chocolate', nameAr: 'شوكولاتة', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 3 },
+  { id: 'caramel', nameEn: 'Caramel', nameAr: 'كراميل', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 4 },
+  { id: 'vanilla', nameEn: 'Vanilla', nameAr: 'فانيلا', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 5 },
+  { id: 'lotus', nameEn: 'Lotus', nameAr: 'لوتس', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 6 },
+  { id: 'oreo', nameEn: 'Oreo', nameAr: 'أوريو', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 7 },
+  { id: 'cherry', nameEn: 'Cherry', nameAr: 'كرز', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 8 },
+  { id: 'almond', nameEn: 'Almond', nameAr: 'لوز', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 9 },
+  { id: 'pistachio', nameEn: 'Pistachio', nameAr: 'فستق', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 10 },
+  { id: 'hazelnut-chunks', nameEn: 'Hazelnut Chunks', nameAr: 'بندق قطع', type: 'chunks', price: 70, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 11 },
+  { id: 'hazelnut', nameEn: 'Hazelnut', nameAr: 'بندق', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 12 },
+  { id: 'strawberry', nameEn: 'Strawberry', nameAr: 'فراولة', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 13 },
+  { id: 'banana', nameEn: 'Banana', nameAr: 'موز', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 14 },
+  { id: 'mango', nameEn: 'Mango', nameAr: 'مانجو', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 15 },
+  { id: 'peach', nameEn: 'Peach', nameAr: 'خوخ', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 16 },
+  { id: 'berry', nameEn: 'Berry', nameAr: 'توت', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 17 },
+  { id: 'blueberry', nameEn: 'Blueberry', nameAr: 'توت أزرق', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 18 },
+  { id: 'apple', nameEn: 'Apple', nameAr: 'تفاح', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 19 },
+  { id: 'grape', nameEn: 'Grape', nameAr: 'عنب', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 20 },
+  { id: 'watermelon', nameEn: 'Watermelon', nameAr: 'بطيخ', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 21 },
+  { id: 'guava', nameEn: 'Guava', nameAr: 'جوافة', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 22 },
+  { id: 'pineapple', nameEn: 'Pineapple', nameAr: 'أناناس', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 23 },
+  { id: 'orange', nameEn: 'Orange', nameAr: 'برتقال', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 24 },
+  { id: 'coconut', nameEn: 'Coconut', nameAr: 'جوز الهند', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 25 },
+  { id: 'mocha', nameEn: 'Mocha', nameAr: 'موكا', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 26 },
+  { id: 'pina-colada', nameEn: 'Pina Colada', nameAr: 'بينا كولادا', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 27 },
+  { id: 'apple-hookah', nameEn: 'Apple Hookah', nameAr: 'شيشة تفاح', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 28 },
+  { id: 'grape-hookah', nameEn: 'Grape Hookah', nameAr: 'شيشة عنب', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 29 },
+  { id: 'hot-cider', nameEn: 'Hot Cider', nameAr: 'هوت سيدر', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 30 },
 ]
 
 export const DEFAULT_CUSTOM_BLEND_BEANS: CoffeeBeanOption[] = [
@@ -359,7 +402,7 @@ export function calculateFlavorPrice(
   basePrice: number,
   additions: Array<{ price: number }>,
   size: PackageSize,
-  valveBag = false,
+  _valveBag = false,
 ) {
-  return calculateRetailPrice(calculateFlavorRawCost(basePrice, additions), size, valveBag)
+  return Math.round(calculateFlavorRawCost(basePrice, additions) * sizeToKg(size))
 }

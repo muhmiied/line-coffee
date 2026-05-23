@@ -15,11 +15,9 @@ import type { Product } from '@/lib/types'
 import {
   calculateBlendPrice,
   calculateFlavorPrice,
+  CUSTOMIZE_FLAVOR_ADDITIONS,
+  CUSTOMIZE_FLAVOR_BASES,
   DEFAULT_CUSTOM_BLEND_BEANS,
-  DEFAULT_FLAVOR_ADDITIONS,
-  FLAVOR_BASES,
-  PACKAGE_COSTS,
-  VALVE_BAG_COST,
   type CoffeeBeanOption,
   type FlavorAdditionOption,
   type FlavorBaseOption,
@@ -57,11 +55,11 @@ const FALLBACK_DB_CATEGORIES: DbCategory[] = [
 
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
 const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr: 'جميع المنتجات' }
-const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Customize Blend', nameAr: 'اصنع توليفتك', isCustomizeBlend: true }
-const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Customize Flavor', nameAr: 'اصنع نكهتك', isCustomizeFlavor: true }
+const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Make Your Espresso Blend', nameAr: 'اصنع توليفة الإسبريسو الخاصة بك', isCustomizeBlend: true }
+const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Make Your Flavor', nameAr: 'اصنع نكهتك الخاصة', isCustomizeFlavor: true }
 
 
-const customFlavorOptions: FlavorAdditionOption[] = DEFAULT_FLAVOR_ADDITIONS
+const customFlavorOptions: FlavorAdditionOption[] = CUSTOMIZE_FLAVOR_ADDITIONS
 
 // ─── Helper to build a Product object ─────────────────────────────────────────
 function mkProduct(
@@ -201,7 +199,20 @@ const LAST_RESORT_PRODUCTS: Product[] = [
 ]
 
 // ─── Flavor base options for customize-flavor ──────────────────────────────────
-const flavorBaseOptions = FLAVOR_BASES
+const flavorBaseOptions = CUSTOMIZE_FLAVOR_BASES
+
+const CUSTOMIZE_FLAVOR_GROUPS = [
+  { key: 'original', nameEn: 'Original LINE', nameAr: 'الأساسي', min: 1, max: 1 },
+  { key: 'sweets', nameEn: 'sweets LINE', nameAr: 'حلويات', min: 2, max: 8 },
+  { key: 'nuts', nameEn: 'Nuts', nameAr: 'مكسرات', min: 9, max: 12 },
+  { key: 'fruits', nameEn: 'Fruits', nameAr: 'فواكه', min: 13, max: 24 },
+  { key: 'special', nameEn: 'Special Order', nameAr: 'سيبشيل أوردر', min: 25, max: 30 },
+]
+
+function getCustomizeFlavorGroup(sortOrder: number | undefined) {
+  const order = Number(sortOrder || 0)
+  return CUSTOMIZE_FLAVOR_GROUPS.find((group) => order >= group.min && order <= group.max) || CUSTOMIZE_FLAVOR_GROUPS[4]
+}
 
 const SIZE_OPTIONS: PackageSize[] = ['250g', '500g', '1kg']
 
@@ -215,38 +226,32 @@ function formatOptionName(language: 'en' | 'ar', item: { nameEn: string; nameAr:
   return language === 'ar' ? item.nameAr : item.nameEn
 }
 
-function PriceBreakdown({
-  size,
-  valveBag,
-  t,
-}: {
-  size: PackageSize
-  valveBag: boolean
-  t: (en: string, ar: string) => string
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-2 text-[11px] text-[#D6B79A]/65">
-      <span>{t('Packaging', 'التغليف')}</span>
-      <span className="text-right text-[#F5E6D8]/75">{PACKAGE_COSTS[size]} {t('EGP', 'ج.م')}</span>
-      <span>{t('Valve bag', 'كيس بصمام')}</span>
-      <span className="text-right text-[#F5E6D8]/75">{valveBag ? `+${VALVE_BAG_COST}` : '0'} {t('EGP', 'ج.م')}</span>
-      <span>{t('Profit margin', 'هامش الربح')}</span>
-      <span className="text-right text-[#F5E6D8]/75">60%</span>
-    </div>
-  )
+function getEqualBlendRatios(count: number) {
+  if (count <= 0) return []
+
+  const baseTenths = Math.floor(1000 / count)
+  return Array.from({ length: count }, (_, index) => {
+    if (index === count - 1) {
+      return (1000 - baseTenths * (count - 1)) / 10
+    }
+    return baseTenths / 10
+  })
 }
 
-// ─── Customize Blend Component ─────────────────────────────────────────────────
-function CustomizeBlend() {
+function formatRatio(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+// ─── Make Your Espresso Blend Component ───────────────────────────────────────
+function MakeYourEspressoBlend() {
   const { t, language } = useLanguage()
   const { addItem } = useCartStore()
-  const [blendMode, setBlendMode] = useState<'types' | 'ratios'>('types')
+  const [blendMode, setBlendMode] = useState<'quick' | 'custom'>('quick')
   const [beanOptions, setBeanOptions] = useState<CoffeeBeanOption[]>(
     DEFAULT_CUSTOM_BLEND_BEANS.filter((bean) => bean.isVisible),
   )
   const [selectedBeans, setSelectedBeans] = useState<Array<CoffeeBeanOption & { percent: string }>>([])
   const [selectedSize, setSelectedSize] = useState<PackageSize>('250g')
-  const [valveBag, setValveBag] = useState(false)
 
   const groupedBeans = useMemo(() => {
     const visible = beanOptions.filter((bean) => bean.isVisible)
@@ -256,10 +261,25 @@ function CustomizeBlend() {
     }
   }, [beanOptions])
 
-  const ratioTotal = selectedBeans.reduce((sum, bean) => sum + Number(bean.percent || 0), 0)
-  const ratioIsValid = blendMode !== 'ratios' || (selectedBeans.length > 0 && Math.round(ratioTotal * 100) / 100 === 100)
-  const totalPrice = selectedBeans.length > 0
-    ? calculateBlendPrice(selectedBeans, blendMode, selectedSize, valveBag)
+  const finalBlendBeans = useMemo(() => {
+    const quickRatios = getEqualBlendRatios(selectedBeans.length)
+
+    return selectedBeans.map((bean, index) => ({
+      ...bean,
+      finalPercent: blendMode === 'quick'
+        ? quickRatios[index] ?? 0
+        : Number(bean.percent || 0),
+    }))
+  }, [blendMode, selectedBeans])
+
+  const ratioTotal = finalBlendBeans.reduce((sum, bean) => sum + bean.finalPercent, 0)
+  const ratioIsValid = blendMode === 'quick'
+    ? selectedBeans.length > 0
+    : selectedBeans.length > 0
+      && selectedBeans.every((bean) => Number(bean.percent || 0) > 0)
+      && Math.round(ratioTotal * 10) / 10 === 100
+  const totalPrice = finalBlendBeans.length > 0
+    ? calculateBlendPrice(finalBlendBeans.map((bean) => ({ price: bean.price, percent: bean.finalPercent })), 'ratios', selectedSize, false)
     : 0
 
   useEffect(() => {
@@ -277,12 +297,29 @@ function CustomizeBlend() {
       const exists = prev.some((item) => item.id === bean.id)
       return exists
         ? prev.filter((item) => item.id !== bean.id)
-        : [...prev, { ...bean, percent: '' }]
+        : [...prev, { ...bean, percent: blendMode === 'custom' ? '0' : '' }]
     })
   }
 
+  const handleBlendModeChange = (mode: 'quick' | 'custom') => {
+    if (mode === blendMode) return
+
+    if (mode === 'custom') {
+      const quickRatios = getEqualBlendRatios(selectedBeans.length)
+      setSelectedBeans((prev) => prev.map((bean, index) => ({
+        ...bean,
+        percent: formatRatio(quickRatios[index] ?? 0),
+      })))
+    }
+
+    setBlendMode(mode)
+  }
+
   const updateBeanPercent = (id: string, val: string) => {
-    const nextValue = val === '' ? '' : String(Math.min(100, Math.max(0, Number(val))))
+    const rawValue = Number(val)
+    const nextValue = val === '' || !Number.isFinite(rawValue)
+      ? ''
+      : String(Math.min(100, Math.max(0, rawValue)))
     setSelectedBeans((prev) => prev.map((bean) => (bean.id === id ? { ...bean, percent: nextValue } : bean)))
   }
 
@@ -292,41 +329,44 @@ function CustomizeBlend() {
       return
     }
 
-    if (blendMode === 'ratios' && !ratioIsValid) {
+    if (!ratioIsValid) {
       toast.error(t('Set ratios to exactly 100%', 'اجعل مجموع النسب 100% بالضبط'))
       return
     }
 
-    const blendPartEn = selectedBeans
-      .map((bean) => blendMode === 'ratios' ? `${bean.nameEn} ${bean.percent}%` : bean.nameEn)
+    const blendPartEn = finalBlendBeans
+      .map((bean) => `${bean.nameEn} ${formatRatio(bean.finalPercent)}%`)
       .join(' + ')
-    const blendPartAr = selectedBeans
-      .map((bean) => blendMode === 'ratios' ? `${bean.nameAr} ${bean.percent}%` : bean.nameAr)
+    const blendPartAr = finalBlendBeans
+      .map((bean) => `${bean.nameAr} ${formatRatio(bean.finalPercent)}%`)
       .join(' + ')
-    const blendKey = selectedBeans
-      .map((bean) => `${bean.id}${blendMode === 'ratios' ? `-${bean.percent}` : ''}`)
+    const blendKey = finalBlendBeans
+      .map((bean) => `${bean.id}-${formatRatio(bean.finalPercent)}`)
       .join('-')
 
     addItem({
-      id: `blend-${blendMode}-${blendKey}-${selectedSize}-${valveBag ? 'valve' : 'plain'}`,
-      product_id: 'custom-blend',
-      name_en: `Custom Blend - ${blendPartEn}`,
-      name_ar: `توليفة مخصصة - ${blendPartAr}`,
+      id: `espresso-blend-${blendKey}-${selectedSize}`,
+      product_id: 'make-your-espresso-blend',
+      name_en: 'Make Your Espresso Blend',
+      name_ar: 'توليفة الإسبريسو الخاصة بك',
       size: selectedSize,
       price: totalPrice,
       quantity: 1,
-      image: IMG_TC,
+      image: IMG_ESP,
       customizations: {
-        type: 'blend',
+        type: 'espresso-blend',
         mode: blendMode,
-        valve_bag: valveBag,
-        beans: selectedBeans.map((bean) => ({
+        title_en: 'Make Your Espresso Blend',
+        title_ar: 'توليفة الإسبريسو الخاصة بك',
+        summary_en: blendPartEn,
+        summary_ar: blendPartAr,
+        beans: finalBlendBeans.map((bean) => ({
           id: bean.id,
           name_en: bean.nameEn,
           name_ar: bean.nameAr,
           family: bean.family,
-          raw_price: bean.price,
-          percent: blendMode === 'ratios' ? Number(bean.percent) : null,
+          origin: bean.origin ?? null,
+          percent: bean.finalPercent,
         })),
       },
     })
@@ -356,12 +396,20 @@ function CustomizeBlend() {
 
       <div className={cn('grid gap-3', family === 'arabica' ? 'md:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-5')}>
         {groupedBeans[family].map((bean) => {
-          const selected = selectedBeans.some((item) => item.id === bean.id)
+          const selectedBean = finalBlendBeans.find((item) => item.id === bean.id)
+          const selected = Boolean(selectedBean)
           return (
-            <button
-              type="button"
+            <article
+              role="button"
+              tabIndex={0}
               key={bean.id}
               onClick={() => toggleBean(bean)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  toggleBean(bean)
+                }
+              }}
               className={cn(
                 'group relative min-h-32 overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300',
                 'bg-gradient-to-br from-[#1B140F]/90 to-[#0B0806]/88 hover:-translate-y-1',
@@ -388,12 +436,31 @@ function CustomizeBlend() {
                     {language === 'ar' ? bean.descAr : bean.descEn}
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-xs text-[#D6A373]">
-                  <span>{bean.origin || t('Premium origin', 'منشأ فاخر')}</span>
-                  <span>{bean.price} {t('EGP/kg', 'ج.م/كجم')}</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs text-[#D6A373]">
+                    <span>{bean.origin || t('Premium origin', 'منشأ فاخر')}</span>
+                    <span>{bean.price} {t('EGP/kg', 'ج.م/كجم')}</span>
+                  </div>
+                  {selected && blendMode === 'custom' && (
+                    <div
+                      className="flex items-center gap-2 rounded-xl border border-[#D6A373]/18 bg-[#0B0806]/55 p-2"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={selectedBeans.find((item) => item.id === bean.id)?.percent ?? ''}
+                        onChange={(event) => updateBeanPercent(bean.id, event.target.value)}
+                        placeholder="0"
+                        className="h-9 border-[#B6885E]/18 bg-[#120D09]/80 text-center text-sm"
+                      />
+                      <span className="text-sm font-semibold text-[#D6A373]">%</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </button>
+            </article>
           )
         })}
       </div>
@@ -409,26 +476,31 @@ function CustomizeBlend() {
               <Sparkles className="h-7 w-7 text-[#D6A373]" />
             </div>
             <div>
-              <h2 className="font-serif text-3xl font-bold text-[#F5E6D8] md:text-4xl">{t('Customize Your Blend', 'اختر توليفتك')}</h2>
-              <p className="mt-1 text-sm text-[#D6B79A]/75">{t('Choose beans, then set the ratio that suits your cup.', 'اختر أنواع البن ثم اضبط النسبة المناسبة لكوبك.')}</p>
+              <h2 className="font-serif text-3xl font-bold text-[#F5E6D8] md:text-4xl">{t('Make Your Espresso Blend', 'اصنع توليفة الإسبريسو الخاصة بك')}</h2>
+              <p className="mt-1 text-sm text-[#D6B79A]/75">{t('Choose espresso beans, then use quick balance or custom ratios.', 'اختر حبوب الإسبريسو ثم استخدم التوزيع السريع أو النسب المخصصة.')}</p>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 rounded-2xl border border-[#B6885E]/15 bg-[#0B0806]/55 p-1">
-            {(['types', 'ratios'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setBlendMode(mode)}
-                className={cn(
-                  'rounded-xl px-4 py-2.5 text-sm font-semibold transition-all',
-                  blendMode === mode ? 'bg-[#D6A373] text-[#0B0806]' : 'text-[#D6B79A]/75 hover:text-[#F5E6D8]',
-                )}
-              >
-                {mode === 'types' ? t('Select Beans', 'اختيار البن') : t('Set Ratio', 'تحديد النسب')}
-              </button>
-            ))}
-          </div>
+        <div className="mt-5 grid gap-2 rounded-2xl border border-[#B6885E]/15 bg-[#0B0806]/55 p-1 sm:max-w-md sm:grid-cols-2">
+          {([
+            { value: 'quick' as const, labelEn: 'Quick Select', labelAr: 'اختيار سريع' },
+            { value: 'custom' as const, labelEn: 'Custom Ratios', labelAr: 'نسب مخصصة' },
+          ]).map((mode) => (
+            <button
+              key={mode.value}
+              type="button"
+              onClick={() => handleBlendModeChange(mode.value)}
+              className={cn(
+                'rounded-xl px-4 py-2.5 text-sm font-semibold transition-all',
+                blendMode === mode.value
+                  ? 'bg-[#D6A373] text-[#0B0806] shadow-[0_8px_24px_rgba(182,136,94,0.18)]'
+                  : 'text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8]',
+              )}
+            >
+              {t(mode.labelEn, mode.labelAr)}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -444,20 +516,26 @@ function CustomizeBlend() {
                   <Scale className="h-6 w-6 text-[#D6A373]" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-[#D6A373]">{t('Set Your Perfect Ratio', 'حدد نسبتك المثالية')}</h3>
+                  <h3 className="font-serif text-xl font-bold text-[#D6A373]">
+                    {blendMode === 'quick'
+                      ? t('Auto Blend Ratios', 'نسب تلقائية للتوليفة')
+                      : t('Set Your Perfect Ratio', 'حدد نسبتك المثالية')}
+                  </h3>
                   <p className="text-sm text-[#D6B79A]/72">
-                    {blendMode === 'ratios'
-                      ? t('Adjust each selected bean until the total reaches 100%.', 'اضبط كل نوع بن حتى يصل المجموع إلى 100%.')
-                      : t('Switch to Set Ratio when you want exact percentages.', 'انتقل إلى تحديد النسب عندما تريد نسباً دقيقة.')}
+                    {blendMode === 'quick'
+                      ? t('Selected beans are balanced evenly for an easy espresso blend.', 'يتم توزيع الحبوب المختارة بالتساوي لتوليفة إسبريسو سهلة.')
+                      : t('Adjust each selected bean until the total reaches 100%.', 'اضبط كل نوع بن حتى يصل المجموع إلى 100%.')}
                   </p>
                 </div>
               </div>
-              <div className={cn(
-                'rounded-full border px-4 py-2 text-sm font-semibold',
-                ratioIsValid ? 'border-[#D6A373]/25 bg-[#D6A373]/10 text-[#D6A373]' : 'border-red-400/25 bg-red-500/10 text-red-300',
-              )}>
-                {t('Total', 'المجموع')}: {blendMode === 'ratios' ? ratioTotal || 0 : 100}%
-              </div>
+              {blendMode === 'custom' && (
+                <div className={cn(
+                  'rounded-full border px-4 py-2 text-sm font-semibold',
+                  ratioIsValid ? 'border-[#D6A373]/25 bg-[#D6A373]/10 text-[#D6A373]' : 'border-red-400/25 bg-red-500/10 text-red-300',
+                )}>
+                  {t('Total', 'المجموع')}: {formatRatio(ratioTotal || 0)}%
+                </div>
+              )}
             </div>
 
             {selectedBeans.length === 0 ? (
@@ -466,7 +544,7 @@ function CustomizeBlend() {
               </p>
             ) : (
               <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {selectedBeans.map((bean) => (
+                {finalBlendBeans.map((bean) => (
                   <div key={bean.id} className="rounded-xl border border-[#B6885E]/14 bg-[#0B0806]/55 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -477,19 +555,8 @@ function CustomizeBlend() {
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                    {blendMode === 'ratios' && (
-                      <div className="mt-3 flex items-center gap-3">
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={bean.percent}
-                          onChange={(e) => updateBeanPercent(bean.id, e.target.value)}
-                          placeholder="%"
-                          className="h-10"
-                        />
-                        <span className="text-sm font-semibold text-[#D6A373]">%</span>
-                      </div>
+                    {blendMode === 'custom' && (
+                      <p className="mt-3 text-sm font-semibold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</p>
                     )}
                   </div>
                 ))}
@@ -506,6 +573,22 @@ function CustomizeBlend() {
           </div>
 
           <div className="space-y-5">
+            {selectedBeans.length > 0 && (
+              <div className="rounded-xl border border-[#B6885E]/14 bg-[#120D09]/70 p-4">
+                <p className="mb-3 text-sm font-semibold text-[#F5E6D8]">{t('Selected Beans', 'الحبوب المختارة')}</p>
+                <div className="space-y-2">
+                  {finalBlendBeans.map((bean) => (
+                    <div key={bean.id} className="flex items-center justify-between gap-3 text-xs">
+                      <span className="truncate text-[#D6B79A]/75">{formatOptionName(language, bean)}</span>
+                      {blendMode === 'custom' && (
+                        <span className="shrink-0 font-semibold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <p className="mb-2 text-sm font-semibold text-[#F5E6D8]">{t('Weight', 'الوزن')}</p>
               <div className="grid grid-cols-3 gap-2">
@@ -525,20 +608,11 @@ function CustomizeBlend() {
               </div>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#B6885E]/14 bg-[#120D09]/70 px-4 py-3">
-              <span>
-                <span className="block text-sm font-semibold text-[#F5E6D8]">{t('Valve bag', 'كيس بصمام')}</span>
-                <span className="text-xs text-[#D6B79A]/55">+{VALVE_BAG_COST} {t('EGP', 'ج.م')}</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={valveBag}
-                onChange={(e) => setValveBag(e.target.checked)}
-                className="h-5 w-5 accent-[#D6A373]"
-              />
-            </label>
-
-            <PriceBreakdown size={selectedSize} valveBag={valveBag} t={t} />
+            {selectedBeans.length > 0 && blendMode === 'custom' && !ratioIsValid && (
+              <p className="rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {t('Total ratio must equal 100%', 'مجموع النسب يجب أن يساوي 100%')}
+              </p>
+            )}
 
             <Button
               size="lg"
@@ -565,7 +639,7 @@ function CustomizeFlavor() {
   const [selectedBase, setSelectedBase] = useState<FlavorBaseOption>(flavorBaseOptions[0])
   const [selectedFlavors, setSelectedFlavors] = useState<FlavorAdditionOption[]>([])
   const [selectedSize, setSelectedSize] = useState<PackageSize>('250g')
-  const [valveBag, setValveBag] = useState(false)
+  const valveBag = false
 
   const filteredAdditions = useMemo(() => {
     return additionOptions.filter(
@@ -573,9 +647,22 @@ function CustomizeFlavor() {
     )
   }, [additionOptions, selectedBase.id])
 
+  const groupedFilteredAdditions = useMemo(() => {
+    return CUSTOMIZE_FLAVOR_GROUPS
+      .map((group) => ({
+        group,
+        flavors: filteredAdditions
+          .filter((flavor) => getCustomizeFlavorGroup(flavor.sortOrder).key === group.key)
+          .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0)),
+      }))
+      .filter((entry) => entry.flavors.length > 0)
+  }, [filteredAdditions])
+
   const totalPrice = selectedBase
     ? calculateFlavorPrice(selectedBase.price, selectedFlavors, selectedSize, valveBag)
     : 0
+  const selectedFlavorDeltaPerKg = selectedFlavors.reduce((sum, flavor) => sum + Number(flavor.price || 0), 0)
+  const totalPricePerKg = Number(selectedBase?.price || 0) + selectedFlavorDeltaPerKg
 
   const toggleFlavor = (flavor: FlavorAdditionOption) => {
     setSelectedFlavors((prev) => {
@@ -621,8 +708,8 @@ function CustomizeFlavor() {
     addItem({
       id: `flavor-${selectedBase.id}-${selectedFlavors.map((flavor) => flavor.id).join('-')}-${selectedSize}-${valveBag ? 'valve' : 'plain'}`,
       product_id: `custom-flavor-${selectedBase.id}`,
-      name_en: `Custom ${selectedBase.nameEn} - ${flavorPartEn}`,
-      name_ar: `${selectedBase.nameAr} مخصص - ${flavorPartAr}`,
+      name_en: `Make Your Flavor - ${selectedBase.nameEn} - ${flavorPartEn}`,
+      name_ar: `اصنع نكهتك الخاصة - ${selectedBase.nameAr} - ${flavorPartAr}`,
       size: selectedSize,
       price: totalPrice,
       quantity: 1,
@@ -656,7 +743,7 @@ function CustomizeFlavor() {
             <Sparkles className="h-7 w-7 text-[#D6A373]" />
           </div>
           <div>
-            <h2 className="font-serif text-3xl font-bold text-[#F5E6D8] md:text-4xl">{t('Customize Your Flavor', 'صمم نكهتك')}</h2>
+            <h2 className="font-serif text-3xl font-bold text-[#F5E6D8] md:text-4xl">{t('Make Your Flavor', 'اصنع نكهتك الخاصة')}</h2>
             <p className="mt-1 text-sm text-[#D6B79A]/75">{t('Pick a base, then add up to 3 premium flavors.', 'اختر القاعدة ثم أضف حتى 3 نكهات فاخرة.')}</p>
           </div>
         </div>
@@ -696,7 +783,7 @@ function CustomizeFlavor() {
                         <h4 className="font-serif text-xl font-bold text-[#F5E6D8]">{formatOptionName(language, base)}</h4>
                         {selected && <Check className="h-5 w-5 text-[#D6A373]" />}
                       </div>
-                      <p className="mt-3 text-sm text-[#D6B79A]/68">{base.price} {t('EGP/kg raw', 'ج.م/كجم خام')}</p>
+                      <p className="mt-3 text-sm text-[#D6B79A]/68">{base.price} {t('EGP/kg', 'ج.م/كجم')}</p>
                       <p className="mt-1 text-xs text-[#D6A373]">{t('From', 'من')} {previewPrice} {t('EGP', 'ج.م')}</p>
                     </div>
                   </button>
@@ -719,31 +806,40 @@ function CustomizeFlavor() {
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2.5">
-              {filteredAdditions.map((flavor) => {
-                const selected = selectedFlavors.some((item) => item.id === flavor.id)
-                const disabled = !selected && selectedFlavors.length >= 3
-                return (
-                  <button
-                    type="button"
-                    key={flavor.id}
-                    onClick={() => toggleFlavor(flavor)}
-                    disabled={disabled}
-                    className={cn(
-                      'rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300',
-                      selected
-                        ? 'border-[#D6A373]/55 bg-[#D6A373] text-[#0B0806]'
-                        : disabled
-                          ? 'border-[#B6885E]/8 bg-[#120D09]/35 text-[#D6B79A]/28'
-                          : 'border-[#B6885E]/14 bg-[#120D09]/76 text-[#D6B79A] hover:-translate-y-0.5 hover:border-[#D6A373]/35 hover:text-[#F5E6D8]',
-                    )}
-                  >
-                    {selected && <Check className="mr-1 inline h-3.5 w-3.5" />}
-                    {formatOptionName(language, flavor)}
-                    <span className="ml-2 text-xs opacity-70">+{flavor.price}</span>
-                  </button>
-                )
-              })}
+            <div className="space-y-5">
+              {groupedFilteredAdditions.map(({ group, flavors }) => (
+                <div key={group.key}>
+                  <h4 className="mb-2 font-serif text-lg font-bold text-[#F5E6D8]">
+                    {t(group.nameEn, group.nameAr)}
+                  </h4>
+                  <div className="flex flex-wrap gap-2.5">
+                    {flavors.map((flavor) => {
+                      const selected = selectedFlavors.some((item) => item.id === flavor.id)
+                      const disabled = !selected && selectedFlavors.length >= 3
+                      return (
+                        <button
+                          type="button"
+                          key={flavor.id}
+                          onClick={() => toggleFlavor(flavor)}
+                          disabled={disabled}
+                          className={cn(
+                            'rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300',
+                            selected
+                              ? 'border-[#D6A373]/55 bg-[#D6A373] text-[#0B0806]'
+                              : disabled
+                                ? 'border-[#B6885E]/8 bg-[#120D09]/35 text-[#D6B79A]/28'
+                                : 'border-[#B6885E]/14 bg-[#120D09]/76 text-[#D6B79A] hover:-translate-y-0.5 hover:border-[#D6A373]/35 hover:text-[#F5E6D8]',
+                          )}
+                        >
+                          {selected && <Check className="mr-1 inline h-3.5 w-3.5" />}
+                          {formatOptionName(language, flavor)}
+                          <span className="ml-2 text-xs opacity-70">+{flavor.price}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         </div>
@@ -752,7 +848,7 @@ function CustomizeFlavor() {
           <div className="mb-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#D6A373]/75">{t('Live Price', 'السعر المباشر')}</p>
             <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{totalPrice} {t('EGP', 'ج.م')}</p>
-            <p className="mt-1 text-xs text-[#D6B79A]/58">{t('Calculated from raw base, flavors, packaging, and margin.', 'محسوب من الخام والنكهات والتغليف والهامش.')}</p>
+            <p className="mt-1 text-xs text-[#D6B79A]/58">{t('Updates from your base, flavors, and selected weight.', 'يتحدث حسب القاعدة والنكهات والوزن المختار.')}</p>
           </div>
 
           <div className="space-y-5">
@@ -775,28 +871,29 @@ function CustomizeFlavor() {
               </div>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#B6885E]/14 bg-[#120D09]/70 px-4 py-3">
-              <span>
-                <span className="block text-sm font-semibold text-[#F5E6D8]">{t('Valve bag', 'كيس بصمام')}</span>
-                <span className="text-xs text-[#D6B79A]/55">+{VALVE_BAG_COST} {t('EGP', 'ج.م')}</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={valveBag}
-                onChange={(e) => setValveBag(e.target.checked)}
-                className="h-5 w-5 accent-[#D6A373]"
-              />
-            </label>
-
             <div className="rounded-xl border border-[#B6885E]/12 bg-[#120D09]/60 p-4">
               <p className="mb-3 text-sm font-semibold text-[#F5E6D8]">{t('Selected', 'المختار')}</p>
               <p className="text-sm text-[#D6B79A]/72">
                 {formatOptionName(language, selectedBase)}
                 {selectedFlavors.length > 0 ? ` + ${selectedFlavors.map((flavor) => formatOptionName(language, flavor)).join(' + ')}` : ''}
               </p>
+              <div className="mt-3 space-y-1 text-xs text-[#D6B79A]/62">
+                <div className="flex items-center justify-between gap-3">
+                  <span>{t('Base price', 'سعر القاعدة')}</span>
+                  <span className="text-[#F5E6D8]/80">{selectedBase.price} {t('EGP/kg', 'ج.م/كجم')}</span>
+                </div>
+                {selectedFlavors.length > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{t('Flavor additions', 'إضافات النكهات')}</span>
+                    <span className="text-[#F5E6D8]/80">+{selectedFlavorDeltaPerKg} {t('EGP/kg', 'ج.م/كجم')}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-3 border-t border-[#B6885E]/10 pt-1">
+                  <span>{t('Total per kg', 'الإجمالي للكيلو')}</span>
+                  <span className="text-[#D6A373]">{totalPricePerKg} {t('EGP/kg', 'ج.م/كجم')}</span>
+                </div>
+              </div>
             </div>
-
-            <PriceBreakdown size={selectedSize} valveBag={valveBag} t={t} />
 
             <Button
               size="lg"
@@ -984,7 +1081,7 @@ function ProductsPageInner() {
           {/* Main */}
           <main className="flex-1">
             {isCustomizeBlend ? (
-              <CustomizeBlend />
+              <MakeYourEspressoBlend />
             ) : isCustomizeFlavor ? (
               <CustomizeFlavor />
             ) : (

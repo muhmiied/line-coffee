@@ -9,7 +9,38 @@ import { useLanguage } from '@/lib/context/language'
 import { calculateShippingCost, getFreeShippingRemaining } from '@/lib/config/shipping'
 import { useFreeShippingThreshold } from '@/lib/hooks/use-free-shipping-threshold'
 import { useCartStore } from '@/lib/store/cart'
+import type { CartItem } from '@/lib/store/cart'
 import { cn } from '@/lib/utils'
+
+type BlendBeanDetail = {
+  nameEn: string
+  nameAr: string
+  percent: number | null
+}
+
+function getEspressoBlendBeans(item: CartItem): BlendBeanDetail[] {
+  const customizations = item.customizations
+  const type = customizations?.type
+
+  if (!customizations || (type !== 'espresso-blend' && type !== 'blend')) return []
+  if (!Array.isArray(customizations.beans)) return []
+
+  return customizations.beans
+    .map((bean) => {
+      if (!bean || typeof bean !== 'object') return null
+      const row = bean as Record<string, unknown>
+      const nameEn = typeof row.name_en === 'string' ? row.name_en : ''
+      const nameAr = typeof row.name_ar === 'string' ? row.name_ar : nameEn
+      const percent = Number(row.percent)
+
+      return {
+        nameEn,
+        nameAr,
+        percent: Number.isFinite(percent) ? percent : null,
+      }
+    })
+    .filter((bean): bean is BlendBeanDetail => Boolean(bean?.nameEn || bean?.nameAr))
+}
 
 export function CartDrawer() {
   const { t, language, dir } = useLanguage()
@@ -87,7 +118,10 @@ export function CartDrawer() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const espressoBlendBeans = getEspressoBlendBeans(item)
+
+                    return (
                     <motion.div
                       key={item.id}
                       layout
@@ -118,6 +152,21 @@ export function CartDrawer() {
                           {language === 'ar' ? item.name_ar : item.name_en}
                         </h4>
                         <p className="text-xs text-muted-foreground mb-2">{item.size}</p>
+                        {espressoBlendBeans.length > 0 && (
+                          <div className="mb-2 rounded-md border border-border/60 bg-background/35 p-2 text-[11px] text-muted-foreground">
+                            <p className="mb-1 font-medium text-foreground">
+                              {t('Espresso blend', 'توليفة الإسبريسو')}
+                            </p>
+                            <div className="space-y-1">
+                              {espressoBlendBeans.map((bean, index) => (
+                                <div key={`${bean.nameEn}-${index}`} className="flex justify-between gap-2">
+                                  <span className="truncate">{language === 'ar' ? bean.nameAr : bean.nameEn}</span>
+                                  {bean.percent !== null && <span className="shrink-0">{bean.percent}%</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between">
                           {/* Quantity Controls */}
@@ -162,7 +211,8 @@ export function CartDrawer() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </motion.div>
-                  ))}
+                    )
+                  })}
 
                   {/* Clear Cart */}
                   {items.length > 0 && (
