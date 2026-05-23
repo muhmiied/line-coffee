@@ -1,3 +1,12 @@
+-- DEPRECATED - DO NOT RUN.
+-- Replaced by scripts/013_seed_clean_line_coffee_catalog.sql for catalog data.
+-- This legacy demo seed can reintroduce stale categories/products.
+
+DO $$
+BEGIN
+  RAISE EXCEPTION 'Deprecated seed script. Use scripts/013_seed_clean_line_coffee_catalog.sql instead.';
+END $$;
+
 -- Line Coffee Seed Data
 -- Run after all schema scripts
 

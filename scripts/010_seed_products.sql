@@ -1,4 +1,16 @@
 -- ============================================================
+-- DEPRECATED - DO NOT RUN.
+-- Replaced by scripts/013_seed_clean_line_coffee_catalog.sql.
+-- This legacy seed contains old Turkish/Espresso product data and can
+-- reintroduce stale catalog records.
+-- ============================================================
+
+DO $$
+BEGIN
+  RAISE EXCEPTION 'Deprecated seed script. Use scripts/013_seed_clean_line_coffee_catalog.sql instead.';
+END $$;
+
+-- ============================================================
 -- 010_seed_products.sql
 -- Seeds all Line Coffee products exactly as they appear on the website.
 -- Run AFTER 009_seed_categories.sql (categories must exist first).

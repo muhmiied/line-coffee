@@ -1,3 +1,12 @@
+-- DEPRECATED - DO NOT RUN.
+-- Replaced by scripts/013_seed_clean_line_coffee_catalog.sql for catalog data.
+-- This legacy demo seed can reintroduce non-Line Coffee test products.
+
+DO $$
+BEGIN
+  RAISE EXCEPTION 'Deprecated seed script. Use scripts/013_seed_clean_line_coffee_catalog.sql instead.';
+END $$;
+
 -- =============================================
 -- SEED DATA FOR LINE COFFEE
 -- =============================================
