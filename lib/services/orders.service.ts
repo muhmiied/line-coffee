@@ -1,7 +1,38 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import {
+  STANDARD_SHIPPING_COST,
+  calculateShippingCost,
+  isDateWindowActive,
+  parseFreeShippingActive,
+  parseFreeShippingThreshold,
+} from '@/lib/config/shipping'
 import type { Address, Order, OrderWithItems } from '@/lib/types/database'
 import { clearCart, getCartItems } from './cart.service'
+
+async function getFreeShippingRule(): Promise<{ threshold: number; active: boolean }> {
+  const admin = createAdminClient()
+  if (!admin) return { threshold: parseFreeShippingThreshold(null), active: true }
+
+  const { data, error } = await admin
+    .from('site_settings')
+    .select('key, value')
+    .in('key', [
+      'free_shipping_threshold',
+      'free_shipping_active',
+      'free_shipping_starts_at',
+      'free_shipping_ends_at',
+    ])
+
+  if (error) return { threshold: parseFreeShippingThreshold(null), active: true }
+
+  const get = (key: string) => data?.find((row) => row.key === key)?.value ?? null
+  return {
+    threshold: parseFreeShippingThreshold(get('free_shipping_threshold')),
+    active: parseFreeShippingActive(get('free_shipping_active')) &&
+      isDateWindowActive(get('free_shipping_starts_at'), get('free_shipping_ends_at')),
+  }
+}
 
 export async function getUserOrders(userId: string) {
   const supabase = await createClient()
@@ -77,7 +108,13 @@ export async function createOrder(data: CreateOrderData) {
     return sum + price * item.quantity
   }, 0)
 
-  const shippingCost = subtotal >= 200 ? 0 : 25
+  const freeShippingRule = await getFreeShippingRule()
+  const shippingCost = calculateShippingCost(
+    subtotal,
+    freeShippingRule.threshold,
+    STANDARD_SHIPPING_COST,
+    freeShippingRule.active
+  )
   const tax = subtotal * 0.15
   const total = subtotal + shippingCost + tax
 

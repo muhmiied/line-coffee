@@ -270,7 +270,11 @@ export default function DashboardOrdersPage() {
                               </div>
                               <div className="flex justify-between gap-3">
                                 <span className="text-muted-foreground">{t('Shipping', 'الشحن')}</span>
-                                <span>{formatCurrency(order.shipping_cost, currencyLabel)}</span>
+                                <span>
+                                  {Number(order.shipping_cost || 0) > 0
+                                    ? formatCurrency(order.shipping_cost, currencyLabel)
+                                    : t('Free Delivery', 'توصيل مجاني')}
+                                </span>
                               </div>
                               {Number(order.discount_amount || 0) > 0 && (
                                 <div className="flex justify-between gap-3 text-green-600">

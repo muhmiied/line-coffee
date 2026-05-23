@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
+import {
+  STANDARD_SHIPPING_COST,
+  calculateShippingCost,
+  isDateWindowActive,
+  parseFreeShippingActive,
+  parseFreeShippingThreshold,
+} from '@/lib/config/shipping'
 
 const PAYMENT_LABELS: Record<string, string> = {
   cod: 'الدفع عند الاستلام',
   electronic_wallet: 'محفظة إلكترونية',
   instapay: 'إنستاباي',
 }
-
-const FREE_SHIPPING_THRESHOLD = 200
-const STANDARD_SHIPPING_COST = 25
 
 type CheckoutItemInput = {
   product_id?: unknown
@@ -57,6 +61,27 @@ type DiscountRow = {
 }
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>
+
+async function getFreeShippingRule(admin: AdminClient): Promise<{ threshold: number; active: boolean }> {
+  const { data, error } = await admin
+    .from('site_settings')
+    .select('key, value')
+    .in('key', [
+      'free_shipping_threshold',
+      'free_shipping_active',
+      'free_shipping_starts_at',
+      'free_shipping_ends_at',
+    ])
+
+  if (error) return { threshold: parseFreeShippingThreshold(null), active: true }
+
+  const get = (key: string) => data?.find((row) => row.key === key)?.value ?? null
+  return {
+    threshold: parseFreeShippingThreshold(get('free_shipping_threshold')),
+    active: parseFreeShippingActive(get('free_shipping_active')) &&
+      isDateWindowActive(get('free_shipping_starts_at'), get('free_shipping_ends_at')),
+  }
+}
 
 type OrderMessagePayload = {
   orderNumber: string
@@ -162,7 +187,7 @@ function buildWhatsAppMessage(payload: {
     `المجموع الفرعي: ${payload.subtotal} ج.م`,
     payload.shipping_cost > 0
       ? `الشحن: ${payload.shipping_cost} ج.م`
-      : 'الشحن: مجاني',
+      : 'الشحن: توصيل مجاني',
     payload.discountCode && payload.discountAmount
       ? `الخصم (${payload.discountCode}): -${payload.discountAmount} ج.م`
       : null,
@@ -281,7 +306,7 @@ function buildOrderMessage(payload: OrderMessagePayload): string {
     'Payment and totals',
     `Payment method: ${paymentLabel}`,
     `Subtotal: ${formatMoney(payload.subtotal)}`,
-    payload.shipping_cost > 0 ? `Shipping: ${formatMoney(payload.shipping_cost)}` : 'Shipping: Free',
+    payload.shipping_cost > 0 ? `Shipping: ${formatMoney(payload.shipping_cost)}` : 'Shipping: Free Delivery',
     payload.discountCode && payload.discountAmount
       ? `Discount (${payload.discountCode}): -${formatMoney(payload.discountAmount)}`
       : null,
@@ -460,7 +485,13 @@ export async function POST(request: NextRequest) {
     }
 
     const computedSubtotal = sanitizedItems.reduce((sum, item) => sum + item.total_price, 0)
-    const computedShippingCost = computedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST
+    const freeShippingRule = await getFreeShippingRule(admin)
+    const computedShippingCost = calculateShippingCost(
+      computedSubtotal,
+      freeShippingRule.threshold,
+      STANDARD_SHIPPING_COST,
+      freeShippingRule.active
+    )
     let appliedDiscountCode: string | null = null
     let computedDiscountAmount = 0
 

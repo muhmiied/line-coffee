@@ -31,6 +31,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
 import { useAuth } from '@/lib/context/auth'
+import { calculateShippingCost, getFreeShippingRemaining } from '@/lib/config/shipping'
+import { useFreeShippingThreshold } from '@/lib/hooks/use-free-shipping-threshold'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -38,6 +40,7 @@ export default function CheckoutPage() {
   const { t, language, dir } = useLanguage()
   const { user, profile, isLoading: authLoading } = useAuth()
   const { items, getTotal, clearCart } = useCartStore()
+  const freeShippingRule = useFreeShippingThreshold()
   const router = useRouter()
 
   const [isLoading, setIsLoading] = useState(false)
@@ -89,7 +92,12 @@ export default function CheckoutPage() {
   }, [user, profile])
 
   const subtotal = getTotal()
-  const shipping = subtotal >= 200 ? 0 : 25
+  const shipping = calculateShippingCost(subtotal, freeShippingRule.threshold, undefined, freeShippingRule.active)
+  const freeShippingRemaining = getFreeShippingRemaining(
+    subtotal,
+    freeShippingRule.threshold,
+    freeShippingRule.active
+  )
   const discountAmount = promoApplied?.discount_amount || 0
   const total = Math.max(0, subtotal + shipping - discountAmount)
 
@@ -737,7 +745,7 @@ export default function CheckoutPage() {
                   </span>
                   <span>
                     {shipping === 0 ? (
-                      <span className="text-green-600">{t('Free', 'مجاني')}</span>
+                      <span className="text-green-600">{t('Free Delivery', 'توصيل مجاني')}</span>
                     ) : (
                       `${shipping} ${t('EGP', 'ج.م')}`
                     )}
@@ -754,11 +762,11 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                 )}
-                {subtotal < 200 && (
+                {freeShippingRemaining > 0 && (
                   <p className="text-xs text-muted-foreground">
                     {t(
-                      `Add ${200 - subtotal} EGP more for free shipping`,
-                      `أضف ${200 - subtotal} ج.م للشحن المجاني`
+                      `Add ${freeShippingRemaining} EGP to get free delivery`,
+                      `أضف ${freeShippingRemaining} ج للحصول على توصيل مجاني`
                     )}
                   </p>
                 )}

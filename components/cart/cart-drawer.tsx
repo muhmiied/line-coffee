@@ -6,15 +6,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/context/language'
+import { calculateShippingCost, getFreeShippingRemaining } from '@/lib/config/shipping'
+import { useFreeShippingThreshold } from '@/lib/hooks/use-free-shipping-threshold'
 import { useCartStore } from '@/lib/store/cart'
 import { cn } from '@/lib/utils'
 
 export function CartDrawer() {
   const { t, language, dir } = useLanguage()
   const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, getTotal } = useCartStore()
+  const freeShippingRule = useFreeShippingThreshold()
 
   const subtotal = getTotal()
-  const shipping = subtotal >= 200 ? 0 : 25
+  const shipping = calculateShippingCost(subtotal, freeShippingRule.threshold, undefined, freeShippingRule.active)
+  const freeShippingRemaining = getFreeShippingRemaining(
+    subtotal,
+    freeShippingRule.threshold,
+    freeShippingRule.active
+  )
   const total = subtotal + shipping
 
   return (
@@ -184,14 +192,14 @@ export function CartDrawer() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('Shipping', 'الشحن')}</span>
                     <span>
-                      {shipping === 0 ? t('Free', 'مجاني') : `${shipping} ${t('EGP', 'ج.م')}`}
+                      {shipping === 0 ? t('Free Delivery', 'توصيل مجاني') : `${shipping} ${t('EGP', 'ج.م')}`}
                     </span>
                   </div>
-                  {subtotal < 200 && (
+                  {freeShippingRemaining > 0 && (
                     <p className="text-xs text-muted-foreground">
                       {t(
-                        `Add ${200 - subtotal} EGP more for free shipping`,
-                        `أضف ${200 - subtotal} ج.م للشحن المجاني`
+                        `Add ${freeShippingRemaining} EGP to get free delivery`,
+                        `أضف ${freeShippingRemaining} ج للحصول على توصيل مجاني`
                       )}
                     </p>
                   )}

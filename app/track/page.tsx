@@ -186,7 +186,7 @@ export default function TrackPage() {
                   {data.subtotal !== undefined && data.shipping_cost !== undefined && (
                     <div className="flex justify-between text-xs text-gray-400">
                       <span>{t('Delivery', 'توصيل')}</span>
-                      <span>{data.shipping_cost > 0 ? `${data.shipping_cost} ${t('EGP', 'ج.م')}` : t('Free', 'مجاني')}</span>
+                      <span>{data.shipping_cost > 0 ? `${data.shipping_cost} ${t('EGP', 'ج.م')}` : t('Free Delivery', 'توصيل مجاني')}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm font-bold text-[#522500]">
