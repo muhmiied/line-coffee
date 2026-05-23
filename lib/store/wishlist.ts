@@ -16,6 +16,7 @@ interface WishlistStore {
   items: WishlistItem[]
   isOpen: boolean
   ownerId: string | null
+  hasHydrated: boolean
   addItem: (item: WishlistItem) => void
   removeItem: (productId: string) => void
   toggleItem: (item: WishlistItem) => void
@@ -26,6 +27,7 @@ interface WishlistStore {
   replaceItems: (items: WishlistItem[]) => void
   resetForGuest: () => void
   syncOwner: (ownerId: string | null) => void
+  setHasHydrated: (hasHydrated: boolean) => void
 }
 
 function canSync(ownerId: string | null) {
@@ -48,6 +50,7 @@ export const useWishlistStore = create<WishlistStore>()(
       items: [],
       isOpen: false,
       ownerId: null,
+      hasHydrated: false,
 
       addItem: (item) => {
         set((state) => {
@@ -84,10 +87,14 @@ export const useWishlistStore = create<WishlistStore>()(
       replaceItems: (items) => set({ items }),
       resetForGuest: () => set({ items: [], isOpen: false, ownerId: null }),
       syncOwner: (ownerId) => set({ ownerId }),
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
       name: 'line-coffee-wishlist',
       partialize: (state) => ({ items: state.items, ownerId: state.ownerId }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      },
     }
   )
 )

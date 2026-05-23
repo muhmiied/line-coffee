@@ -14,6 +14,56 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCartItems, getStoreCartItems, addToCart, mergeCartItems, clearCart, getCartTotal } from '@/lib/services'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i
+const VALID_CART_SIZES = new Set(['250g', '500g', '1kg'])
+
+function isUuid(value: unknown) {
+  return typeof value === 'string' && UUID_RE.test(value)
+}
+
+function isValidSize(value: unknown) {
+  return typeof value === 'string' && VALID_CART_SIZES.has(value)
+}
+
+function isPositiveQuantity(value: unknown) {
+  const quantity = Number(value)
+  return Number.isFinite(quantity) && quantity > 0
+}
+
+async function validateCartProduct(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productId: unknown,
+  size: unknown,
+  clientItemId?: unknown,
+  price?: unknown
+) {
+  if (!productId || !isValidSize(size)) {
+    return 'Valid product ID and size are required'
+  }
+
+  if (!isUuid(productId)) {
+    const customPrice = Number(price)
+    if (!clientItemId || !Number.isFinite(customPrice) || customPrice < 0) {
+      return 'Invalid custom cart item'
+    }
+    return null
+  }
+
+  const { data, error } = await supabase
+    .from('product_sizes')
+    .select('id, is_available')
+    .eq('product_id', productId)
+    .eq('size', size)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data || data.is_available === false) {
+    return 'Invalid product or size'
+  }
+
+  return null
+}
+
 // جلب عناصر السلة
 export async function GET() {
   try {
@@ -81,6 +131,21 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    if (!isPositiveQuantity(quantity)) {
+      return NextResponse.json(
+        { success: false, error: 'Quantity must be greater than zero' },
+        { status: 400 }
+      )
+    }
+
+    const validationError = await validateCartProduct(supabase, productId, size, clientItemId, price)
+    if (validationError) {
+      return NextResponse.json(
+        { success: false, error: validationError },
+        { status: 400 }
+      )
+    }
     
     const item = await addToCart({
       userId: user.id,
@@ -126,6 +191,31 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     const items = Array.isArray(body?.items) ? body.items : []
+
+    for (const item of items) {
+      if (!isPositiveQuantity(item?.quantity)) {
+        return NextResponse.json(
+          { success: false, error: 'Quantity must be greater than zero' },
+          { status: 400 }
+        )
+      }
+
+      const validationError = await validateCartProduct(
+        supabase,
+        item?.product_id,
+        item?.size,
+        item?.id,
+        item?.price
+      )
+
+      if (validationError) {
+        return NextResponse.json(
+          { success: false, error: validationError },
+          { status: 400 }
+        )
+      }
+    }
+
     const storeItems = items.length > 0
       ? await mergeCartItems(user.id, items)
       : await getStoreCartItems(user.id)

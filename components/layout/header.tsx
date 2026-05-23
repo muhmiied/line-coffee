@@ -72,11 +72,16 @@ export function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const { language, setLanguage, t } = useLanguage()
-  const { openCart, getTotalItems } = useCartStore()
-  const { openWishlist } = useWishlistStore()
+  const openCart = useCartStore((state) => state.openCart)
+  const cartTotalItems = useCartStore((state) =>
+    state.items.reduce((total, item) => total + item.quantity, 0)
+  )
+  const openWishlist = useWishlistStore((state) => state.openWishlist)
+  const wishlistTotalItems = useWishlistStore((state) => state.items.length)
   const { user, profile, signOut } = useAuth()
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
-  const cartItemCount = isMounted ? getTotalItems() : 0
+  const cartItemCount = isMounted ? cartTotalItems : 0
+  const wishlistItemCount = isMounted ? wishlistTotalItems : 0
 
   const isTransparentTop =
     pathname === '/' ||
@@ -373,10 +378,23 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={openWishlist}
-                className="hidden md:flex text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
+                className="relative hidden md:flex text-[#D6B79A]/75 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8] hover:shadow-[0_0_24px_rgba(182,136,94,0.14)]"
                 aria-label={t('Wishlist', 'المفضلة')}
               >
                 <Heart className="h-5 w-5" />
+                {wishlistItemCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 h-4.5 w-4.5 min-w-[1.1rem] rounded-full text-[10px] flex items-center justify-center font-bold px-1"
+                    style={{
+                      background: 'linear-gradient(135deg, #B6885E, #D6A373)',
+                      color: '#0B0806',
+                    }}
+                  >
+                    {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
+                  </motion.span>
+                )}
               </Button>
 
               {/* Cart */}
@@ -660,6 +678,17 @@ export function Header() {
                           className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                         >
                           <Heart className="h-5 w-5" />
+                          {wishlistItemCount > 0 && (
+                            <span
+                              className="ml-auto order-last min-w-[1.25rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold"
+                              style={{
+                                background: 'linear-gradient(135deg, #B6885E, #D6A373)',
+                                color: '#0B0806',
+                              }}
+                            >
+                              {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
+                            </span>
+                          )}
                           <span className="text-sm">{t('Wishlist', 'المفضلة')}</span>
                         </Link>
                       )}
@@ -686,6 +715,17 @@ export function Header() {
                       className="flex items-center gap-3 py-2 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                     >
                       <Heart className="h-5 w-5" />
+                      {wishlistItemCount > 0 && (
+                        <span
+                          className="ml-auto order-last min-w-[1.25rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold"
+                          style={{
+                            background: 'linear-gradient(135deg, #B6885E, #D6A373)',
+                            color: '#0B0806',
+                          }}
+                        >
+                          {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
+                        </span>
+                      )}
                       <span className="text-sm">{t('Wishlist', 'المفضلة')}</span>
                     </button>
                   )}

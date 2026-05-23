@@ -79,7 +79,7 @@ export async function addToWishlist(userId: string, productId: string) {
     .select('id')
     .eq('user_id', userId)
     .eq('product_id', productId)
-    .single()
+    .maybeSingle()
   
   if (existing) {
     // المنتج موجود بالفعل

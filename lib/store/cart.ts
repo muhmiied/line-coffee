@@ -19,6 +19,7 @@ interface CartStore {
   items: CartItem[]
   isOpen: boolean
   ownerId: string | null
+  hasHydrated: boolean
   addItem: (item: CartItem) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
@@ -26,6 +27,7 @@ interface CartStore {
   replaceItems: (items: CartItem[]) => void
   resetForGuest: () => void
   syncOwner: (ownerId: string | null) => void
+  setHasHydrated: (hasHydrated: boolean) => void
   openCart: () => void
   closeCart: () => void
   toggleCart: () => void
@@ -87,6 +89,7 @@ export const useCartStore = create<CartStore>()(
       items: [],
       isOpen: false,
       ownerId: null,
+      hasHydrated: false,
 
       addItem: (item) => {
         const quantityToAdd = item.quantity || 1
@@ -139,6 +142,8 @@ export const useCartStore = create<CartStore>()(
 
       syncOwner: (ownerId) => set({ ownerId }),
 
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
@@ -156,6 +161,9 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'line-coffee-cart',
       partialize: (state) => ({ items: state.items, ownerId: state.ownerId }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      },
     }
   )
 )

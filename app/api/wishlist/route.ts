@@ -11,6 +11,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getWishlist, getStoreWishlist, toggleWishlist, mergeWishlistItems, getWishlistCount } from '@/lib/services'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i
+
+function isUuid(value: unknown) {
+  return typeof value === 'string' && UUID_RE.test(value)
+}
+
+async function validateWishlistProduct(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productId: unknown
+) {
+  if (!isUuid(productId)) {
+    return 'Valid product ID is required'
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('id')
+    .eq('id', productId)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return 'Invalid product'
+
+  return null
+}
+
 // جلب المفضلة
 export async function GET() {
   try {
@@ -68,6 +94,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const validationError = await validateWishlistProduct(supabase, productId)
+    if (validationError) {
+      return NextResponse.json(
+        { success: false, error: validationError },
+        { status: 400 }
+      )
+    }
     
     const result = await toggleWishlist(user.id, productId)
     const storeItems = await getStoreWishlist(user.id)
@@ -102,6 +136,17 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     const items = Array.isArray(body?.items) ? body.items : []
+
+    for (const item of items) {
+      const validationError = await validateWishlistProduct(supabase, item?.productId)
+      if (validationError) {
+        return NextResponse.json(
+          { success: false, error: validationError },
+          { status: 400 }
+        )
+      }
+    }
+
     const storeItems = items.length > 0
       ? await mergeWishlistItems(user.id, items)
       : await getStoreWishlist(user.id)

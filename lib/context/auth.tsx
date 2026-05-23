@@ -51,9 +51,11 @@ export function AuthProvider({
   const cartSyncOwner = useCartStore((state) => state.syncOwner)
   const replaceCartItems = useCartStore((state) => state.replaceItems)
   const resetCartForGuest = useCartStore((state) => state.resetForGuest)
+  const cartHasHydrated = useCartStore((state) => state.hasHydrated)
   const wishlistSyncOwner = useWishlistStore((state) => state.syncOwner)
   const replaceWishlistItems = useWishlistStore((state) => state.replaceItems)
   const resetWishlistForGuest = useWishlistStore((state) => state.resetForGuest)
+  const wishlistHasHydrated = useWishlistStore((state) => state.hasHydrated)
 
   useEffect(() => {
     setUser(initialUser)
@@ -88,6 +90,10 @@ export function AuthProvider({
     let cancelled = false
     const userId = user?.id ?? null
 
+    if (!cartHasHydrated || !wishlistHasHydrated) {
+      return
+    }
+
     if (!userId) {
       cartSyncOwner(null)
       wishlistSyncOwner(null)
@@ -98,9 +104,6 @@ export function AuthProvider({
     const currentWishlistState = useWishlistStore.getState()
     const guestCartItems = currentCartState.ownerId === userId ? [] : currentCartState.items
     const guestWishlistItems = currentWishlistState.ownerId === userId ? [] : currentWishlistState.items
-
-    cartSyncOwner(userId)
-    wishlistSyncOwner(userId)
 
     async function syncPersistedState() {
       try {
@@ -123,6 +126,7 @@ export function AuthProvider({
           const json = await cartResponse.json()
           if (Array.isArray(json?.data?.store_items)) {
             replaceCartItems(json.data.store_items)
+            cartSyncOwner(userId)
           }
         }
 
@@ -130,6 +134,7 @@ export function AuthProvider({
           const json = await wishlistResponse.json()
           if (Array.isArray(json?.data?.store_items)) {
             replaceWishlistItems(json.data.store_items)
+            wishlistSyncOwner(userId)
           }
         }
       } catch {
@@ -142,7 +147,15 @@ export function AuthProvider({
     return () => {
       cancelled = true
     }
-  }, [cartSyncOwner, replaceCartItems, replaceWishlistItems, user?.id, wishlistSyncOwner])
+  }, [
+    cartHasHydrated,
+    cartSyncOwner,
+    replaceCartItems,
+    replaceWishlistItems,
+    user?.id,
+    wishlistHasHydrated,
+    wishlistSyncOwner,
+  ])
 
   useEffect(() => {
     if (!supabase) {
