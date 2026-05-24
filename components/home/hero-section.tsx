@@ -11,14 +11,19 @@ import { cn } from '@/lib/utils'
 import { WordByWord } from '@/components/ui/motion-primitives'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
 import {
+  buildEffectsFilter,
+  buildOverlayGradient,
   getMediaObjectPosition,
   getMediaOverlayOpacity,
   getSectionBuilderContent,
   getSectionBuilderLayout,
+  getVisualEffects,
   getWebsiteSection,
+  GRAIN_SVG,
   type SectionBuilderLayout,
   type SectionStatBlock,
   type SiteMediaItem,
+  type VisualEffects,
 } from '@/lib/media'
 
 const heroSectionConfig = getWebsiteSection('hero')
@@ -38,6 +43,8 @@ type HeroSlide = {
   buttonLink?: string | null
   stats?: SectionStatBlock[]
   layout?: SectionBuilderLayout
+  visualEffects?: VisualEffects
+  animationDuration?: number
 }
 
 function elementTransform(layout: SectionBuilderLayout | undefined, elementId: string) {
@@ -92,11 +99,13 @@ export function HeroSection() {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    if (slides.length <= 1) return
+    const duration = slides[currentSlide]?.animationDuration ?? 6000
+    const timer = setTimeout(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 6000)
-    return () => clearInterval(timer)
-  }, [slides.length])
+    }, duration)
+    return () => clearTimeout(timer)
+  }, [currentSlide, slides])
 
   useEffect(() => {
     let mounted = true
@@ -125,6 +134,8 @@ export function HeroSection() {
               buttonLink: content.button_link || item.button_link || item.link_url,
               stats: content.stats,
               layout: getSectionBuilderLayout(heroSectionConfig, item),
+              visualEffects: getVisualEffects(item),
+              animationDuration: typeof item.animation_duration === 'number' && item.animation_duration > 0 ? item.animation_duration : 6000,
             }
           })
 
@@ -158,6 +169,14 @@ export function HeroSection() {
         { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
       ]
 
+  const currentFx = slides[currentSlide].visualEffects || {}
+  const hasFx = Object.keys(currentFx).length > 0
+  const imgFilter = buildEffectsFilter(currentFx)
+  const overlayGrad = buildOverlayGradient(currentFx.gradient_type, currentFx.overlay_color, slides[currentSlide].overlayOpacity ?? 0.6)
+  const fxVignette = Number(currentFx.vignette ?? 0)
+  const fxGlow = Number(currentFx.glow ?? 0)
+  const fxGrain = Number(currentFx.grain ?? 0)
+
   return (
     <section
       ref={ref}
@@ -187,23 +206,34 @@ export function HeroSection() {
             alt={imageAlt}
             fill
             className="object-cover"
-            style={{ objectPosition: slides[currentSlide].objectPosition || 'center center' }}
+            style={{ objectPosition: slides[currentSlide].objectPosition || 'center center', ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
             priority
           />
 
           {/* Cinematic grading stack */}
-          {/* 1. Dark base overlay */}
-          <div className="absolute inset-0 bg-black" style={{ opacity: slides[currentSlide].overlayOpacity ?? 0.6 }} />
+          {/* 1. Dark base overlay — dynamic gradient when effects configured, solid black otherwise */}
+          {hasFx
+            ? <div className="absolute inset-0" style={{ background: overlayGrad }} />
+            : <div className="absolute inset-0 bg-black" style={{ opacity: slides[currentSlide].overlayOpacity ?? 0.6 }} />
+          }
           {/* 2. Warm brown tone cast — luxury cinema feel */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
-          {/* 3. Vignette */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
+          {/* 3. Vignette — admin-configured or hardcoded fallback */}
+          {fxVignette > 0.05
+            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />
+            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
+          }
           {/* 4. Bottom lift — keeps content readable */}
           <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
           {/* 5. Top scrim */}
           <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
-          {/* 6. Ambient gold glow — center warmth */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
+          {/* 6. Ambient gold glow — admin override or fixed */}
+          {fxGlow > 0.05
+            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />
+            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
+          }
+          {/* 7. Film grain (admin-configured) */}
+          {fxGrain > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />}
 
         </motion.div>
       </AnimatePresence>

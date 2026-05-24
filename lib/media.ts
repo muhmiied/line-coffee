@@ -54,6 +54,21 @@ export type SectionStatBlock = {
   is_active?: boolean
 }
 
+// Visual effects stored inside content.visual_effects (no DB migration needed)
+export type VisualEffects = {
+  overlay_color?: string
+  gradient_type?: 'solid' | 'radial' | 'top_bottom' | 'vignette_only'
+  blur?: number
+  brightness?: number
+  contrast?: number
+  saturation?: number
+  warmth?: number
+  vignette?: number
+  glow?: number
+  grain?: number
+  parallax?: number
+}
+
 export type SectionBuilderContent = {
   eyebrow_en?: string
   eyebrow_ar?: string
@@ -68,6 +83,7 @@ export type SectionBuilderContent = {
   button_link?: string
   features?: SectionTextBlock[]
   stats?: SectionStatBlock[]
+  visual_effects?: VisualEffects
 }
 
 export type SectionElementPosition = {
@@ -1059,4 +1075,108 @@ export function isUploadedImageSmall(usageArea: string, width: number, height: n
 
 export function mediaByUsage(items: SiteMediaItem[]) {
   return new Map(items.map((item) => [item.usage_area || item.section_key || 'banner', item]))
+}
+
+// =============================================
+// VISUAL EFFECTS SYSTEM
+// =============================================
+
+export const GRAIN_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`
+
+export type VisualPreset = {
+  key: string
+  nameEn: string
+  opacity: number
+  effects: Omit<VisualEffects, 'parallax'>
+}
+
+export const VISUAL_PRESETS: VisualPreset[] = [
+  {
+    key: 'luxury_dark',
+    nameEn: 'Luxury Dark',
+    opacity: 0.68,
+    effects: { overlay_color: '#0B0806', gradient_type: 'solid', blur: 0, brightness: 0.72, contrast: 1.18, saturation: 0.72, warmth: 0.18, vignette: 0.72, glow: 0.08, grain: 0.12 },
+  },
+  {
+    key: 'warm_coffee',
+    nameEn: 'Warm Coffee',
+    opacity: 0.55,
+    effects: { overlay_color: '#1a0800', gradient_type: 'solid', blur: 0, brightness: 0.88, contrast: 1.08, saturation: 0.95, warmth: 0.42, vignette: 0.45, glow: 0.18, grain: 0.08 },
+  },
+  {
+    key: 'golden_glow',
+    nameEn: 'Golden Glow',
+    opacity: 0.50,
+    effects: { overlay_color: '#2a1500', gradient_type: 'radial', blur: 0, brightness: 0.90, contrast: 1.05, saturation: 1.05, warmth: 0.28, vignette: 0.35, glow: 0.45, grain: 0.06 },
+  },
+  {
+    key: 'cinematic_brown',
+    nameEn: 'Cinematic Brown',
+    opacity: 0.62,
+    effects: { overlay_color: '#120800', gradient_type: 'top_bottom', blur: 0.5, brightness: 0.78, contrast: 1.22, saturation: 0.78, warmth: 0.22, vignette: 0.65, glow: 0.05, grain: 0.18 },
+  },
+  {
+    key: 'elegant_matte',
+    nameEn: 'Elegant Matte',
+    opacity: 0.72,
+    effects: { overlay_color: '#0a0805', gradient_type: 'solid', blur: 0, brightness: 0.80, contrast: 1.12, saturation: 0.65, warmth: 0.12, vignette: 0.55, glow: 0.04, grain: 0.06 },
+  },
+  {
+    key: 'soft_premium',
+    nameEn: 'Soft Premium',
+    opacity: 0.48,
+    effects: { overlay_color: '#1e0f06', gradient_type: 'radial', blur: 0, brightness: 0.92, contrast: 1.04, saturation: 0.90, warmth: 0.22, vignette: 0.28, glow: 0.22, grain: 0.04 },
+  },
+  {
+    key: 'espresso_mood',
+    nameEn: 'Espresso Mood',
+    opacity: 0.75,
+    effects: { overlay_color: '#0d0600', gradient_type: 'vignette_only', blur: 0, brightness: 0.68, contrast: 1.28, saturation: 0.62, warmth: 0.25, vignette: 0.80, glow: 0.06, grain: 0.22 },
+  },
+]
+
+export function getVisualEffects(item?: Partial<SiteMediaItem> | null): VisualEffects {
+  const raw = item?.content
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const vf = (raw as Record<string, unknown>).visual_effects
+  if (!vf || typeof vf !== 'object' || Array.isArray(vf)) return {}
+  return vf as VisualEffects
+}
+
+export function buildEffectsFilter(fx: VisualEffects): string {
+  const parts: string[] = []
+  const blur = Number(fx.blur ?? 0)
+  const brightness = Number(fx.brightness ?? 1)
+  const contrast = Number(fx.contrast ?? 1)
+  const saturation = Number(fx.saturation ?? 1)
+  const warmth = Number(fx.warmth ?? 0)
+  if (blur > 0.05) parts.push(`blur(${blur.toFixed(1)}px)`)
+  if (Math.abs(brightness - 1) > 0.01) parts.push(`brightness(${brightness.toFixed(2)})`)
+  if (Math.abs(contrast - 1) > 0.01) parts.push(`contrast(${contrast.toFixed(2)})`)
+  if (Math.abs(saturation - 1) > 0.01) parts.push(`saturate(${saturation.toFixed(2)})`)
+  if (warmth > 0.01) parts.push(`sepia(${(warmth * 0.65).toFixed(2)})`)
+  return parts.join(' ')
+}
+
+export function buildOverlayGradient(
+  type: string | undefined,
+  color: string | undefined,
+  opacity: number,
+): string {
+  const c = color && color.length >= 7 ? color : '#000000'
+  const r = parseInt(c.slice(1, 3), 16) || 0
+  const g = parseInt(c.slice(3, 5), 16) || 0
+  const b = parseInt(c.slice(5, 7), 16) || 0
+  const o = Math.max(0, Math.min(1, opacity))
+  const rgba = `rgba(${r},${g},${b},${o.toFixed(2)})`
+  switch (type) {
+    case 'radial':
+      return `radial-gradient(ellipse at center, rgba(${r},${g},${b},${(o * 0.28).toFixed(2)}) 0%, ${rgba} 100%)`
+    case 'top_bottom':
+      return `linear-gradient(to bottom, rgba(${r},${g},${b},${(o * 0.15).toFixed(2)}) 0%, ${rgba} 100%)`
+    case 'vignette_only':
+      return `radial-gradient(ellipse at center, transparent 30%, ${rgba} 100%)`
+    default:
+      return rgba
+  }
 }

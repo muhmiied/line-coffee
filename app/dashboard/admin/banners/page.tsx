@@ -22,6 +22,7 @@ import {
   Plus,
   RefreshCw,
   Save,
+  Sparkles,
   Tablet,
   Trash2,
   Upload,
@@ -29,22 +30,29 @@ import {
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 import {
+  buildEffectsFilter,
+  buildOverlayGradient,
   getMediaImageMeta,
   getMediaObjectPosition,
   getMediaOverlayOpacity,
   getMediaSectionKey,
   getSectionBuilderContent,
   getSectionBuilderLayout,
+  getVisualEffects,
   getWebsitePages,
+  GRAIN_SVG,
   isUploadedImageSmall,
   MEDIA_ALLOWED_MIME_TYPES,
   MEDIA_MAX_UPLOAD_SIZE,
   MEDIA_USAGE_OPTIONS,
   OBJECT_POSITION_OPTIONS,
+  VISUAL_PRESETS,
   WEBSITE_SECTIONS,
   type SectionBuilderContent,
   type SectionBuilderLayout,
   type SiteMediaItem,
+  type VisualEffects,
+  type VisualPreset,
   type WebsiteSectionConfig,
 } from '@/lib/media'
 import { cn } from '@/lib/utils'
@@ -87,6 +95,82 @@ function slideBelongsToSection(slide: SiteMediaItem, section: WebsiteSectionConf
 
   const key = getMediaSectionKey(slide)
   return key === section.key || slide.usage_area === section.usageArea
+}
+
+const HERO_FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
+  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80',
+  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80',
+  'https://images.unsplash.com/photo-1459755486867-b55449bb39ff?w=1920&q=80',
+]
+
+const HERO_FALLBACK_CONTENT: Array<{ en: string; ar: string; subEn: string; subAr: string }> = [
+  {
+    en: 'Experience Coffee Like Never Before',
+    ar: 'اختبر القهوة كما لم تفعل من قبل',
+    subEn: 'Discover our carefully sourced single-origin beans and signature blends, roasted to perfection for the ultimate coffee experience.',
+    subAr: 'اكتشف حبوبنا من الأصل الواحد المختارة بعناية وخلطاتنا المميزة، المحمصة بإتقان لتجربة القهوة المثالية.',
+  },
+  {
+    en: 'Crafted With Passion & Precision',
+    ar: 'مصنوعة بشغف وإتقان',
+    subEn: 'From the finest farms to your cup, we bring you exceptional quality with every sip.',
+    subAr: 'من أفضل المزارع إلى كوبك، نقدم لك جودة استثنائية مع كل رشفة.',
+  },
+  {
+    en: 'Your Daily Ritual, Elevated',
+    ar: 'طقوسك اليومية، بمستوى أعلى',
+    subEn: 'Transform your morning routine with our premium Turkish coffee and specialty blends.',
+    subAr: 'حوّل روتينك الصباحي مع قهوتنا التركية الفاخرة وخلطاتنا المميزة.',
+  },
+  {
+    en: 'Bold Flavor. Smooth Finish.',
+    ar: 'نكهة قوية. نهاية ناعمة.',
+    subEn: 'Signature blends crafted for cappuccino, coffee mix, and hot chocolate lovers—classic or flavored.',
+    subAr: 'خلطات مميزة لعشاق الكابتشينو والكوفي ميكس والهوت شوكلت—كلاسيك أو نكهات.',
+  },
+]
+
+function makeHeroInitialSlides(section: WebsiteSectionConfig): EditorSlide[] {
+  return HERO_FALLBACK_IMAGES.map((imgUrl, index) => {
+    const localId = createLocalId()
+    const copy = HERO_FALLBACK_CONTENT[index]!
+    return {
+      id: localId,
+      local_id: localId,
+      isNew: true,
+      title_en: copy.en,
+      title_ar: copy.ar,
+      subtitle_en: copy.subEn,
+      subtitle_ar: copy.subAr,
+      image_url: imgUrl,
+      link_url: '/products',
+      sort_order: index,
+      is_active: true,
+      section_key: section.key,
+      slide_key: localId,
+      section_type: section.sectionType,
+      media_type: section.mediaType,
+      usage_area: section.usageArea,
+      alt_en: copy.en,
+      alt_ar: copy.ar,
+      is_featured: index === 0,
+      button_text_en: 'Shop Now',
+      button_text_ar: 'تسوق الآن',
+      button_link: '/products',
+      mobile_image_url: null,
+      overlay_opacity: 0.6,
+      object_position: 'center center',
+      content: section.defaultContent || {},
+      layout: section.defaultLayout || {},
+      animation_type: 'fade',
+      animation_duration: 6000,
+      device_visibility: { desktop: true, tablet: true, mobile: true },
+      starts_at: null,
+      ends_at: null,
+      images: [{ url: imgUrl, object_position: 'center center' }],
+    }
+  })
 }
 
 function makeSlide(section: WebsiteSectionConfig, index: number): EditorSlide {
@@ -176,6 +260,7 @@ function EditableText({
   placeholder,
   className,
   multiline,
+  style,
   onCommit,
 }: {
   fieldKey: string
@@ -183,6 +268,7 @@ function EditableText({
   placeholder: string
   className: string
   multiline?: boolean
+  style?: React.CSSProperties
   onCommit: (value: string) => void
 }) {
   const displayValue = value || placeholder
@@ -210,6 +296,7 @@ function EditableText({
         !value && 'text-[#F5E6D8]/45',
         className,
       )}
+      style={style}
     >
       {displayValue}
     </div>
@@ -360,6 +447,13 @@ function SectionPreview({
   const body = getContentText(content, language, 'body', subtitle)
   const buttonText = getContentText(content, language, 'button_text', section.defaultButtonTextEn || 'Shop Now')
   const overlayOpacity = getMediaOverlayOpacity(slide, 0.55)
+  const fx = getVisualEffects(slide)
+  const hasFx = Object.keys(fx).length > 0
+  const imgFilter = buildEffectsFilter(fx)
+  const overlayGrad = buildOverlayGradient(fx.gradient_type, fx.overlay_color, overlayOpacity)
+  const fxVignette = Number(fx.vignette ?? 0)
+  const fxGlow = Number(fx.glow ?? 0)
+  const fxGrain = Number(fx.grain ?? 0)
   const features = (content.features || []).filter((feature) => feature.is_active !== false)
   const stats = (content.stats || []).filter((stat) => stat.is_active !== false)
 
@@ -400,6 +494,134 @@ function SectionPreview({
 
   const storyDirection = language === 'ar' ? 'rtl' : 'ltr'
 
+  // ── Hero template — same cinematic rendering as hero-section.tsx ──────────
+  if (section.editorTemplate === 'hero') {
+    const heroStats = stats.length > 0 ? stats : []
+    const isRtl = language === 'ar'
+    return (
+      <div
+        className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/18 shadow-2xl transition-all', deviceClass(device))}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={handleDrop}
+      >
+        <div
+          className={cn('relative flex flex-col items-center justify-center overflow-hidden', device === 'mobile' ? 'min-h-[680px] px-4 py-20' : 'min-h-[580px] px-6 py-16')}
+          style={{ background: '#0B0806' }}
+        >
+          {/* Background image with visual effects filter */}
+          <img
+            src={image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ ...sharedStyle, ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
+          />
+
+          {/* Cinematic grading stack — identical to hero-section.tsx */}
+          {hasFx
+            ? <div className="absolute inset-0" style={{ background: overlayGrad }} />
+            : <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
+          }
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
+          {fxVignette > 0.05
+            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />
+            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
+          }
+          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
+          {fxGlow > 0.05
+            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />
+            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
+          }
+          {fxGrain > 0.05 && (
+            <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />
+          )}
+
+          {/* Slide position indicator (right side, visual only) */}
+          <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2">
+            <div className="h-7 w-1.5 rounded-full bg-[#D6A373]" />
+            <div className="h-1.5 w-1.5 rounded-full bg-white/30" />
+            <div className="h-1.5 w-1.5 rounded-full bg-white/30" />
+          </div>
+
+          {/* Hero content — same layout as hero-section.tsx */}
+          <DraggableElement
+            id="main-copy"
+            layout={layout}
+            editable
+            selected={selectedElement === 'main-copy'}
+            onSelect={onSelectElement}
+            onLayoutChange={onPatchLayout}
+            className="relative z-10 mx-auto w-full max-w-3xl text-center"
+          >
+            {/* Stats row — matches hero-section.tsx */}
+            {heroStats.length > 0 && (
+              <div className={cn('mb-7 flex flex-wrap justify-center gap-6 md:gap-12', isRtl && 'flex-row-reverse')}>
+                {heroStats.slice(0, 4).map((stat) => (
+                  <div key={stat.id} className="text-center">
+                    <EditableText
+                      fieldKey={`${slide.local_id}-${language}-${stat.id}-value`}
+                      value={stat.value}
+                      placeholder="10+"
+                      onCommit={(value) => commitStat(stat.id, 'value', value)}
+                      className="font-serif text-2xl font-bold text-[#D6A373] md:text-3xl"
+                    />
+                    <EditableText
+                      fieldKey={`${slide.local_id}-${language}-${stat.id}-label`}
+                      value={language === 'ar' ? stat.label_ar || stat.label_en : stat.label_en || stat.label_ar}
+                      placeholder="Label"
+                      onCommit={(value) => commitStat(stat.id, 'label', value)}
+                      className="mt-0.5 text-[11px] text-[#F5E6D8]/55"
+                    />
+                    <div className="mx-auto mt-1 h-px w-8 bg-gradient-to-r from-transparent via-[#B6885E]/50 to-transparent" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Headline — matches hero text-4xl md:text-7xl lg:text-8xl */}
+            <EditableText
+              fieldKey={`${slide.local_id}-${language}-hero-title`}
+              value={title}
+              placeholder={section.defaultTitleEn}
+              onCommit={(value) => commitText('title', value)}
+              className={cn(
+                'font-serif font-extrabold leading-[1.05] text-balance text-[#F5E6D8]',
+                device === 'mobile' ? 'text-4xl' : 'text-5xl md:text-6xl',
+              )}
+              style={{ textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)' }}
+            />
+
+            {/* Subheadline */}
+            <EditableText
+              fieldKey={`${slide.local_id}-${language}-hero-subtitle`}
+              value={subtitle}
+              placeholder={section.defaultSubtitleEn}
+              multiline
+              onCommit={(value) => commitText('subtitle', value)}
+              className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#D6B79A]/85 md:text-lg"
+            />
+
+            {/* CTA button */}
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div
+                className="inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold tracking-wide"
+                style={{ background: 'linear-gradient(135deg,#B6885E 0%,#D6A373 100%)', color: '#0B0806', boxShadow: '0 4px 24px rgba(182,136,94,0.35)' }}
+              >
+                <EditableText
+                  fieldKey={`${slide.local_id}-${language}-hero-button`}
+                  value={buttonText}
+                  placeholder={section.defaultButtonTextEn || 'Shop Now'}
+                  onCommit={(value) => commitText('button_text', value)}
+                  className="text-[#0B0806]"
+                />
+              </div>
+            </div>
+          </DraggableElement>
+        </div>
+      </div>
+    )
+  }
+
   if (section.editorTemplate === 'story') {
     return (
       <div
@@ -428,8 +650,8 @@ function SectionPreview({
                   <img
                     src={image}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover brightness-[0.82] contrast-[1.12] saturate-[1.08]"
-                    style={sharedStyle}
+                    className={cn('absolute inset-0 h-full w-full object-cover', !hasFx && 'brightness-[0.82] contrast-[1.12] saturate-[1.08]')}
+                    style={{ ...sharedStyle, ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/78 via-[#0F0A07]/18 to-transparent" />
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_34%,_rgba(11,8,6,0.58)_100%)]" />
@@ -575,9 +797,12 @@ function SectionPreview({
       onDrop={handleDrop}
     >
       <div className={cn('relative flex items-center justify-center overflow-hidden', device === 'mobile' ? 'min-h-[680px]' : 'min-h-[540px]')}>
-        <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" style={sharedStyle} />
-        <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
+        <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ ...sharedStyle, ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }} />
+        <div className="absolute inset-0" style={{ background: overlayGrad }} />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/85 via-transparent to-[#0B0806]/40" />
+        {fxVignette > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />}
+        {fxGlow > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 50%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />}
+        {fxGrain > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />}
         <DraggableElement
           id="main-copy"
           layout={layout}
@@ -644,6 +869,213 @@ function SectionPreview({
           )}
         </DraggableElement>
       </div>
+    </div>
+  )
+}
+
+function VisualEffectsPanel({
+  slide,
+  onPatch,
+  onPatchContent,
+}: {
+  slide: EditorSlide
+  onPatch: (patch: Partial<EditorSlide>) => void
+  onPatchContent: (patch: Partial<SectionBuilderContent>) => void
+}) {
+  const fx = getVisualEffects(slide)
+  const opacity = Number(slide.overlay_opacity ?? 0.55)
+
+  const patchFx = (patch: Partial<VisualEffects>) => {
+    onPatchContent({ visual_effects: { ...fx, ...patch } })
+  }
+
+  const applyPreset = (preset: VisualPreset) => {
+    onPatch({ overlay_opacity: preset.opacity })
+    onPatchContent({ visual_effects: { ...preset.effects } })
+  }
+
+  const resetEffects = () => {
+    onPatch({ overlay_opacity: 0.55 })
+    onPatchContent({ visual_effects: {} })
+  }
+
+  const analyzeImage = () => {
+    const imgSrc = slide.image_url
+    if (!imgSrc) return
+    const canvas = document.createElement('canvas')
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const W = 40, H = 40
+      canvas.width = W
+      canvas.height = H
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { applyPreset(VISUAL_PRESETS[0]!); return }
+      ctx.drawImage(img, 0, 0, W, H)
+      try {
+        const d = ctx.getImageData(0, 0, W, H).data
+        let r = 0, g = 0, b = 0
+        const px = W * H
+        for (let i = 0; i < d.length; i += 4) { r += d[i]!; g += d[i + 1]!; b += d[i + 2]! }
+        r /= px; g /= px; b /= px
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+        const warmth = (r - b) / 255
+        let preset: VisualPreset
+        if (lum > 0.65) preset = VISUAL_PRESETS[0]!
+        else if (warmth > 0.12 && lum < 0.45) preset = VISUAL_PRESETS[6]!
+        else if (warmth > 0.08) preset = VISUAL_PRESETS[1]!
+        else preset = VISUAL_PRESETS[4]!
+        applyPreset(preset)
+      } catch {
+        applyPreset(VISUAL_PRESETS[0]!)
+      }
+    }
+    img.onerror = () => applyPreset(VISUAL_PRESETS[0]!)
+    img.src = imgSrc
+  }
+
+  const readabilityWarn =
+    Number(fx.brightness ?? 1) > 0.90 &&
+    opacity < 0.45 &&
+    Number(fx.vignette ?? 0) < 0.30
+
+  const sliders: { key: keyof VisualEffects; label: string; min: number; max: number; step: number; defaultVal: number; fmt: (v: number) => string }[] = [
+    { key: 'brightness', label: 'Brightness', min: 0.3, max: 1.5, step: 0.02, defaultVal: 1, fmt: (v) => `${Math.round(v * 100)}%` },
+    { key: 'contrast',   label: 'Contrast',   min: 0.5, max: 1.8, step: 0.02, defaultVal: 1, fmt: (v) => `${Math.round(v * 100)}%` },
+    { key: 'saturation', label: 'Saturation', min: 0,   max: 1.6, step: 0.02, defaultVal: 1, fmt: (v) => `${Math.round(v * 100)}%` },
+    { key: 'warmth',     label: 'Warmth',     min: 0,   max: 1,   step: 0.02, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
+    { key: 'blur',       label: 'Blur',       min: 0,   max: 6,   step: 0.1,  defaultVal: 0, fmt: (v) => `${v.toFixed(1)}px` },
+    { key: 'vignette',   label: 'Vignette',   min: 0,   max: 1,   step: 0.02, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
+    { key: 'glow',       label: 'Glow',       min: 0,   max: 0.6, step: 0.01, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
+    { key: 'grain',      label: 'Grain',      min: 0,   max: 0.5, step: 0.01, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* AI Enhance */}
+      <button
+        type="button"
+        onClick={analyzeImage}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D6A373]/30 bg-[#D6A373]/10 px-3 py-2.5 text-xs font-bold text-[#D6A373] transition hover:bg-[#D6A373]/18"
+        title="Analyze image colors and apply the best LINE COFFEE preset"
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        AI Enhance for LINE COFFEE
+      </button>
+
+      {/* Presets */}
+      <div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">Presets</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {VISUAL_PRESETS.map((preset) => (
+            <button
+              key={preset.key}
+              type="button"
+              onClick={() => applyPreset(preset)}
+              title={preset.nameEn}
+              className="rounded-xl border border-white/8 bg-white/[0.03] px-2 py-2 text-[10px] font-semibold text-white/60 transition hover:border-[#D6A373]/30 hover:text-[#D6A373]"
+            >
+              {preset.nameEn}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Overlay opacity */}
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[11px] text-white/45">Overlay Opacity</span>
+          <span className="text-[11px] text-[#D6A373]/80">{Math.round(opacity * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={0.85}
+          step={0.05}
+          value={opacity}
+          onChange={(e) => onPatch({ overlay_opacity: Number(e.target.value) })}
+          className="w-full accent-[#D6A373]"
+          title="Overlay Opacity"
+        />
+      </div>
+
+      {/* Overlay color */}
+      <div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">Overlay Color</p>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={fx.overlay_color || '#000000'}
+            onChange={(e) => patchFx({ overlay_color: e.target.value })}
+            className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent"
+            title="Overlay Color"
+          />
+          <span className="text-xs text-white/40">{fx.overlay_color || '#000000'}</span>
+        </div>
+      </div>
+
+      {/* Gradient type */}
+      <div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">Gradient Type</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {(['solid', 'radial', 'top_bottom', 'vignette_only'] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => patchFx({ gradient_type: type })}
+              title={type}
+              className={cn(
+                'rounded-xl border px-2 py-2 text-[10px] font-semibold transition',
+                fx.gradient_type === type
+                  ? 'border-[#D6A373]/55 bg-[#D6A373]/12 text-[#D6A373]'
+                  : 'border-white/8 bg-white/[0.03] text-white/50',
+              )}
+            >
+              {type === 'solid' ? 'Solid' : type === 'radial' ? 'Radial' : type === 'top_bottom' ? 'Top→Bottom' : 'Vignette'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Effect sliders */}
+      {sliders.map(({ key, label, min, max, step, defaultVal, fmt }) => {
+        const val = Number((fx as Record<string, unknown>)[key] ?? defaultVal)
+        return (
+          <div key={key}>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[11px] text-white/45">{label}</span>
+              <span className="text-[11px] text-[#D6A373]/80">{fmt(val)}</span>
+            </div>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={val}
+              onChange={(e) => patchFx({ [key]: Number(e.target.value) })}
+              className="w-full accent-[#D6A373]"
+              title={label}
+            />
+          </div>
+        )
+      })}
+
+      {/* Text readability warning */}
+      {readabilityWarn && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2.5 text-[11px] text-amber-200/80">
+          Low contrast — text may be hard to read. Lower brightness or raise overlay opacity.
+        </div>
+      )}
+
+      {/* Reset */}
+      <button
+        type="button"
+        onClick={resetEffects}
+        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/45 transition hover:text-white"
+        title="Reset all visual effects"
+      >
+        Reset Effects
+      </button>
     </div>
   )
 }
@@ -716,7 +1148,11 @@ export default function BannersPage() {
       .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
       .map(normalizeSlide)
 
-    const initialSlides = sectionSlides.length > 0 ? sectionSlides : [makeSlide(section, 0)]
+    const initialSlides = sectionSlides.length > 0
+      ? sectionSlides
+      : section.editorTemplate === 'hero'
+        ? makeHeroInitialSlides(section)
+        : [makeSlide(section, 0)]
     setActiveSection(section)
     setSlides(initialSlides)
     setSelectedId(initialSlides[0]?.local_id || null)
@@ -1241,18 +1677,13 @@ export default function BannersPage() {
                   </div>
                 )}
 
-                <div>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Overlay', 'Overlay')}</p>
-                  <input
-                    type="range"
-                    min={0}
-                    max={0.85}
-                    step={0.05}
-                    value={Number(selectedSlide.overlay_opacity ?? 0.55)}
-                    onChange={(event) => patchSelected({ overlay_opacity: Number(event.target.value) })}
-                    className="w-full accent-[#D6A373]"
+                <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Visual Effects', 'Visual Effects')}</p>
+                  <VisualEffectsPanel
+                    slide={selectedSlide}
+                    onPatch={patchSelected}
+                    onPatchContent={patchSelectedContent}
                   />
-                  <p className="mt-1 text-xs text-white/35">{Math.round(Number(selectedSlide.overlay_opacity ?? 0.55) * 100)}%</p>
                 </div>
 
                 {activeSection.supportsCta && (

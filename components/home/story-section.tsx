@@ -8,10 +8,13 @@ import { ArrowRight, Leaf, Award, Heart, Coffee } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
 import {
+  buildEffectsFilter,
   getMediaObjectPosition,
   getSectionBuilderContent,
   getSectionBuilderLayout,
+  getVisualEffects,
   getWebsiteSection,
+  GRAIN_SVG,
   type SectionBuilderLayout,
   type SiteMediaItem,
 } from '@/lib/media'
@@ -75,6 +78,11 @@ export function StorySection() {
   const storyMedia = storySlides[currentSlide] || null
   const storyContent = getSectionBuilderContent(storySectionConfig, storyMedia)
   const storyLayout = getSectionBuilderLayout(storySectionConfig, storyMedia)
+  const storyFx = getVisualEffects(storyMedia)
+  const storyHasFx = Object.keys(storyFx).length > 0
+  const storyImgFilter = buildEffectsFilter(storyFx)
+  const storyFxGrain = Number(storyFx.grain ?? 0)
+  const storyFxVignette = Number(storyFx.vignette ?? 0)
   const storyFeatures = (storyContent.features || []).filter((item) => item.is_active !== false)
   const storyStats = (storyContent.stats || []).filter((item) => item.is_active !== false)
   const storyTitle = t(storyContent.title_en || storySectionConfig.defaultTitleEn, storyContent.title_ar || storyContent.title_en || storySectionConfig.defaultTitleAr)
@@ -243,16 +251,20 @@ export function StorySection() {
                     alt={t(storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story', storyMedia?.alt_ar || storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story')}
                     fill
                     sizes="(min-width: 1024px) 44vw, 92vw"
-                    className="object-cover object-center brightness-[0.82] contrast-[1.12] saturate-[1.08] transition-transform duration-700 group-hover:scale-[1.035]"
-                    style={{ objectPosition: storyMedia ? getMediaObjectPosition(storyMedia) : 'center center' }}
+                    className={cn('object-cover object-center transition-transform duration-700 group-hover:scale-[1.035]', !storyHasFx && 'brightness-[0.82] contrast-[1.12] saturate-[1.08]')}
+                    style={{ objectPosition: storyMedia ? getMediaObjectPosition(storyMedia) : 'center center', ...(storyHasFx && storyImgFilter ? { filter: storyImgFilter } : {}) }}
                   />
                 </motion.div>
               </AnimatePresence>
               {/* Cinematic warm grade and soft vignette */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/78 via-[#0F0A07]/18 to-transparent" />
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_34%,_rgba(11,8,6,0.58)_100%)]" />
+              {storyFxVignette > 0.05
+                ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 34%, rgba(11,8,6,${storyFxVignette.toFixed(2)}) 100%)` }} />
+                : <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_34%,_rgba(11,8,6,0.58)_100%)]" />
+              }
               <div className="absolute inset-0 bg-gradient-to-br from-[#FFDCC2]/12 via-transparent to-[#522500]/32 mix-blend-soft-light" />
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FFDCC2]/35 to-transparent" />
+              {storyFxGrain > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ opacity: storyFxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />}
             </div>
 
             {/* Floating stats card */}

@@ -235,12 +235,13 @@ export interface Testimonial {
   customer_name: string
   customer_avatar: string | null
   content_en: string
-  content_ar: string
+  content_ar: string | null
   rating: number
   is_featured: boolean
   is_visible: boolean
-  is_approved?: boolean
+  is_approved: boolean
   created_at: string
+  updated_at?: string | null
 }
 
 // ==========================================
