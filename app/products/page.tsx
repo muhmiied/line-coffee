@@ -91,6 +91,8 @@ function mkProduct(
     is_new: opts.is_new ?? false,
     is_visible: true,
     stock_quantity: 100,
+    low_stock_threshold: 10,
+    is_manually_out_of_stock: false,
     created_at: '',
     updated_at: '',
     sizes: [

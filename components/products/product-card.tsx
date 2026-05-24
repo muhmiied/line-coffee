@@ -10,6 +10,7 @@ import { useWishlistStore } from '@/lib/store/wishlist'
 import type { Product } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getStockState } from '@/lib/stock'
 
 interface ProductCardProps {
   product: Product
@@ -61,7 +62,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
   }))
   const lowestPrice = sizes.length > 0 ? Math.min(...sizes.map((s) => s.price)) : 0
   const hasDiscount = sizes.some((s) => s.compare_at_price && s.compare_at_price > s.price)
-  const isSoldOut = product.stock_quantity === 0
+  const stockState = getStockState(product)
+  const isSoldOut = stockState === 'out_of_stock'
+  const isLowStock = stockState === 'low_stock'
   const inWishlist = wishlistStore.isInWishlist(product.id)
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -148,6 +151,15 @@ export function ProductCard({ product, className }: ProductCardProps) {
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/55">
                 <span className="text-[10px] tracking-[0.18em] uppercase font-bold px-4 py-1.5 rounded-full bg-[#FFDCC2]/92 text-[#522500] shadow-md">
                   {t('Sold Out', 'نفد المخزون')}
+                </span>
+              </div>
+            )}
+
+            {/* Low-stock badge — top right corner below wishlist */}
+            {isLowStock && !isSoldOut && (
+              <div className="absolute bottom-10 inset-x-0 z-10 flex justify-center">
+                <span className="text-[9px] tracking-[0.14em] uppercase font-bold px-3 py-1 rounded-full bg-amber-500/90 text-black shadow-md">
+                  {t(`Only ${product.stock_quantity} left`, `${product.stock_quantity} قطع فقط`)}
                 </span>
               </div>
             )}

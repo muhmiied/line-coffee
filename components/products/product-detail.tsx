@@ -34,6 +34,7 @@ import { useWishlistStore } from '@/lib/store/wishlist'
 import type { Product, ProductSize } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getStockState } from '@/lib/stock'
 
 interface ProductDetailProps {
   product: Product & { category?: { name_en: string; name_ar: string; slug: string } | null }
@@ -50,6 +51,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
 
+  const stockState = getStockState(product)
+  const isOutOfStock = stockState === 'out_of_stock'
+  const isLowStock = stockState === 'low_stock'
+  const maxQty = isOutOfStock ? 0 : product.stock_quantity
+
   const name = language === 'ar' ? product.name_ar : product.name_en
   const description = language === 'ar' ? product.description_ar : product.description_en
   const categoryName = product.category
@@ -59,7 +65,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     : null
 
   const handleAddToCart = () => {
-    if (!selectedSize) return
+    if (!selectedSize || isOutOfStock) return
 
     addItem({
       id: `${product.id}-${selectedSize.size}`,
@@ -70,6 +76,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
       price: selectedSize.price,
       quantity,
       image: product.images?.[0] || '',
+      stock_quantity: product.stock_quantity,
     })
 
     toast.success(t('Added to cart', 'تمت الإضافة للسلة'), {
@@ -304,6 +311,26 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
           )}
 
+          {/* Stock state */}
+          <div className="flex items-center gap-2">
+            {isOutOfStock ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                {t('Out of Stock', 'نفد المخزون')}
+              </span>
+            ) : isLowStock ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                {t(`Only ${product.stock_quantity} left`, `${product.stock_quantity} قطع فقط`)}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/12 px-3 py-1 text-xs font-semibold text-green-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                {t('In Stock', 'متوفر')}
+              </span>
+            )}
+          </div>
+
           {/* Quantity */}
           <div>
             <Label className="text-sm font-medium mb-3 block">
@@ -314,7 +341,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
+                disabled={quantity <= 1 || isOutOfStock}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -322,7 +349,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
+                disabled={isOutOfStock || quantity >= maxQty}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -353,10 +381,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 size="lg"
                 className="premium-button flex-1 rounded-full sm:flex-none"
                 onClick={handleAddToCart}
-                disabled={!selectedSize}
+                disabled={!selectedSize || isOutOfStock}
               >
                 <ShoppingBag className="h-5 w-5 mr-2" />
-                {t('Add to Cart', 'أضف للسلة')}
+                {isOutOfStock ? t('Out of Stock', 'نفد المخزون') : t('Add to Cart', 'أضف للسلة')}
               </Button>
               <Button
                 size="lg"

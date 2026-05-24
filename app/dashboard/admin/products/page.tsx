@@ -26,6 +26,8 @@ type Product = {
   is_best_seller: boolean
   is_new: boolean
   stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   sizes: Size[]
 }
 
@@ -42,6 +44,8 @@ type ProductForm = {
   price_500: string
   price_1000: string
   stock_quantity: string
+  low_stock_threshold: string
+  is_manually_out_of_stock: boolean
   is_visible: boolean
   is_featured: boolean
   is_best_seller: boolean
@@ -53,6 +57,8 @@ const EMPTY_FORM: ProductForm = {
   category_id: '', image: '',
   price_250: '', price_500: '', price_1000: '',
   stock_quantity: '0',
+  low_stock_threshold: '10',
+  is_manually_out_of_stock: false,
   is_visible: true, is_featured: false, is_best_seller: false, is_new: false,
 }
 
@@ -131,6 +137,8 @@ export default function ProductsPage() {
       price_500: String(p.sizes.find(s => s.size === '500g')?.price ?? ''),
       price_1000: String(p.sizes.find(s => s.size === '1kg')?.price ?? ''),
       stock_quantity: String(p.stock_quantity),
+      low_stock_threshold: String(p.low_stock_threshold ?? 10),
+      is_manually_out_of_stock: p.is_manually_out_of_stock ?? false,
       is_visible: p.is_visible,
       is_featured: p.is_featured,
       is_best_seller: p.is_best_seller,
@@ -157,6 +165,8 @@ export default function ProductsPage() {
         price_500: form.price_500 ? Number(form.price_500) : 0,
         price_1000: form.price_1000 ? Number(form.price_1000) : 0,
         stock_quantity: Number(form.stock_quantity || 0),
+        low_stock_threshold: Number(form.low_stock_threshold || 10),
+        is_manually_out_of_stock: form.is_manually_out_of_stock,
         is_visible: form.is_visible,
         is_featured: form.is_featured,
         is_best_seller: form.is_best_seller,
@@ -448,7 +458,18 @@ export default function ProductsPage() {
                     )}
                     <div className="flex items-center gap-1">
                       <Package className="h-3 w-3 text-white/20" />
-                      <span className="text-white/25 text-[10px]">{product.stock_quantity}</span>
+                      <span className={`text-[10px] font-semibold ${
+                        product.is_manually_out_of_stock || product.stock_quantity <= 0
+                          ? 'text-red-400/80'
+                          : product.stock_quantity <= (product.low_stock_threshold ?? 10)
+                            ? 'text-yellow-400/80'
+                            : 'text-white/25'
+                      }`}>
+                        {product.is_manually_out_of_stock
+                          ? t('OOS', 'نفد')
+                          : product.stock_quantity
+                        }
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -528,22 +549,24 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Category + Stock */}
+              {/* Category */}
+              <div>
+                <label className="block text-white/40 text-xs mb-1.5">{t('Category', 'الفئة')}</label>
+                <select
+                  value={form.category_id}
+                  onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}
+                  aria-label={t('Category', 'الفئة')}
+                  className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                >
+                  <option value="">{t('Uncategorized', 'بدون فئة')}</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name_ar}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Stock */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-white/40 text-xs mb-1.5">{t('Category', 'الفئة')}</label>
-                  <select
-                    value={form.category_id}
-                    onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}
-                    aria-label={t('Category', 'الفئة')}
-                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/70 focus:outline-none focus:border-[#c8941a]/30 transition-all"
-                  >
-                    <option value="">{t('Uncategorized', 'بدون فئة')}</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name_ar}</option>
-                    ))}
-                  </select>
-                </div>
                 <div>
                   <label className="block text-white/40 text-xs mb-1.5">{t('Stock Quantity', 'الكمية المتوفرة')}</label>
                   <input
@@ -555,6 +578,33 @@ export default function ProductsPage() {
                     className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#c8941a]/30 transition-all"
                   />
                 </div>
+                <div>
+                  <label className="block text-white/40 text-xs mb-1.5">{t('Low Stock Alert At', 'تنبيه عند الكمية')}</label>
+                  <input
+                    type="number"
+                    value={form.low_stock_threshold}
+                    onChange={e => setForm(p => ({ ...p, low_stock_threshold: e.target.value }))}
+                    min={1}
+                    placeholder="10"
+                    className="w-full bg-[#180d04] border border-[#c8941a]/10 rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#c8941a]/30 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Manual out-of-stock */}
+              <div className="flex items-center justify-between p-3 bg-[#180d04] border border-[#c8941a]/10 rounded-xl">
+                <div>
+                  <p className="text-white/70 text-sm font-medium">{t('Force Out of Stock', 'إيقاف البيع يدوياً')}</p>
+                  <p className="text-white/25 text-xs mt-0.5">{t('Override stock — prevent all purchases', 'تعطيل الشراء بغض النظر عن الكمية')}</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={t('Force Out of Stock', 'إيقاف البيع يدوياً')}
+                  onClick={() => setForm(p => ({ ...p, is_manually_out_of_stock: !p.is_manually_out_of_stock }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${form.is_manually_out_of_stock ? 'bg-red-600' : 'bg-white/10'}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.is_manually_out_of_stock ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
               </div>
 
               {/* Image URL */}

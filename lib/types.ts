@@ -31,6 +31,8 @@ export interface Product {
   is_new: boolean
   is_visible: boolean
   stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   created_at: string
   updated_at: string
   // Joined data

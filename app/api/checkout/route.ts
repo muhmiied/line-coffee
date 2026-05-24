@@ -43,6 +43,8 @@ type CatalogProduct = {
   name_ar: string | null
   images: string[] | null
   is_visible: boolean | null
+  stock_quantity: number | null
+  is_manually_out_of_stock: boolean | null
   sizes: Array<{
     size: string
     price: number | string
@@ -405,7 +407,7 @@ export async function POST(request: NextRequest) {
     if (realProductIds.length > 0) {
       const { data: products, error: productsError } = await admin
         .from('products')
-        .select('id, name_en, name_ar, images, is_visible, sizes:product_sizes(size, price, is_available)')
+        .select('id, name_en, name_ar, images, is_visible, stock_quantity, is_manually_out_of_stock, sizes:product_sizes(size, price, is_available)')
         .in('id', realProductIds)
 
       if (productsError) {
@@ -444,6 +446,23 @@ export async function POST(request: NextRequest) {
 
         if (!selectedSize) {
           return NextResponse.json({ success: false, error: 'A selected product size is unavailable' }, { status: 400 })
+        }
+
+        // ── Stock validation ──────────────────────────────────────
+        if (product.is_manually_out_of_stock) {
+          const productName = product.name_en || product.name_ar || 'A product'
+          return NextResponse.json(
+            { success: false, error: `${productName} is currently out of stock` },
+            { status: 409 }
+          )
+        }
+        const availableQty = typeof product.stock_quantity === 'number' ? product.stock_quantity : Infinity
+        if (availableQty < quantity) {
+          const productName = product.name_en || product.name_ar || 'A product'
+          return NextResponse.json(
+            { success: false, error: `Insufficient stock for ${productName}. Only ${availableQty} available.` },
+            { status: 409 }
+          )
         }
 
         const unitPrice = toMoney(selectedSize.price)
@@ -613,19 +632,19 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Deduct stock ──────────────────────────────────────────────
+    // Use the already-fetched catalogProducts snapshot for deduction — avoids
+    // a second round-trip and ensures we deduct exactly what was validated.
     for (const item of sanitizedItems) {
       if (!item.product_id) continue
-      const { data: product } = await admin
-        .from('products')
-        .select('stock_quantity')
-        .eq('id', item.product_id)
-        .single()
-      if (product && typeof product.stock_quantity === 'number') {
-        const newQty = Math.max(0, product.stock_quantity - item.quantity)
+      const catalogProduct = catalogProducts.get(item.product_id)
+      if (catalogProduct && typeof catalogProduct.stock_quantity === 'number') {
+        const newQty = Math.max(0, catalogProduct.stock_quantity - item.quantity)
         await admin
           .from('products')
           .update({ stock_quantity: newQty })
           .eq('id', item.product_id)
+        // Update local snapshot so subsequent items in the same order see the deducted value
+        catalogProducts.set(item.product_id, { ...catalogProduct, stock_quantity: newQty })
       }
     }
 

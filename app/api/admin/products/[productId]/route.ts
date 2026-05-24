@@ -35,6 +35,8 @@ export async function PATCH(
   if (body.is_best_seller !== undefined) patch.is_best_seller = body.is_best_seller
   if (body.is_new !== undefined) patch.is_new = body.is_new
   if (body.stock_quantity !== undefined) patch.stock_quantity = Number(body.stock_quantity)
+  if (body.low_stock_threshold !== undefined) patch.low_stock_threshold = Number(body.low_stock_threshold)
+  if (body.is_manually_out_of_stock !== undefined) patch.is_manually_out_of_stock = Boolean(body.is_manually_out_of_stock)
   if ('category_id' in body) patch.category_id = body.category_id
   if (body.images !== undefined) patch.images = body.images
 

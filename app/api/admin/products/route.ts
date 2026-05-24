@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
       images: body.images || [],
       is_visible: body.is_visible ?? true,
       stock_quantity: Number(body.stock_quantity || 0),
+      low_stock_threshold: Number(body.low_stock_threshold || 10),
+      is_manually_out_of_stock: Boolean(body.is_manually_out_of_stock ?? false),
     })
     .select()
     .single()
