@@ -9,7 +9,16 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getWishlist, getStoreWishlist, toggleWishlist, mergeWishlistItems, getWishlistCount } from '@/lib/services'
+import {
+  addToWishlist,
+  clearWishlist,
+  getWishlist,
+  getStoreWishlist,
+  toggleWishlist,
+  mergeWishlistItems,
+  getWishlistCount,
+  removeFromWishlist,
+} from '@/lib/services'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i
 
@@ -86,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json()
-    const { productId } = body
+    const { productId, action } = body
     
     if (!productId) {
       return NextResponse.json(
@@ -95,7 +104,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const validationError = await validateWishlistProduct(supabase, productId)
+    const validationError = action === 'remove'
+      ? (!isUuid(productId) ? 'Valid product ID is required' : null)
+      : await validateWishlistProduct(supabase, productId)
     if (validationError) {
       return NextResponse.json(
         { success: false, error: validationError },
@@ -103,7 +114,11 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const result = await toggleWishlist(user.id, productId)
+    const result = action === 'add'
+      ? { added: true, item: await addToWishlist(user.id, productId) }
+      : action === 'remove'
+        ? { added: false, ...(await removeFromWishlist(user.id, productId)) }
+        : await toggleWishlist(user.id, productId)
     const storeItems = await getStoreWishlist(user.id)
     
     return NextResponse.json({
@@ -116,6 +131,53 @@ export async function POST(request: NextRequest) {
     console.error('API Error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update wishlist' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const productId = body?.productId
+
+    if (productId) {
+      if (!isUuid(productId)) {
+        return NextResponse.json(
+          { success: false, error: 'Valid product ID is required' },
+          { status: 400 }
+        )
+      }
+
+      await removeFromWishlist(user.id, productId)
+    } else {
+      await clearWishlist(user.id)
+    }
+
+    const storeItems = await getStoreWishlist(user.id)
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        store_items: storeItems,
+        count: storeItems.length,
+      },
+      message: productId ? 'Removed from wishlist' : 'Wishlist cleared',
+    })
+  } catch (error) {
+    console.error('API Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete wishlist item' },
       { status: 500 }
     )
   }
@@ -136,6 +198,10 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     const items = Array.isArray(body?.items) ? body.items : []
+    const removedProductIds = Array.isArray(body?.removedProductIds)
+      ? body.removedProductIds.filter(isUuid)
+      : []
+    const shouldClear = body?.clear === true
 
     for (const item of items) {
       const validationError = await validateWishlistProduct(supabase, item?.productId)
@@ -145,6 +211,14 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         )
       }
+    }
+
+    if (shouldClear) {
+      await clearWishlist(user.id)
+    }
+
+    for (const productId of removedProductIds) {
+      await removeFromWishlist(user.id, productId)
     }
 
     const storeItems = items.length > 0

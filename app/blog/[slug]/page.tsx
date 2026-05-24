@@ -1,117 +1,77 @@
-'use client'
+import type { Metadata } from 'next'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { BlogPostClient, type BlogPost } from './post-client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowLeft, ArrowRight, Calendar, FileText } from 'lucide-react'
-import { useLanguage } from '@/lib/context/language'
+const BLOG_SELECT = 'id, title_ar, title_en, slug, cover_image, content_ar, content_en, excerpt_ar, excerpt_en, published_at, sort_order, created_at'
+const BLOG_FALLBACK_SELECT = 'id, title_ar, title_en, slug, cover_image, content_ar, content_en, published_at, created_at'
 
-type Post = {
-  id: string
-  title_ar: string
-  title_en: string
-  slug: string
-  cover_image: string | null
-  content_ar: string | null
-  content_en: string | null
-  published_at: string | null
-  created_at: string
+export const dynamic = 'force-dynamic'
+
+async function getPublishedPost(slug: string): Promise<BlogPost | null> {
+  const admin = createAdminClient()
+  if (!admin) return null
+
+  const { data, error } = await admin
+    .from('blog_posts')
+    .select(BLOG_SELECT)
+    .eq('slug', slug)
+    .eq('is_published', true)
+    .maybeSingle()
+
+  if (error?.code === '42703') {
+    const { data: fallbackData } = await admin
+      .from('blog_posts')
+      .select(BLOG_FALLBACK_SELECT)
+      .eq('slug', slug)
+      .eq('is_published', true)
+      .maybeSingle()
+
+    return fallbackData as BlogPost | null
+  }
+
+  if (error || !data) return null
+
+  return data as BlogPost
 }
 
-export default function BlogPostPage() {
-  const { slug } = useParams<{ slug: string }>()
-  const { t, language, dir } = useLanguage()
-  const [post, setPost] = useState<Post | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+function plainExcerpt(value?: string | null) {
+  return value?.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 155) || undefined
+}
 
-  useEffect(() => {
-    fetch('/api/blog/public', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((json) => {
-        const found = (json.data || []).find((p: Post) => p.slug === slug)
-        if (found) setPost(found)
-        else setNotFound(true)
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false))
-  }, [slug])
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getPublishedPost(slug)
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0B0806] py-20 md:py-24">
-        <div className="container mx-auto max-w-3xl px-4">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 w-3/4 rounded bg-[#B6885E]/10" />
-            <div className="h-72 rounded-2xl bg-[#B6885E]/10" />
-            <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-4 rounded bg-[#B6885E]/10" />)}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+  if (!post) {
+    return {
+      title: 'Blog Post | Line Coffee',
+      description: 'Line Coffee blog article',
+    }
   }
 
-  if (notFound || !post) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0B0806]">
-        <div className="text-center">
-          <FileText className="mx-auto mb-4 h-16 w-16 text-[#B6885E]/30" />
-          <h1 className="mb-2 text-2xl font-bold text-[#F5E6D8]">{t('Post not found', 'المقال غير موجود')}</h1>
-          <Link href="/blog" className="text-[#D6A373] hover:underline">{t('Back to Blog', 'العودة للمدونة')}</Link>
-        </div>
-      </div>
-    )
+  const title = `${post.title_en || post.title_ar} | Line Coffee`
+  const description = plainExcerpt(post.excerpt_en || post.content_en || post.excerpt_ar || post.content_ar)
+  const images = post.cover_image ? [{ url: post.cover_image }] : undefined
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images,
+      type: 'article',
+    },
   }
+}
 
-  const title = language === 'ar' ? post.title_ar : post.title_en
-  const content = language === 'ar' ? post.content_ar : post.content_en
-  const date = post.published_at || post.created_at
+export default async function BlogPostPage(
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await params
+  const post = await getPublishedPost(slug)
 
-  return (
-    <div className="min-h-screen bg-[#0B0806] py-20 md:py-24" dir={dir}>
-      <article className="container mx-auto max-w-3xl px-4">
-        <Link href="/blog" className="mb-8 inline-flex items-center gap-1.5 text-sm text-[#D6B79A]/72 transition-colors hover:text-[#D6A373]">
-          {dir === 'rtl' ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
-          {t('Back to Blog', 'العودة للمدونة')}
-        </Link>
-
-        {post.cover_image && (
-          <div className="relative mb-8 h-72 overflow-hidden rounded-2xl border border-[#B6885E]/14 md:h-96">
-            <Image src={post.cover_image} alt={title} fill className="object-cover" unoptimized />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/72 to-transparent" />
-          </div>
-        )}
-
-        <header className="mb-8">
-          <div className="mb-4 flex items-center gap-1.5 text-sm text-[#D6B79A]/58">
-            <Calendar className="h-4 w-4" />
-            {new Date(date).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </div>
-          <h1 className="font-serif text-3xl font-bold leading-[1.16] text-[#F5E6D8] md:text-5xl">
-            {title}
-          </h1>
-        </header>
-
-        <div className="rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/58 p-5 text-[#F5E6D8]/84 md:p-7">
-          {content ? (
-            content.split('\n').map((para, i) =>
-              para.trim() ? <p key={i} className="mb-5 text-base leading-8 text-[#F5E6D8]/84">{para}</p> : <br key={i} />
-            )
-          ) : (
-            <p className="italic text-[#D6B79A]/70">{t('No content available.', 'لا يوجد محتوى.')}</p>
-          )}
-        </div>
-
-        <div className="mt-10 border-t border-[#B6885E]/14 pt-8">
-          <Link href="/blog" className="inline-flex items-center gap-1.5 font-medium text-[#D6A373] hover:underline">
-            {dir === 'rtl' ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
-            {t('All Posts', 'كل المقالات')}
-          </Link>
-        </div>
-      </article>
-    </div>
-  )
+  return <BlogPostClient initialPost={post} />
 }

@@ -103,7 +103,14 @@ export function AuthProvider({
     const currentCartState = useCartStore.getState()
     const currentWishlistState = useWishlistStore.getState()
     const guestCartItems = currentCartState.ownerId === userId ? [] : currentCartState.items
-    const guestWishlistItems = currentWishlistState.ownerId === userId ? [] : currentWishlistState.items
+    const wishlistItemsToMerge = currentWishlistState.ownerId === userId
+      ? currentWishlistState.pendingAdds
+      : currentWishlistState.items
+    const wishlistPendingSnapshot = JSON.stringify({
+      adds: currentWishlistState.pendingAdds.map((item) => item.productId),
+      removals: currentWishlistState.pendingRemovals,
+      clear: currentWishlistState.pendingClear,
+    })
 
     async function syncPersistedState() {
       try {
@@ -116,7 +123,11 @@ export function AuthProvider({
           fetch('/api/wishlist', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: guestWishlistItems }),
+            body: JSON.stringify({
+              items: wishlistItemsToMerge,
+              removedProductIds: currentWishlistState.pendingRemovals,
+              clear: currentWishlistState.pendingClear,
+            }),
           }),
         ])
 
@@ -133,7 +144,16 @@ export function AuthProvider({
         if (wishlistResponse.ok) {
           const json = await wishlistResponse.json()
           if (Array.isArray(json?.data?.store_items)) {
-            replaceWishlistItems(json.data.store_items)
+            const latestWishlistState = useWishlistStore.getState()
+            const latestWishlistPendingSnapshot = JSON.stringify({
+              adds: latestWishlistState.pendingAdds.map((item) => item.productId),
+              removals: latestWishlistState.pendingRemovals,
+              clear: latestWishlistState.pendingClear,
+            })
+
+            if (latestWishlistPendingSnapshot === wishlistPendingSnapshot) {
+              replaceWishlistItems(json.data.store_items)
+            }
             wishlistSyncOwner(userId)
           }
         }

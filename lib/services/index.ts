@@ -58,6 +58,7 @@ export {
   getStoreWishlist,
   addToWishlist,
   removeFromWishlist,
+  clearWishlist,
   isInWishlist,
   toggleWishlist,
   mergeWishlistItems,

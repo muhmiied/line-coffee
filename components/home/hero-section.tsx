@@ -10,7 +10,18 @@ import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
 import { WordByWord } from '@/components/ui/motion-primitives'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
-import { getMediaObjectPosition, type SiteMediaItem } from '@/lib/media'
+import {
+  getMediaObjectPosition,
+  getMediaOverlayOpacity,
+  getSectionBuilderContent,
+  getSectionBuilderLayout,
+  getWebsiteSection,
+  type SectionBuilderLayout,
+  type SectionStatBlock,
+  type SiteMediaItem,
+} from '@/lib/media'
+
+const heroSectionConfig = getWebsiteSection('hero')
 
 type HeroSlide = {
   image: string
@@ -21,6 +32,19 @@ type HeroSlide = {
   altEn?: string | null
   altAr?: string | null
   objectPosition?: string
+  overlayOpacity?: number
+  buttonTextEn?: string | null
+  buttonTextAr?: string | null
+  buttonLink?: string | null
+  stats?: SectionStatBlock[]
+  layout?: SectionBuilderLayout
+}
+
+function elementTransform(layout: SectionBuilderLayout | undefined, elementId: string) {
+  const position = layout?.elements?.[elementId]
+  const x = Number(position?.x || 0)
+  const y = Number(position?.y || 0)
+  return x || y ? { transform: `translate(${x}px, ${y}px)` } : undefined
 }
 
 const fallbackSlides: HeroSlide[] = [
@@ -84,16 +108,25 @@ export function HeroSection() {
 
         const mediaSlides = (json.data as SiteMediaItem[])
           .filter((item) => item.image_url)
-          .map((item, index): HeroSlide => ({
-            image: item.image_url,
-            headingEn: item.title_en || fallbackSlides[index % fallbackSlides.length].headingEn,
-            headingAr: item.title_ar || item.title_en || fallbackSlides[index % fallbackSlides.length].headingAr,
-            subheadingEn: item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingEn,
-            subheadingAr: item.subtitle_ar || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingAr,
-            altEn: item.alt_en,
-            altAr: item.alt_ar,
-            objectPosition: getMediaObjectPosition(item),
-          }))
+          .map((item, index): HeroSlide => {
+            const content = getSectionBuilderContent(heroSectionConfig, item)
+            return {
+              image: item.image_url,
+              headingEn: content.title_en || item.title_en || fallbackSlides[index % fallbackSlides.length].headingEn,
+              headingAr: content.title_ar || item.title_ar || item.title_en || fallbackSlides[index % fallbackSlides.length].headingAr,
+              subheadingEn: content.subtitle_en || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingEn,
+              subheadingAr: content.subtitle_ar || item.subtitle_ar || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingAr,
+              altEn: item.alt_en,
+              altAr: item.alt_ar,
+              objectPosition: getMediaObjectPosition(item),
+              overlayOpacity: getMediaOverlayOpacity(item, 0.6),
+              buttonTextEn: content.button_text_en || item.button_text_en,
+              buttonTextAr: content.button_text_ar || item.button_text_ar,
+              buttonLink: content.button_link || item.button_link || item.link_url,
+              stats: content.stats,
+              layout: getSectionBuilderLayout(heroSectionConfig, item),
+            }
+          })
 
         if (mediaSlides.length > 0) {
           setSlides(mediaSlides)
@@ -114,6 +147,16 @@ export function HeroSection() {
   const headingText = t(slides[currentSlide].headingEn, slides[currentSlide].headingAr)
   const subheadingText = t(slides[currentSlide].subheadingEn, slides[currentSlide].subheadingAr)
   const imageAlt = t(slides[currentSlide].altEn || 'Coffee background', slides[currentSlide].altAr || slides[currentSlide].altEn || 'Coffee background')
+  const primaryButtonText = t(slides[currentSlide].buttonTextEn || 'Shop Now', slides[currentSlide].buttonTextAr || slides[currentSlide].buttonTextEn || 'تسوق الآن')
+  const primaryButtonHref = slides[currentSlide].buttonLink || '/products'
+  const currentLayout = slides[currentSlide].layout
+  const heroStats = slides[currentSlide].stats && slides[currentSlide].stats.length > 0
+    ? slides[currentSlide].stats.filter((stat) => stat.is_active !== false)
+    : [
+        { id: 'countries', value: '15+', label_en: 'Countries Sourced', label_ar: 'دولة مصدر' },
+        { id: 'customers', value: '50K+', label_en: 'Happy Customers', label_ar: 'عميل سعيد' },
+        { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
+      ]
 
   return (
     <section
@@ -150,7 +193,7 @@ export function HeroSection() {
 
           {/* Cinematic grading stack */}
           {/* 1. Dark base overlay */}
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-black" style={{ opacity: slides[currentSlide].overlayOpacity ?? 0.6 }} />
           {/* 2. Warm brown tone cast — luxury cinema feel */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
           {/* 3. Vignette */}
@@ -167,7 +210,7 @@ export function HeroSection() {
 
       {/* ── Hero content ── */}
       <motion.div style={{ opacity }} className="container mx-auto px-4 relative z-20">
-        <div className="max-w-6xl text-center mx-auto">
+        <div className="max-w-6xl text-center mx-auto" style={elementTransform(currentLayout, 'main-copy')}>
 
           {/* Stats row */}
           <motion.div
@@ -176,22 +219,21 @@ export function HeroSection() {
             transition={{ delay: 0.3 }}
             className="mb-8 flex flex-wrap justify-center gap-5 sm:gap-8 md:mb-12 md:gap-16"
           >
-            {[
-              { value: 15, suffix: '+', labelEn: 'Countries Sourced', labelAr: 'دولة مصدر' },
-              { value: 50, suffix: 'K+', labelEn: 'Happy Customers', labelAr: 'عميل سعيد' },
-              { value: 100, suffix: '%', labelEn: 'Arabica Beans', labelAr: 'حبوب أرابيكا' },
-            ].map((stat) => (
-              <div key={stat.labelEn} className="text-center">
+            {heroStats.map((stat) => {
+              const numericValue = Number(String(stat.value).replace(/\D/g, ''))
+              const suffix = String(stat.value).replace(/[0-9]/g, '')
+              return (
+              <div key={stat.id} className="text-center">
                 <p className="font-serif text-2xl md:text-3xl font-bold" style={{ color: '#D6A373' }}>
-                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                  {Number.isFinite(numericValue) ? <AnimatedCounter value={numericValue} suffix={suffix} /> : stat.value}
                 </p>
                 <p className="text-xs md:text-sm mt-0.5" style={{ color: 'rgba(245,230,216,0.55)' }}>
-                  {t(stat.labelEn, stat.labelAr)}
+                  {t(stat.label_en, stat.label_ar || stat.label_en)}
                 </p>
                 {/* Thin gold underline */}
                 <div className="mx-auto mt-1.5 h-px w-8 bg-gradient-to-r from-transparent via-[#B6885E]/50 to-transparent" />
               </div>
-            ))}
+            )})}
           </motion.div>
 
           {/* Headline */}
@@ -236,7 +278,7 @@ export function HeroSection() {
           >
             {/* Primary — gold gradient */}
             <Link
-              href="/products"
+              href={primaryButtonHref}
               className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
@@ -252,7 +294,7 @@ export function HeroSection() {
                 e.currentTarget.style.transform = 'translateY(0)'
               }}
             >
-              {t('Shop Now', 'تسوق الآن')}
+              {primaryButtonText}
               <ArrowRight
                 className={cn(
                   'h-4 w-4 transition-transform group-hover:translate-x-1',

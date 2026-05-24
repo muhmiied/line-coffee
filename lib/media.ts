@@ -19,6 +19,101 @@ export type MediaUsageOption = {
   recommendationAr: string
 }
 
+export type SectionType =
+  | 'full_hero'
+  | 'split_content'
+  | 'full_image_banner'
+  | 'centered_cta'
+  | 'multi_card_slider'
+  | 'testimonial_highlight'
+
+export type SectionEditorTemplate =
+  | 'hero'
+  | 'story'
+  | 'banner'
+  | 'cards'
+  | 'text_cards'
+  | 'contact'
+  | 'generic'
+
+export type SectionTextBlock = {
+  id: string
+  icon?: string
+  title_en: string
+  title_ar: string
+  description_en?: string
+  description_ar?: string
+  is_active?: boolean
+}
+
+export type SectionStatBlock = {
+  id: string
+  value: string
+  label_en: string
+  label_ar: string
+  is_active?: boolean
+}
+
+export type SectionBuilderContent = {
+  eyebrow_en?: string
+  eyebrow_ar?: string
+  title_en?: string
+  title_ar?: string
+  subtitle_en?: string
+  subtitle_ar?: string
+  body_en?: string
+  body_ar?: string
+  button_text_en?: string
+  button_text_ar?: string
+  button_link?: string
+  features?: SectionTextBlock[]
+  stats?: SectionStatBlock[]
+}
+
+export type SectionElementPosition = {
+  x?: number
+  y?: number
+  align?: 'left' | 'center' | 'right'
+  visible?: boolean
+}
+
+export type SectionBuilderLayout = {
+  elements?: Record<string, SectionElementPosition>
+  imagePosition?: SectionElementPosition
+  textPosition?: SectionElementPosition
+  overlayOpacity?: number
+  objectPosition?: string
+}
+
+export type WebsiteSectionConfig = {
+  key: string
+  pageKey: string
+  pageLabelEn: string
+  pageLabelAr: string
+  usageArea: string
+  mediaType: string
+  sectionType: SectionType
+  editorTemplate: SectionEditorTemplate
+  labelEn: string
+  labelAr: string
+  descriptionEn: string
+  descriptionAr: string
+  fallbackImage: string
+  defaultTitleEn: string
+  defaultTitleAr: string
+  defaultSubtitleEn: string
+  defaultSubtitleAr: string
+  defaultButtonTextEn?: string
+  defaultButtonTextAr?: string
+  defaultButtonLink?: string
+  supportsSlides: boolean
+  supportsCta: boolean
+  minWidth: number
+  minHeight: number
+  defaultContent?: SectionBuilderContent
+  defaultLayout?: SectionBuilderLayout
+}
+
 export const MEDIA_USAGE_OPTIONS: MediaUsageOption[] = [
   {
     value: 'hero',
@@ -162,6 +257,634 @@ export const MEDIA_USAGE_OPTIONS: MediaUsageOption[] = [
   },
 ]
 
+export const WEBSITE_SECTIONS: WebsiteSectionConfig[] = [
+  {
+    key: 'hero',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'hero',
+    mediaType: 'hero',
+    sectionType: 'full_hero',
+    editorTemplate: 'hero',
+    labelEn: 'Hero Section',
+    labelAr: 'Hero Section',
+    descriptionEn: 'Homepage full-screen hero slides with headline, subtitle, and CTA.',
+    descriptionAr: 'Homepage full-screen hero slides with headline, subtitle, and CTA.',
+    fallbackImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
+    defaultTitleEn: 'Experience Coffee Like Never Before',
+    defaultTitleAr: 'Experience Coffee Like Never Before',
+    defaultSubtitleEn: 'Discover our carefully sourced beans and signature blends.',
+    defaultSubtitleAr: 'Discover our carefully sourced beans and signature blends.',
+    defaultButtonTextEn: 'Shop Now',
+    defaultButtonTextAr: 'Shop Now',
+    defaultButtonLink: '/products',
+    supportsSlides: true,
+    supportsCta: false,
+    minWidth: 1920,
+    minHeight: 900,
+    defaultContent: {
+      eyebrow_en: 'Line Coffee',
+      eyebrow_ar: 'Line Coffee',
+      title_en: 'Experience Coffee Like Never Before',
+      title_ar: 'Experience Coffee Like Never Before',
+      subtitle_en: 'Discover our carefully sourced beans and signature blends.',
+      subtitle_ar: 'Discover our carefully sourced beans and signature blends.',
+      button_text_en: 'Shop Now',
+      button_text_ar: 'Shop Now',
+      button_link: '/products',
+      stats: [
+        { id: 'countries', value: '15+', label_en: 'Countries Sourced', label_ar: 'Countries Sourced', is_active: true },
+        { id: 'customers', value: '50K+', label_en: 'Happy Customers', label_ar: 'Happy Customers', is_active: true },
+        { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'Arabica Beans', is_active: true },
+      ],
+    },
+  },
+  {
+    key: 'about_top',
+    pageKey: 'about',
+    pageLabelEn: 'About Page',
+    pageLabelAr: 'About Page',
+    usageArea: 'about_top',
+    mediaType: 'section',
+    sectionType: 'full_image_banner',
+    editorTemplate: 'banner',
+    labelEn: 'About Section',
+    labelAr: 'About Section',
+    descriptionEn: 'Top visual banner for the About page.',
+    descriptionAr: 'Top visual banner for the About page.',
+    fallbackImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600',
+    defaultTitleEn: 'Our Story',
+    defaultTitleAr: 'Our Story',
+    defaultSubtitleEn: 'Crafting the perfect cup since 2019',
+    defaultSubtitleAr: 'Crafting the perfect cup since 2019',
+    supportsSlides: false,
+    supportsCta: true,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      eyebrow_en: 'Since 2019',
+      eyebrow_ar: 'Since 2019',
+      title_en: 'Our Story',
+      title_ar: 'Our Story',
+      subtitle_en: 'Crafting the perfect cup since 2019',
+      subtitle_ar: 'Crafting the perfect cup since 2019',
+    },
+  },
+  {
+    key: 'about_lower',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'about_lower',
+    mediaType: 'section',
+    sectionType: 'split_content',
+    editorTemplate: 'story',
+    labelEn: 'Our Story',
+    labelAr: 'Our Story',
+    descriptionEn: 'Story image used in the homepage and About content block.',
+    descriptionAr: 'Story image used in the homepage and About content block.',
+    fallbackImage: '/images/story.jpg',
+    defaultTitleEn: 'From Distant Farms to Your Cup',
+    defaultTitleAr: 'From Distant Farms to Your Cup',
+    defaultSubtitleEn: 'A premium visual for the story block.',
+    defaultSubtitleAr: 'A premium visual for the story block.',
+    supportsSlides: false,
+    supportsCta: true,
+    minWidth: 1000,
+    minHeight: 1000,
+    defaultContent: {
+      eyebrow_en: 'Our Story',
+      eyebrow_ar: 'قصتنا',
+      title_en: 'From Distant Farms to Your Cup',
+      title_ar: 'من المزارع البعيدة إلى كوبك',
+      body_en: "Line Coffee began with a simple mission: to bring the world's finest coffee to every home. We build lasting relationships with farmers who share our passion for exceptional quality.",
+      body_ar: 'بدأت لاين كوفي بمهمة بسيطة: تقديم قهوة فاخرة بجودة ثابتة لكل بيت. نبني علاقات طويلة مع مزارعين يشاركوننا الشغف بالجودة الاستثنائية.',
+      button_text_en: 'Learn More About Us',
+      button_text_ar: 'تعرف علينا أكثر',
+      button_link: '/about',
+      features: [
+        {
+          id: 'sourcing',
+          icon: 'leaf',
+          title_en: 'Sustainably Sourced',
+          title_ar: 'مصادر مستدامة',
+          description_en: 'Direct relationships with farmers ensuring fair trade and environmental responsibility.',
+          description_ar: 'علاقات مباشرة مع المزارعين تضمن التجارة العادلة والمسؤولية البيئية.',
+          is_active: true,
+        },
+        {
+          id: 'roasting',
+          icon: 'award',
+          title_en: 'Expert Roasting',
+          title_ar: 'تحميص احترافي',
+          description_en: "Small-batch roasting by master roasters to bring out each bean's unique character.",
+          description_ar: 'تحميص بكميات صغيرة من قبل محمصين محترفين لإبراز الطابع الفريد لكل حبة.',
+          is_active: true,
+        },
+        {
+          id: 'quality',
+          icon: 'heart',
+          title_en: 'Passion for Quality',
+          title_ar: 'شغف بالجودة',
+          description_en: 'From farm to cup, every step is guided by our commitment to excellence.',
+          description_ar: 'من المزرعة إلى الكوب، كل خطوة موجّهة بالتزامنا بالتميز.',
+          is_active: true,
+        },
+      ],
+      stats: [
+        { id: 'years', value: '10+', label_en: 'Years of Excellence', label_ar: 'سنوات من التميز', is_active: true },
+        { id: 'farms', value: '25+', label_en: 'Farm Partners', label_ar: 'شريك مزارع', is_active: true },
+      ],
+    },
+  },
+  {
+    key: 'products_banner',
+    pageKey: 'products',
+    pageLabelEn: 'Products Page',
+    pageLabelAr: 'Products Page',
+    usageArea: 'products_banner',
+    mediaType: 'banner',
+    sectionType: 'full_image_banner',
+    editorTemplate: 'banner',
+    labelEn: 'Products Banner',
+    labelAr: 'Products Banner',
+    descriptionEn: 'Hero image for the products page.',
+    descriptionAr: 'Hero image for the products page.',
+    fallbackImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600',
+    defaultTitleEn: 'Our Products',
+    defaultTitleAr: 'Our Products',
+    defaultSubtitleEn: 'Explore Line Coffee selections.',
+    defaultSubtitleAr: 'Explore Line Coffee selections.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      title_en: 'Our Products',
+      title_ar: 'Our Products',
+      subtitle_en: 'Explore Line Coffee selections.',
+      subtitle_ar: 'Explore Line Coffee selections.',
+    },
+  },
+  {
+    key: 'categories',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'categories',
+    mediaType: 'category',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'cards',
+    labelEn: 'Categories Banner',
+    labelAr: 'Categories Banner',
+    descriptionEn: 'Visual controls for category card images.',
+    descriptionAr: 'Visual controls for category card images.',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
+    defaultTitleEn: 'Shop by Category',
+    defaultTitleAr: 'Shop by Category',
+    defaultSubtitleEn: 'Browse Line Coffee categories.',
+    defaultSubtitleAr: 'Browse Line Coffee categories.',
+    supportsSlides: true,
+    supportsCta: false,
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Browse by Category',
+      eyebrow_ar: 'Browse by Category',
+      title_en: 'Shop by Category',
+      title_ar: 'Shop by Category',
+      subtitle_en: 'Browse Line Coffee categories.',
+      subtitle_ar: 'Browse Line Coffee categories.',
+    },
+  },
+  {
+    key: 'testimonials',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'testimonial',
+    mediaType: 'testimonial',
+    sectionType: 'testimonial_highlight',
+    editorTemplate: 'text_cards',
+    labelEn: 'Testimonials Section',
+    labelAr: 'Testimonials Section',
+    descriptionEn: 'Optional visual highlight for reviews/testimonials.',
+    descriptionAr: 'Optional visual highlight for reviews/testimonials.',
+    fallbackImage: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200',
+    defaultTitleEn: 'What Our Customers Say',
+    defaultTitleAr: 'What Our Customers Say',
+    defaultSubtitleEn: 'A warm highlight image for customer stories.',
+    defaultSubtitleAr: 'A warm highlight image for customer stories.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Testimonials',
+      eyebrow_ar: 'Testimonials',
+      title_en: 'What Our Customers Say',
+      title_ar: 'What Our Customers Say',
+      subtitle_en: 'A warm highlight image for customer stories.',
+      subtitle_ar: 'A warm highlight image for customer stories.',
+    },
+  },
+  {
+    key: 'promo_banner',
+    pageKey: 'global',
+    pageLabelEn: 'Global Banners',
+    pageLabelAr: 'Global Banners',
+    usageArea: 'promo_banner',
+    mediaType: 'banner',
+    sectionType: 'centered_cta',
+    editorTemplate: 'banner',
+    labelEn: 'Promo Banner',
+    labelAr: 'Promo Banner',
+    descriptionEn: 'A centered promotional CTA banner.',
+    descriptionAr: 'A centered promotional CTA banner.',
+    fallbackImage: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1920&q=80',
+    defaultTitleEn: 'Premium Coffee, Delivered Fresh',
+    defaultTitleAr: 'Premium Coffee, Delivered Fresh',
+    defaultSubtitleEn: 'Create a seasonal promotion or campaign banner.',
+    defaultSubtitleAr: 'Create a seasonal promotion or campaign banner.',
+    defaultButtonTextEn: 'Shop Now',
+    defaultButtonTextAr: 'Shop Now',
+    defaultButtonLink: '/products',
+    supportsSlides: true,
+    supportsCta: true,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      title_en: 'Premium Coffee, Delivered Fresh',
+      title_ar: 'Premium Coffee, Delivered Fresh',
+      subtitle_en: 'Create a seasonal promotion or campaign banner.',
+      subtitle_ar: 'Create a seasonal promotion or campaign banner.',
+      button_text_en: 'Shop Now',
+      button_text_ar: 'Shop Now',
+      button_link: '/products',
+    },
+  },
+  {
+    key: 'contact_banner',
+    pageKey: 'contact',
+    pageLabelEn: 'Contact Page',
+    pageLabelAr: 'Contact Page',
+    usageArea: 'contact_banner',
+    mediaType: 'banner',
+    sectionType: 'centered_cta',
+    editorTemplate: 'contact',
+    labelEn: 'Contact Banner',
+    labelAr: 'Contact Banner',
+    descriptionEn: 'Optional image and CTA for the contact area.',
+    descriptionAr: 'Optional image and CTA for the contact area.',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&q=80',
+    defaultTitleEn: 'Need Help Choosing?',
+    defaultTitleAr: 'Need Help Choosing?',
+    defaultSubtitleEn: 'Reach out and we will help you find the right coffee.',
+    defaultSubtitleAr: 'Reach out and we will help you find the right coffee.',
+    defaultButtonTextEn: 'Contact Us',
+    defaultButtonTextAr: 'Contact Us',
+    defaultButtonLink: '/contact',
+    supportsSlides: false,
+    supportsCta: true,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      title_en: 'Need Help Choosing?',
+      title_ar: 'Need Help Choosing?',
+      subtitle_en: 'Reach out and we will help you find the right coffee.',
+      subtitle_ar: 'Reach out and we will help you find the right coffee.',
+      button_text_en: 'Contact Us',
+      button_text_ar: 'Contact Us',
+      button_link: '/contact',
+    },
+  },
+  {
+    key: 'home_features',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'home_features',
+    mediaType: 'section',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'text_cards',
+    labelEn: 'Feature Pills',
+    labelAr: 'Feature Pills',
+    descriptionEn: 'Small trust/value cards below category browsing.',
+    descriptionAr: 'Small trust/value cards below category browsing.',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80',
+    defaultTitleEn: 'Why Line Coffee',
+    defaultTitleAr: 'Why Line Coffee',
+    defaultSubtitleEn: 'Premium quality, fresh roasting, and warm service.',
+    defaultSubtitleAr: 'Premium quality, fresh roasting, and warm service.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Why Line Coffee',
+      eyebrow_ar: 'Why Line Coffee',
+      title_en: 'Crafted for Your Daily Ritual',
+      title_ar: 'Crafted for Your Daily Ritual',
+      features: [
+        { id: 'quality', icon: 'award', title_en: 'Premium Beans', title_ar: 'Premium Beans', description_en: 'Carefully selected coffee with a rich, balanced profile.', description_ar: 'Carefully selected coffee with a rich, balanced profile.', is_active: true },
+        { id: 'fresh', icon: 'coffee', title_en: 'Freshly Packed', title_ar: 'Freshly Packed', description_en: 'Packed with care to preserve aroma and freshness.', description_ar: 'Packed with care to preserve aroma and freshness.', is_active: true },
+        { id: 'service', icon: 'heart', title_en: 'Made With Care', title_ar: 'Made With Care', description_en: 'A warm coffee experience from order to cup.', description_ar: 'A warm coffee experience from order to cup.', is_active: true },
+      ],
+    },
+  },
+  {
+    key: 'best_sellers',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'best_sellers',
+    mediaType: 'section',
+    sectionType: 'full_image_banner',
+    editorTemplate: 'generic',
+    labelEn: 'Best Sellers',
+    labelAr: 'Best Sellers',
+    descriptionEn: 'Homepage best-selling products section heading and background.',
+    descriptionAr: 'Homepage best-selling products section heading and background.',
+    fallbackImage: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1600&q=80',
+    defaultTitleEn: 'Best Sellers',
+    defaultTitleAr: 'Best Sellers',
+    defaultSubtitleEn: 'Customer favorites from Line Coffee.',
+    defaultSubtitleAr: 'Customer favorites from Line Coffee.',
+    supportsSlides: false,
+    supportsCta: true,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      eyebrow_en: 'Customer Favorites',
+      eyebrow_ar: 'Customer Favorites',
+      title_en: 'Best Sellers',
+      title_ar: 'Best Sellers',
+      subtitle_en: 'Customer favorites from Line Coffee.',
+      subtitle_ar: 'Customer favorites from Line Coffee.',
+      button_text_en: 'View All Best Sellers',
+      button_text_ar: 'View All Best Sellers',
+      button_link: '/products?filter=best-seller',
+    },
+  },
+  {
+    key: 'home_blog',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'home_blog',
+    mediaType: 'section',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'generic',
+    labelEn: 'Home Blog Section',
+    labelAr: 'Home Blog Section',
+    descriptionEn: 'Homepage blog preview heading and visual settings.',
+    descriptionAr: 'Homepage blog preview heading and visual settings.',
+    fallbackImage: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1600&q=80',
+    defaultTitleEn: 'Coffee Journal',
+    defaultTitleAr: 'Coffee Journal',
+    defaultSubtitleEn: 'Stories, guides, and brewing notes.',
+    defaultSubtitleAr: 'Stories, guides, and brewing notes.',
+    supportsSlides: false,
+    supportsCta: true,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      eyebrow_en: 'Coffee Journal',
+      eyebrow_ar: 'Coffee Journal',
+      title_en: 'Latest From the Blog',
+      title_ar: 'Latest From the Blog',
+      subtitle_en: 'Stories, guides, and brewing notes.',
+      subtitle_ar: 'Stories, guides, and brewing notes.',
+      button_text_en: 'Read More',
+      button_text_ar: 'Read More',
+      button_link: '/blog',
+    },
+  },
+  {
+    key: 'home_instagram',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'home_instagram',
+    mediaType: 'section',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'cards',
+    labelEn: 'Instagram Section',
+    labelAr: 'Instagram Section',
+    descriptionEn: 'Homepage social/gallery image controls.',
+    descriptionAr: 'Homepage social/gallery image controls.',
+    fallbackImage: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=1200&q=80',
+    defaultTitleEn: 'Follow the Aroma',
+    defaultTitleAr: 'Follow the Aroma',
+    defaultSubtitleEn: 'A visual feed for Line Coffee moments.',
+    defaultSubtitleAr: 'A visual feed for Line Coffee moments.',
+    supportsSlides: true,
+    supportsCta: true,
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Instagram',
+      eyebrow_ar: 'Instagram',
+      title_en: 'Follow the Aroma',
+      title_ar: 'Follow the Aroma',
+      subtitle_en: 'A visual feed for Line Coffee moments.',
+      subtitle_ar: 'A visual feed for Line Coffee moments.',
+      button_text_en: 'Follow Us',
+      button_text_ar: 'Follow Us',
+      button_link: '#',
+    },
+  },
+  {
+    key: 'home_contact',
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: 'home_contact',
+    mediaType: 'section',
+    sectionType: 'centered_cta',
+    editorTemplate: 'contact',
+    labelEn: 'Home Contact Section',
+    labelAr: 'Home Contact Section',
+    descriptionEn: 'Homepage contact section heading, copy, and image.',
+    descriptionAr: 'Homepage contact section heading, copy, and image.',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&q=80',
+    defaultTitleEn: 'Let Us Help You Choose',
+    defaultTitleAr: 'Let Us Help You Choose',
+    defaultSubtitleEn: 'Contact us and we will guide you to the right coffee.',
+    defaultSubtitleAr: 'Contact us and we will guide you to the right coffee.',
+    supportsSlides: false,
+    supportsCta: true,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      eyebrow_en: 'Contact',
+      eyebrow_ar: 'Contact',
+      title_en: 'Let Us Help You Choose',
+      title_ar: 'Let Us Help You Choose',
+      subtitle_en: 'Contact us and we will guide you to the right coffee.',
+      subtitle_ar: 'Contact us and we will guide you to the right coffee.',
+      button_text_en: 'Contact Us',
+      button_text_ar: 'Contact Us',
+      button_link: '/contact',
+    },
+  },
+  {
+    key: 'about_story',
+    pageKey: 'about',
+    pageLabelEn: 'About Page',
+    pageLabelAr: 'About Page',
+    usageArea: 'about_story',
+    mediaType: 'section',
+    sectionType: 'split_content',
+    editorTemplate: 'story',
+    labelEn: 'About Journey',
+    labelAr: 'About Journey',
+    descriptionEn: 'Main story block on the About page.',
+    descriptionAr: 'Main story block on the About page.',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1000&q=80',
+    defaultTitleEn: 'From Passion to Perfection',
+    defaultTitleAr: 'From Passion to Perfection',
+    defaultSubtitleEn: 'Line Coffee started with a simple mission and a love for quality.',
+    defaultSubtitleAr: 'Line Coffee started with a simple mission and a love for quality.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1000,
+    minHeight: 1000,
+    defaultContent: {
+      eyebrow_en: 'Our Journey',
+      eyebrow_ar: 'Our Journey',
+      title_en: 'From Passion to Perfection',
+      title_ar: 'From Passion to Perfection',
+      body_en: 'Line Coffee started with a simple mission: to bring the authentic taste of premium coffee to every home.',
+      body_ar: 'Line Coffee started with a simple mission: to bring the authentic taste of premium coffee to every home.',
+    },
+  },
+  {
+    key: 'about_values',
+    pageKey: 'about',
+    pageLabelEn: 'About Page',
+    pageLabelAr: 'About Page',
+    usageArea: 'about_values',
+    mediaType: 'section',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'text_cards',
+    labelEn: 'About Values',
+    labelAr: 'About Values',
+    descriptionEn: 'Values cards on the About page.',
+    descriptionAr: 'Values cards on the About page.',
+    fallbackImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&q=80',
+    defaultTitleEn: 'Our Values',
+    defaultTitleAr: 'Our Values',
+    defaultSubtitleEn: 'The principles that guide everything we do.',
+    defaultSubtitleAr: 'The principles that guide everything we do.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'What We Stand For',
+      eyebrow_ar: 'What We Stand For',
+      title_en: 'Our Values',
+      title_ar: 'Our Values',
+      subtitle_en: 'The principles that guide everything we do.',
+      subtitle_ar: 'The principles that guide everything we do.',
+      features: [
+        { id: 'quality', title_en: 'Quality First', title_ar: 'Quality First', description_en: 'We never compromise on quality.', description_ar: 'We never compromise on quality.', is_active: true },
+        { id: 'customers', title_en: 'Customer Love', title_ar: 'Customer Love', description_en: 'Our customers are family.', description_ar: 'Our customers are family.', is_active: true },
+        { id: 'innovation', title_en: 'Innovation', title_ar: 'Innovation', description_en: 'We constantly explore new flavors and blends.', description_ar: 'We constantly explore new flavors and blends.', is_active: true },
+      ],
+    },
+  },
+  {
+    key: 'blog_page',
+    pageKey: 'blog',
+    pageLabelEn: 'Blog Page',
+    pageLabelAr: 'Blog Page',
+    usageArea: 'blog_page',
+    mediaType: 'banner',
+    sectionType: 'full_image_banner',
+    editorTemplate: 'banner',
+    labelEn: 'Blog Page Hero',
+    labelAr: 'Blog Page Hero',
+    descriptionEn: 'Blog listing page heading and visual.',
+    descriptionAr: 'Blog listing page heading and visual.',
+    fallbackImage: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1600&q=80',
+    defaultTitleEn: 'Coffee Journal',
+    defaultTitleAr: 'Coffee Journal',
+    defaultSubtitleEn: 'Guides, stories, and coffee inspiration.',
+    defaultSubtitleAr: 'Guides, stories, and coffee inspiration.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      title_en: 'Coffee Journal',
+      title_ar: 'Coffee Journal',
+      subtitle_en: 'Guides, stories, and coffee inspiration.',
+      subtitle_ar: 'Guides, stories, and coffee inspiration.',
+    },
+  },
+  {
+    key: 'contact_page',
+    pageKey: 'contact',
+    pageLabelEn: 'Contact Page',
+    pageLabelAr: 'Contact Page',
+    usageArea: 'contact_page',
+    mediaType: 'banner',
+    sectionType: 'centered_cta',
+    editorTemplate: 'contact',
+    labelEn: 'Contact Page Hero',
+    labelAr: 'Contact Page Hero',
+    descriptionEn: 'Contact page intro and visual.',
+    descriptionAr: 'Contact page intro and visual.',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&q=80',
+    defaultTitleEn: 'Contact Line Coffee',
+    defaultTitleAr: 'Contact Line Coffee',
+    defaultSubtitleEn: 'We are here to help with orders and coffee choices.',
+    defaultSubtitleAr: 'We are here to help with orders and coffee choices.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      title_en: 'Contact Line Coffee',
+      title_ar: 'Contact Line Coffee',
+      subtitle_en: 'We are here to help with orders and coffee choices.',
+      subtitle_ar: 'We are here to help with orders and coffee choices.',
+    },
+  },
+  {
+    key: 'track_page',
+    pageKey: 'track',
+    pageLabelEn: 'Track Order Page',
+    pageLabelAr: 'Track Order Page',
+    usageArea: 'track_page',
+    mediaType: 'banner',
+    sectionType: 'centered_cta',
+    editorTemplate: 'generic',
+    labelEn: 'Track Order Page',
+    labelAr: 'Track Order Page',
+    descriptionEn: 'Order tracking page intro content.',
+    descriptionAr: 'Order tracking page intro content.',
+    fallbackImage: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1600&q=80',
+    defaultTitleEn: 'Track Your Order',
+    defaultTitleAr: 'Track Your Order',
+    defaultSubtitleEn: 'Follow your Line Coffee order status.',
+    defaultSubtitleAr: 'Follow your Line Coffee order status.',
+    supportsSlides: false,
+    supportsCta: false,
+    minWidth: 1600,
+    minHeight: 800,
+    defaultContent: {
+      title_en: 'Track Your Order',
+      title_ar: 'Track Your Order',
+      subtitle_en: 'Follow your Line Coffee order status.',
+      subtitle_ar: 'Follow your Line Coffee order status.',
+    },
+  },
+]
+
 export const OBJECT_POSITION_OPTIONS = [
   { value: 'center center', labelEn: 'Center', labelAr: 'المنتصف' },
   { value: 'center top', labelEn: 'Top', labelAr: 'أعلى' },
@@ -190,13 +913,55 @@ export type SiteMediaItem = {
   link_url: string | null
   sort_order: number
   is_active: boolean
+  section_key?: string | null
+  slide_key?: string | null
+  section_type?: SectionType | string | null
   media_type?: string | null
   usage_area?: string | null
   alt_en?: string | null
   alt_ar?: string | null
   is_featured?: boolean | null
+  button_text_ar?: string | null
+  button_text_en?: string | null
+  button_link?: string | null
+  mobile_image_url?: string | null
+  overlay_opacity?: number | null
+  object_position?: string | null
+  content?: unknown
+  layout?: unknown
+  animation_type?: string | null
+  animation_duration?: number | null
+  device_visibility?: unknown
+  starts_at?: string | null
+  ends_at?: string | null
   images?: unknown
   created_at?: string
+  updated_at?: string
+}
+
+export function getWebsiteSection(key: string | null | undefined) {
+  return WEBSITE_SECTIONS.find((section) => section.key === key || section.usageArea === key) ?? WEBSITE_SECTIONS[0]
+}
+
+export function getWebsitePages() {
+  const pages = new Map<string, { key: string; labelEn: string; labelAr: string; sections: WebsiteSectionConfig[] }>()
+
+  WEBSITE_SECTIONS.forEach((section) => {
+    const existing = pages.get(section.pageKey)
+    if (existing) {
+      existing.sections.push(section)
+      return
+    }
+
+    pages.set(section.pageKey, {
+      key: section.pageKey,
+      labelEn: section.pageLabelEn,
+      labelAr: section.pageLabelAr,
+      sections: [section],
+    })
+  })
+
+  return Array.from(pages.values())
 }
 
 export function getMediaUsageOption(value: string | null | undefined) {
@@ -210,15 +975,88 @@ export function getMediaImageMeta(item: Pick<SiteMediaItem, 'images'>): MediaIma
   return first as MediaImageMeta
 }
 
+function parseRecord(value: unknown): Record<string, unknown> {
+  if (!value) return {}
+  if (typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>
+  if (typeof value !== 'string') return {}
+
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+  } catch {
+    return {}
+  }
+}
+
+function mergeContent(base: SectionBuilderContent, override: Record<string, unknown>): SectionBuilderContent {
+  return {
+    ...base,
+    ...override,
+    features: Array.isArray(override.features) ? override.features as SectionTextBlock[] : base.features,
+    stats: Array.isArray(override.stats) ? override.stats as SectionStatBlock[] : base.stats,
+  }
+}
+
+export function getSectionBuilderContent(section: WebsiteSectionConfig, item?: Partial<SiteMediaItem> | null): SectionBuilderContent {
+  const base = section.defaultContent ?? {}
+  const override = parseRecord(item?.content)
+  const merged = mergeContent(base, override)
+
+  return {
+    ...merged,
+    title_en: String(override.title_en || item?.title_en || merged.title_en || section.defaultTitleEn),
+    title_ar: String(override.title_ar || item?.title_ar || merged.title_ar || section.defaultTitleAr),
+    subtitle_en: String(override.subtitle_en || item?.subtitle_en || merged.subtitle_en || section.defaultSubtitleEn),
+    subtitle_ar: String(override.subtitle_ar || item?.subtitle_ar || merged.subtitle_ar || section.defaultSubtitleAr),
+    button_text_en: String(override.button_text_en || item?.button_text_en || merged.button_text_en || section.defaultButtonTextEn || ''),
+    button_text_ar: String(override.button_text_ar || item?.button_text_ar || merged.button_text_ar || section.defaultButtonTextAr || ''),
+    button_link: String(override.button_link || item?.button_link || item?.link_url || merged.button_link || section.defaultButtonLink || ''),
+  }
+}
+
+export function getSectionBuilderLayout(section: WebsiteSectionConfig, item?: Partial<SiteMediaItem> | null): SectionBuilderLayout {
+  return {
+    ...(section.defaultLayout ?? {}),
+    ...parseRecord(item?.layout),
+  } as SectionBuilderLayout
+}
+
+export function getLocalizedBuilderText(
+  language: 'en' | 'ar',
+  content: SectionBuilderContent,
+  key: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text',
+  fallback = '',
+) {
+  const en = content[`${key}_en` as keyof SectionBuilderContent]
+  const ar = content[`${key}_ar` as keyof SectionBuilderContent]
+  const primary = language === 'ar' ? ar : en
+  const secondary = language === 'ar' ? en : ar
+  return String(primary || secondary || fallback)
+}
+
 export function getMediaObjectPosition(item: Pick<SiteMediaItem, 'images'>, fallback = 'center center') {
-  return getMediaImageMeta(item)?.object_position || fallback
+  const directPosition = (item as Pick<SiteMediaItem, 'object_position'>).object_position
+  return directPosition || getMediaImageMeta(item)?.object_position || fallback
+}
+
+export function getMediaOverlayOpacity(item: Pick<SiteMediaItem, 'overlay_opacity' | 'images'>, fallback = 0.55) {
+  const direct = Number(item.overlay_opacity)
+  if (Number.isFinite(direct)) return Math.min(0.85, Math.max(0, direct))
+  return fallback
+}
+
+export function getMediaSectionKey(item: Pick<SiteMediaItem, 'section_key' | 'usage_area'>) {
+  return item.section_key || item.usage_area || 'banner'
 }
 
 export function isUploadedImageSmall(usageArea: string, width: number, height: number) {
-  const usage = getMediaUsageOption(usageArea)
-  return width < usage.minWidth || height < usage.minHeight
+  const section = getWebsiteSection(usageArea)
+  const usage = MEDIA_USAGE_OPTIONS.find((option) => option.value === usageArea)
+  const minWidth = usage?.minWidth ?? section.minWidth
+  const minHeight = usage?.minHeight ?? section.minHeight
+  return width < minWidth || height < minHeight
 }
 
 export function mediaByUsage(items: SiteMediaItem[]) {
-  return new Map(items.map((item) => [item.usage_area || 'banner', item]))
+  return new Map(items.map((item) => [item.usage_area || item.section_key || 'banner', item]))
 }

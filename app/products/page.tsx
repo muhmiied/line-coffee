@@ -23,6 +23,7 @@ import {
   type FlavorBaseOption,
   type PackageSize,
 } from '@/lib/config/customization'
+import { getMediaObjectPosition, getMediaOverlayOpacity, type SiteMediaItem } from '@/lib/media'
 import { toast } from 'sonner'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -923,6 +924,7 @@ function ProductsPageInner() {
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
+  const [productsBanner, setProductsBanner] = useState<SiteMediaItem | null>(null)
 
   // Fetch categories from DB; fall back to hardcoded if DB is empty or unreachable
   useEffect(() => {
@@ -933,6 +935,23 @@ function ProductsPageInner() {
         else setDbCategories(FALLBACK_DB_CATEGORIES)
       })
       .catch(() => setDbCategories(FALLBACK_DB_CATEGORIES))
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    fetch('/api/media?section_key=products_banner', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (mounted && Array.isArray(json?.data) && json.data[0]?.image_url) {
+          setProductsBanner(json.data[0])
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   // Fetch products from API first; use fallback only as a last-resort recovery path.
@@ -1031,8 +1050,15 @@ function ProductsPageInner() {
     <div className="min-h-screen" style={{ background: '#0B0806' }}>
       {/* Hero Banner */}
       <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24" style={{ background: '#0B0806' }}>
-        <Image src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600" alt="Our Products" fill className="object-cover brightness-[0.58] contrast-[1.14] saturate-[1.08]" priority />
-        <div className="absolute inset-0 bg-black/60" />
+        <Image
+          src={productsBanner?.image_url || 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600'}
+          alt={language === 'ar' ? productsBanner?.alt_ar || productsBanner?.alt_en || 'Our Products' : productsBanner?.alt_en || productsBanner?.alt_ar || 'Our Products'}
+          fill
+          className="object-cover brightness-[0.58] contrast-[1.14] saturate-[1.08]"
+          style={{ objectPosition: productsBanner ? getMediaObjectPosition(productsBanner) : 'center center' }}
+          priority
+        />
+        <div className="absolute inset-0 bg-black" style={{ opacity: productsBanner ? getMediaOverlayOpacity(productsBanner, 0.6) : 0.6 }} />
         <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
@@ -1041,11 +1067,14 @@ function ProductsPageInner() {
         <div className="relative z-10 text-center text-white px-4">
           <motion.h1 initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }}
             className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            {t('Our Products', 'منتجاتنا')}
+            {t(productsBanner?.title_en || 'Our Products', productsBanner?.title_ar || productsBanner?.title_en || 'منتجاتنا')}
           </motion.h1>
           <motion.p initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} transition={{ delay:0.1 }}
             className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
-            {t('Discover our carefully curated selection of premium coffee.', 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.')}
+            {t(
+              productsBanner?.subtitle_en || 'Discover our carefully curated selection of premium coffee.',
+              productsBanner?.subtitle_ar || productsBanner?.subtitle_en || 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.',
+            )}
           </motion.p>
         </div>
       </div>

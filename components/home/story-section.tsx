@@ -3,15 +3,39 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, Leaf, Award, Heart } from 'lucide-react'
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
+import { ArrowRight, Leaf, Award, Heart, Coffee } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { cn } from '@/lib/utils'
-import { getMediaObjectPosition, type SiteMediaItem } from '@/lib/media'
+import {
+  getMediaObjectPosition,
+  getSectionBuilderContent,
+  getSectionBuilderLayout,
+  getWebsiteSection,
+  type SectionBuilderLayout,
+  type SiteMediaItem,
+} from '@/lib/media'
+
+const storySectionConfig = getWebsiteSection('about_lower')
+
+const storyIcons = {
+  leaf: Leaf,
+  award: Award,
+  heart: Heart,
+  coffee: Coffee,
+}
+
+function elementTransform(layout: SectionBuilderLayout, elementId: string) {
+  const position = layout.elements?.[elementId]
+  const x = Number(position?.x || 0)
+  const y = Number(position?.y || 0)
+  return x || y ? { transform: `translate(${x}px, ${y}px)` } : undefined
+}
 
 export function StorySection() {
   const { t, dir } = useLanguage()
-  const [storyMedia, setStoryMedia] = useState<SiteMediaItem | null>(null)
+  const [storySlides, setStorySlides] = useState<SiteMediaItem[]>([])
+  const [currentSlide, setCurrentSlide] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -23,11 +47,12 @@ export function StorySection() {
   useEffect(() => {
     let mounted = true
 
-    fetch('/api/media?usage_area=about_lower', { cache: 'no-store' })
+    fetch('/api/media?section_key=about_lower', { cache: 'no-store' })
       .then((res) => res.json())
       .then((json) => {
-        if (mounted && Array.isArray(json?.data) && json.data[0]?.image_url) {
-          setStoryMedia(json.data[0])
+        if (mounted && Array.isArray(json?.data)) {
+          setStorySlides(json.data.filter((item: SiteMediaItem) => item.image_url))
+          setCurrentSlide(0)
         }
       })
       .catch(() => {})
@@ -36,6 +61,27 @@ export function StorySection() {
       mounted = false
     }
   }, [])
+
+  useEffect(() => {
+    if (storySlides.length <= 1) return
+    const duration = Number(storySlides[currentSlide]?.animation_duration || 6000)
+    const timer = window.setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % storySlides.length)
+    }, Number.isFinite(duration) ? duration : 6000)
+
+    return () => window.clearInterval(timer)
+  }, [currentSlide, storySlides])
+
+  const storyMedia = storySlides[currentSlide] || null
+  const storyContent = getSectionBuilderContent(storySectionConfig, storyMedia)
+  const storyLayout = getSectionBuilderLayout(storySectionConfig, storyMedia)
+  const storyFeatures = (storyContent.features || []).filter((item) => item.is_active !== false)
+  const storyStats = (storyContent.stats || []).filter((item) => item.is_active !== false)
+  const storyTitle = t(storyContent.title_en || storySectionConfig.defaultTitleEn, storyContent.title_ar || storyContent.title_en || storySectionConfig.defaultTitleAr)
+  const storyEyebrow = t(storyContent.eyebrow_en || 'Our Story', storyContent.eyebrow_ar || storyContent.eyebrow_en || 'Ù‚ØµØªÙ†Ø§')
+  const storyBody = t(storyContent.body_en || storyContent.subtitle_en || storySectionConfig.defaultSubtitleEn, storyContent.body_ar || storyContent.subtitle_ar || storyContent.body_en || storySectionConfig.defaultSubtitleAr)
+  const storyButtonText = t(storyContent.button_text_en || 'Learn More About Us', storyContent.button_text_ar || storyContent.button_text_en || 'ØªØ¹Ø±Ù Ø¹Ù„ÙŠÙ†Ø§ Ø£ÙƒØ«Ø±')
+  const storyButtonHref = storyContent.button_link || storyMedia?.button_link || storyMedia?.link_url || '/about'
 
   const values = [
     {
@@ -96,6 +142,7 @@ export function StorySection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+            style={elementTransform(storyLayout, 'story-copy')}
           >
             {/* Label */}
             <div className="premium-section-kicker mx-auto mb-5 lg:mx-0">
@@ -104,7 +151,7 @@ export function StorySection() {
                 className="text-xs md:text-sm tracking-[0.24em] uppercase font-bold"
                 style={{ color: '#D6A373' }}
               >
-                {t('Our Story', 'قصتنا')}
+                {storyEyebrow}
               </p>
             </div>
 
@@ -112,26 +159,26 @@ export function StorySection() {
               className="premium-heading-shimmer font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-balance leading-[1.1] text-center lg:text-start"
               style={{ color: '#F5E6D8' }}
             >
-              {t('From Distant Farms to Your Cup', 'من المزارع البعيدة إلى كوبك')}
+              {storyTitle}
             </h2>
 
             <p className="text-lg mb-10 text-pretty leading-relaxed" style={{ color: 'rgba(214,183,154,0.75)' }}>
-              {t(
-                "Line Coffee began with a simple mission: to bring the world's finest coffee to Saudi Arabia. We travel to the most renowned coffee-growing regions, building lasting relationships with farmers who share our passion for exceptional quality.",
-                'بدأت لاين كوفي بمهمة بسيطة: جلب أفضل قهوة في العالم إلى المملكة العربية السعودية. نسافر إلى أشهر مناطق زراعة القهوة، نبني علاقات دائمة مع المزارعين الذين يشاركوننا شغفنا بالجودة الاستثنائية.'
-              )}
+              {storyBody}
             </p>
 
             {/* Values */}
             <div className="space-y-7 mb-10">
-              {values.map((value, index) => (
+              {storyFeatures.map((value, index) => {
+                const Icon = storyIcons[(value.icon || 'leaf') as keyof typeof storyIcons] || Leaf
+                return (
                 <motion.div
-                  key={index}
+                  key={value.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.15 }}
                   className="premium-info-card flex gap-4 group"
+                  style={elementTransform(storyLayout, `feature-${value.id}`)}
                 >
                   <div
                     className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
@@ -140,26 +187,26 @@ export function StorySection() {
                       border: '1px solid rgba(182,136,94,0.28)',
                     }}
                   >
-                    <value.icon className="h-4 w-4" style={{ color: '#B6885E' }} />
+                    <Icon className="h-4 w-4" style={{ color: '#B6885E' }} />
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1" style={{ color: '#F5E6D8' }}>
-                      {t(value.titleEn, value.titleAr)}
+                      {t(value.title_en, value.title_ar || value.title_en)}
                     </h3>
                     <p className="text-sm leading-relaxed" style={{ color: 'rgba(183,155,133,0.7)' }}>
-                      {t(value.descEn, value.descAr)}
+                      {t(value.description_en || '', value.description_ar || value.description_en || '')}
                     </p>
                   </div>
                 </motion.div>
-              ))}
+              )})}
             </div>
 
             {/* CTA */}
             <Link
-              href="/about"
+              href={storyButtonHref}
               className="premium-button-outline group inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold tracking-wide"
             >
-              {t('Learn More About Us', 'تعرف علينا أكثر')}
+              {storyButtonText}
               <ArrowRight
                 className={cn(
                   'h-4 w-4 transition-transform group-hover:translate-x-1',
@@ -176,19 +223,31 @@ export function StorySection() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative mx-auto w-full max-w-xl lg:max-w-none"
+            style={elementTransform(storyLayout, 'story-image')}
           >
             <div className="absolute -inset-4 rounded-2xl bg-[#FFDCC2]/10 blur-3xl" />
             <div className="absolute -inset-1 rounded-2xl border border-[#FFDCC2]/10" />
 
             <div className="premium-image-card group relative aspect-[3/4] overflow-hidden rounded-2xl border border-[#FFDCC2]/15 bg-[#120D09] shadow-2xl">
-            <Image
-                src={storyMedia?.image_url || '/images/story.jpg'}
-                alt={t(storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story', storyMedia?.alt_ar || storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story')}
-                fill
-                sizes="(min-width: 1024px) 44vw, 92vw"
-                className="object-cover object-center brightness-[0.82] contrast-[1.12] saturate-[1.08] transition-transform duration-700 group-hover:scale-[1.035]"
-                style={{ objectPosition: storyMedia ? getMediaObjectPosition(storyMedia) : 'center center' }}
-              />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={storyMedia?.id || 'story-fallback'}
+                  initial={{ opacity: 0, scale: 1.03 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.65 }}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={storyMedia?.image_url || '/images/story.jpg'}
+                    alt={t(storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story', storyMedia?.alt_ar || storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story')}
+                    fill
+                    sizes="(min-width: 1024px) 44vw, 92vw"
+                    className="object-cover object-center brightness-[0.82] contrast-[1.12] saturate-[1.08] transition-transform duration-700 group-hover:scale-[1.035]"
+                    style={{ objectPosition: storyMedia ? getMediaObjectPosition(storyMedia) : 'center center' }}
+                  />
+                </motion.div>
+              </AnimatePresence>
               {/* Cinematic warm grade and soft vignette */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/78 via-[#0F0A07]/18 to-transparent" />
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_34%,_rgba(11,8,6,0.58)_100%)]" />
@@ -206,21 +265,22 @@ export function StorySection() {
                 'luxury-panel absolute -bottom-6 rounded-2xl p-5 shadow-2xl',
                 dir === 'rtl' ? '-right-4 md:-right-6' : '-left-4 md:-left-6'
               )}
+              style={elementTransform(storyLayout, 'story-stats')}
             >
               <div className="flex items-center gap-5">
-                <div className="text-center">
-                  <p className="font-serif text-2xl font-bold" style={{ color: '#D6A373' }}>10+</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(183,155,133,0.65)' }}>
-                    {t('Years of Excellence', 'سنوات من التميز')}
-                  </p>
-                </div>
-                <div className="w-px h-10" style={{ background: 'rgba(182,136,94,0.2)' }} />
-                <div className="text-center">
-                  <p className="font-serif text-2xl font-bold" style={{ color: '#D6A373' }}>25+</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(183,155,133,0.65)' }}>
-                    {t('Farm Partners', 'شريك مزارع')}
-                  </p>
-                </div>
+                {storyStats.slice(0, 3).map((stat, index) => (
+                  <div key={stat.id} className="flex items-center gap-5">
+                    <div className="text-center">
+                      <p className="font-serif text-2xl font-bold" style={{ color: '#D6A373' }}>{stat.value}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'rgba(183,155,133,0.65)' }}>
+                        {t(stat.label_en, stat.label_ar || stat.label_en)}
+                      </p>
+                    </div>
+                    {index < Math.min(storyStats.length, 3) - 1 && (
+                      <div className="w-px h-10" style={{ background: 'rgba(182,136,94,0.2)' }} />
+                    )}
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>

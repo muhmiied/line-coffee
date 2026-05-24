@@ -40,6 +40,7 @@ const navLinks = [
   { href: '/products', labelEn: 'Products', labelAr: 'المنتجات' },
   { href: '/about', labelEn: 'About', labelAr: 'من نحن' },
   { href: '/contact', labelEn: 'Contact', labelAr: 'تواصل معنا' },
+  { href: '/blog', labelEn: 'Blog', labelAr: 'المدونة' },
 ]
 
 const sampleProducts = [

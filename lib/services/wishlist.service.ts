@@ -124,6 +124,22 @@ export async function removeFromWishlist(userId: string, productId: string) {
   return { success: true }
 }
 
+export async function clearWishlist(userId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('wishlist_items')
+    .delete()
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error clearing wishlist:', error)
+    throw new Error(error.message)
+  }
+
+  return { success: true }
+}
+
 // ==========================================
 // CHECK IF IN WISHLIST - التحقق إذا موجود
 // ==========================================

@@ -14,6 +14,8 @@ type Post = {
   cover_image: string | null
   content_ar: string | null
   content_en: string | null
+  excerpt_ar?: string | null
+  excerpt_en?: string | null
   published_at: string | null
   created_at: string
 }
@@ -68,7 +70,9 @@ export default function BlogListPage() {
           <div className="grid gap-6 md:grid-cols-2">
             {posts.map((post) => {
               const title = language === 'ar' ? post.title_ar : post.title_en
-              const excerpt = language === 'ar' ? post.content_ar : post.content_en
+              const excerpt = language === 'ar'
+                ? (post.excerpt_ar || post.content_ar)
+                : (post.excerpt_en || post.content_en)
               const date = post.published_at || post.created_at
 
               return (

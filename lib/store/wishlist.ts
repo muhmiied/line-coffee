@@ -17,6 +17,9 @@ interface WishlistStore {
   isOpen: boolean
   ownerId: string | null
   hasHydrated: boolean
+  pendingAdds: WishlistItem[]
+  pendingRemovals: string[]
+  pendingClear: boolean
   addItem: (item: WishlistItem) => void
   removeItem: (productId: string) => void
   toggleItem: (item: WishlistItem) => void
@@ -30,17 +33,30 @@ interface WishlistStore {
   setHasHydrated: (hasHydrated: boolean) => void
 }
 
-function canSync(ownerId: string | null) {
-  return Boolean(ownerId) && typeof window !== 'undefined'
+function canCallWishlistApi() {
+  return typeof window !== 'undefined'
 }
 
-function syncToggle(productId: string, ownerId: string | null) {
-  if (!canSync(ownerId)) return
+function syncWishlistAction(
+  action: 'add' | 'remove',
+  productId: string
+) {
+  if (!canCallWishlistApi()) return
 
   void fetch('/api/wishlist', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId }),
+    body: JSON.stringify({ productId, action }),
+  }).catch(() => {})
+}
+
+function syncClear() {
+  if (!canCallWishlistApi()) return
+
+  void fetch('/api/wishlist', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
   }).catch(() => {})
 }
 
@@ -51,21 +67,35 @@ export const useWishlistStore = create<WishlistStore>()(
       isOpen: false,
       ownerId: null,
       hasHydrated: false,
+      pendingAdds: [],
+      pendingRemovals: [],
+      pendingClear: false,
 
       addItem: (item) => {
         set((state) => {
           const exists = state.items.some((i) => i.productId === item.productId)
-          if (exists) return state
-          return { items: [...state.items, item] }
+          const pendingAdds = state.pendingAdds.some((i) => i.productId === item.productId)
+            ? state.pendingAdds.map((i) => i.productId === item.productId ? item : i)
+            : [...state.pendingAdds, item]
+
+          return {
+            items: exists ? state.items : [...state.items, item],
+            pendingAdds,
+            pendingRemovals: state.pendingRemovals.filter((id) => id !== item.productId),
+          }
         })
-        syncToggle(item.productId, get().ownerId)
+        syncWishlistAction('add', item.productId)
       },
 
       removeItem: (productId) => {
         set((state) => ({
           items: state.items.filter((i) => i.productId !== productId),
+          pendingAdds: state.pendingAdds.filter((i) => i.productId !== productId),
+          pendingRemovals: state.pendingRemovals.includes(productId)
+            ? state.pendingRemovals
+            : [...state.pendingRemovals, productId],
         }))
-        syncToggle(productId, get().ownerId)
+        syncWishlistAction('remove', productId)
       },
 
       toggleItem: (item) => {
@@ -83,15 +113,36 @@ export const useWishlistStore = create<WishlistStore>()(
 
       openWishlist: () => set({ isOpen: true }),
       closeWishlist: () => set({ isOpen: false }),
-      clearWishlist: () => set({ items: [] }),
-      replaceItems: (items) => set({ items }),
-      resetForGuest: () => set({ items: [], isOpen: false, ownerId: null }),
+      clearWishlist: () => {
+        set({ items: [], pendingAdds: [], pendingRemovals: [], pendingClear: true })
+        syncClear()
+      },
+      replaceItems: (items) => set({
+        items,
+        pendingAdds: [],
+        pendingRemovals: [],
+        pendingClear: false,
+      }),
+      resetForGuest: () => set({
+        items: [],
+        isOpen: false,
+        ownerId: null,
+        pendingAdds: [],
+        pendingRemovals: [],
+        pendingClear: false,
+      }),
       syncOwner: (ownerId) => set({ ownerId }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
       name: 'line-coffee-wishlist',
-      partialize: (state) => ({ items: state.items, ownerId: state.ownerId }),
+      partialize: (state) => ({
+        items: state.items,
+        ownerId: state.ownerId,
+        pendingAdds: state.pendingAdds,
+        pendingRemovals: state.pendingRemovals,
+        pendingClear: state.pendingClear,
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true)
       },
