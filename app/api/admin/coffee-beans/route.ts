@@ -13,6 +13,9 @@ const COFFEE_BEAN_COLUMNS = `
   description_en,
   description_ar,
   is_active,
+  stock_quantity,
+  low_stock_threshold,
+  is_manually_out_of_stock,
   sort_order,
   family,
   price,
@@ -94,6 +97,9 @@ export async function POST(request: NextRequest) {
       family: normalizeFamily(body.family),
       price,
       is_active: body.is_active !== false,
+      stock_quantity: Math.max(0, Math.floor(normalizeNumber(body.stock_quantity ?? 100))),
+      low_stock_threshold: Math.max(0, Math.floor(normalizeNumber(body.low_stock_threshold ?? 10))),
+      is_manually_out_of_stock: Boolean(body.is_manually_out_of_stock ?? false),
       sort_order: normalizeNumber(body.sort_order),
     })
     .select(COFFEE_BEAN_COLUMNS)

@@ -290,7 +290,10 @@ function MakeYourEspressoBlend() {
       .then((r) => r.json())
       .then((d) => {
         const beans = d?.data?.beans
-        if (Array.isArray(beans) && beans.length > 0) setBeanOptions(beans)
+        if (Array.isArray(beans)) {
+          setBeanOptions(beans)
+          setSelectedBeans((current) => current.filter((bean) => beans.some((item: CoffeeBeanOption) => item.id === bean.id)))
+        }
       })
       .catch(() => {})
   }, [])
@@ -691,7 +694,7 @@ function CustomizeFlavor() {
           setSelectedBase((current) => nextBases.find((base) => base.id === current.id) || nextBases[0])
         }
 
-        if (Array.isArray(nextAdditions) && nextAdditions.length > 0) {
+        if (Array.isArray(nextAdditions)) {
           setAdditionOptions(nextAdditions)
           setSelectedFlavors((current) => current.filter((flavor) => nextAdditions.some((item) => item.id === flavor.id)))
         }

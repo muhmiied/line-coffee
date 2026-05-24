@@ -258,6 +258,9 @@ export interface CoffeeBean {
   description_en: string | null
   description_ar: string | null
   is_active: boolean
+  stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   sort_order: number
   created_at: string
   updated_at: string
@@ -288,6 +291,9 @@ export interface FlavorOption {
   price_delta?: number
   option_type?: string
   is_active: boolean
+  stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   sort_order: number
   created_at: string
   updated_at: string

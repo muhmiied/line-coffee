@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Coffee, Plus, Pencil, Eye, EyeOff, Save, X, RefreshCw } from 'lucide-react'
+import { AlertTriangle, Coffee, Plus, Pencil, Eye, EyeOff, Save, X, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
@@ -15,6 +15,9 @@ interface CoffeeBean {
   description_en: string | null
   description_ar: string | null
   is_active: boolean
+  stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   sort_order: number
   family: BeanFamily | 'other' | null
   price: number | null
@@ -27,6 +30,9 @@ interface CoffeeBeanForm {
   description_en: string
   description_ar: string
   is_active: boolean
+  stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   sort_order: number
   family: BeanFamily
   price: number
@@ -39,6 +45,9 @@ const EMPTY: CoffeeBeanForm = {
   description_en: '',
   description_ar: '',
   is_active: true,
+  stock_quantity: 100,
+  low_stock_threshold: 10,
+  is_manually_out_of_stock: false,
   sort_order: 0,
   family: 'arabica',
   price: 0,
@@ -93,6 +102,12 @@ export default function AdminCoffeeBeansPage() {
     `${Number(price || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${t('EGP/kg', 'ج/كجم')}`
   )
 
+  const getStockState = (bean: CoffeeBean) => {
+    if (bean.is_manually_out_of_stock || Number(bean.stock_quantity || 0) <= 0) return 'out'
+    if (Number(bean.stock_quantity || 0) <= Number(bean.low_stock_threshold ?? 10)) return 'low'
+    return 'available'
+  }
+
   const openNew = (family: BeanFamily = 'arabica') => {
     setForm({ ...EMPTY, family, sort_order: beans.length + 1 })
     setEditingId('new')
@@ -106,6 +121,9 @@ export default function AdminCoffeeBeansPage() {
       description_en: bean.description_en || '',
       description_ar: bean.description_ar || '',
       is_active: bean.is_active,
+      stock_quantity: Number(bean.stock_quantity ?? 100),
+      low_stock_threshold: Number(bean.low_stock_threshold ?? 10),
+      is_manually_out_of_stock: bean.is_manually_out_of_stock === true,
       sort_order: Number(bean.sort_order || 0),
       family: normalizeFamily(bean.family),
       price: Number(bean.price || 0),
@@ -142,6 +160,9 @@ export default function AdminCoffeeBeansPage() {
         family: form.family,
         price: Number(form.price),
         is_active: form.is_active,
+        stock_quantity: Math.max(0, Math.floor(Number(form.stock_quantity) || 0)),
+        low_stock_threshold: Math.max(0, Math.floor(Number(form.low_stock_threshold) || 0)),
+        is_manually_out_of_stock: form.is_manually_out_of_stock,
         sort_order: Number(form.sort_order) || 0,
       }
 
@@ -227,7 +248,10 @@ export default function AdminCoffeeBeansPage() {
           </div>
         ) : (
           <div className="grid gap-3 xl:grid-cols-2">
-            {items.map((bean) => (
+            {items.map((bean) => {
+              const stockState = getStockState(bean)
+
+              return (
               <article
                 key={bean.id}
                 className={`group rounded-xl border bg-[#0f0900] p-4 transition-all ${
@@ -253,9 +277,19 @@ export default function AdminCoffeeBeansPage() {
                       }`}>
                         {bean.is_active ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
                       </span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        stockState === 'out'
+                          ? 'bg-red-500/10 text-red-300'
+                          : stockState === 'low'
+                            ? 'bg-amber-500/10 text-amber-300'
+                            : 'bg-emerald-500/10 text-emerald-300'
+                      }`}>
+                        {stockState !== 'available' && <AlertTriangle className="h-3 w-3" />}
+                        {stockState === 'out' ? t('Sold out', 'غير متاح') : stockState === 'low' ? t('Low stock', 'مخزون منخفض') : t('In stock', 'متاح')}
+                      </span>
                     </div>
 
-                    <div className="mt-3 grid gap-2 text-xs text-white/45 sm:grid-cols-3">
+                    <div className="mt-3 grid gap-2 text-xs text-white/45 sm:grid-cols-4">
                       <div>
                         <span className="block text-white/25">{t('Origin', 'المنشأ')}</span>
                         <span className="text-white/65">{bean.origin || t('Not set', 'غير محدد')}</span>
@@ -267,6 +301,10 @@ export default function AdminCoffeeBeansPage() {
                       <div>
                         <span className="block text-white/25">{t('Sort', 'الترتيب')}</span>
                         <span className="text-white/65">{Number(bean.sort_order || 0)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-white/25">{t('Stock', 'المخزون')}</span>
+                        <span className="text-white/65">{Number(bean.stock_quantity || 0)} / {Number(bean.low_stock_threshold ?? 10)}</span>
                       </div>
                     </div>
 
@@ -297,7 +335,8 @@ export default function AdminCoffeeBeansPage() {
                   </button>
                 </div>
               </article>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>
@@ -428,6 +467,44 @@ export default function AdminCoffeeBeansPage() {
                 placeholder="حبة مناسبة لتوليفات الإسبريسو..."
                 className="w-full resize-none rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-4 py-2.5 text-sm text-white/80 placeholder-white/20 transition-all focus:border-[#c8941a]/30 focus:outline-none"
               />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs text-white/40">{t('Stock Quantity', 'كمية المخزون')}</label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={form.stock_quantity}
+                onChange={e => setForm(p => ({ ...p, stock_quantity: Number(e.target.value) }))}
+                className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-4 py-2.5 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs text-white/40">{t('Low Stock Threshold', 'حد المخزون المنخفض')}</label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={form.low_stock_threshold}
+                onChange={e => setForm(p => ({ ...p, low_stock_threshold: Number(e.target.value) }))}
+                className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-4 py-2.5 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-red-500/15 bg-red-500/5 p-3 sm:col-span-2">
+              <div>
+                <p className="text-sm font-medium text-red-200">{t('Force out of stock', 'إيقاف المخزون يدوياً')}</p>
+                <p className="mt-0.5 text-xs text-red-200/45">
+                  {t('Hide this bean from Make Your Espresso Blend even if stock is available.', 'إخفاء الحبة من توليفة الإسبريسو حتى لو يوجد مخزون.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm(p => ({ ...p, is_manually_out_of_stock: !p.is_manually_out_of_stock }))}
+                aria-label={form.is_manually_out_of_stock ? t('Disable manual stock override', 'إلغاء الإيقاف اليدوي') : t('Force out of stock', 'إيقاف المخزون يدوياً')}
+                className={`relative h-6 w-11 rounded-full transition-colors ${form.is_manually_out_of_stock ? 'bg-red-600' : 'bg-white/10'}`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.is_manually_out_of_stock ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-[#c8941a]/10 bg-[#0f0900] p-3 sm:col-span-2">
               <div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Sparkles, Plus, Pencil, Eye, EyeOff, Save, X, ChevronDown, ChevronUp, RefreshCw, Tag } from 'lucide-react'
+import { AlertTriangle, Sparkles, Plus, Pencil, Eye, EyeOff, Save, X, ChevronDown, ChevronUp, RefreshCw, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 
@@ -15,6 +15,9 @@ interface FlavorOption {
   price_delta: number | null
   option_type: FlavorOptionType | string | null
   is_active: boolean
+  stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
   sort_order: number
 }
 
@@ -36,6 +39,9 @@ interface FlavorForm {
   sort_order: number
   price_delta: number
   option_type: FlavorOptionType
+  stock_quantity: number
+  low_stock_threshold: number
+  is_manually_out_of_stock: boolean
 }
 
 const EMPTY_FLAVOR: FlavorForm = {
@@ -45,6 +51,9 @@ const EMPTY_FLAVOR: FlavorForm = {
   sort_order: 0,
   price_delta: 50,
   option_type: 'standard',
+  stock_quantity: 100,
+  low_stock_threshold: 10,
+  is_manually_out_of_stock: false,
 }
 
 const FLAVOR_GROUPS = [
@@ -62,6 +71,12 @@ function normalizeOptionType(value: unknown): FlavorOptionType {
 
 function getFlavorGroup(sortOrder: number) {
   return FLAVOR_GROUPS.find((group) => sortOrder >= group.min && sortOrder <= group.max) || FLAVOR_GROUPS[5]
+}
+
+function getStockState(option: FlavorOption) {
+  if (option.is_manually_out_of_stock || Number(option.stock_quantity || 0) <= 0) return 'out'
+  if (Number(option.stock_quantity || 0) <= Number(option.low_stock_threshold ?? 10)) return 'low'
+  return 'available'
 }
 
 export default function AdminFlavorsPage() {
@@ -132,6 +147,9 @@ export default function AdminFlavorsPage() {
       sort_order: Number(flavor.sort_order || 0),
       price_delta: Number(flavor.price_delta || (normalizeOptionType(flavor.option_type) === 'chunks' ? 70 : 50)),
       option_type: normalizeOptionType(flavor.option_type),
+      stock_quantity: Number(flavor.stock_quantity ?? 100),
+      low_stock_threshold: Number(flavor.low_stock_threshold ?? 10),
+      is_manually_out_of_stock: flavor.is_manually_out_of_stock === true,
     })
     setEditingFlavor({ baseId, flavorId: flavor.id })
     setExpandedId(baseId)
@@ -166,6 +184,9 @@ export default function AdminFlavorsPage() {
         price_delta: Number(flavorForm.price_delta),
         option_type: flavorForm.option_type,
         is_active: flavorForm.is_active,
+        stock_quantity: Math.max(0, Math.floor(Number(flavorForm.stock_quantity) || 0)),
+        low_stock_threshold: Math.max(0, Math.floor(Number(flavorForm.low_stock_threshold) || 0)),
+        is_manually_out_of_stock: flavorForm.is_manually_out_of_stock,
         sort_order: Number(flavorForm.sort_order) || 0,
       }
 
@@ -402,6 +423,41 @@ export default function AdminFlavorsPage() {
                               {t('Groups are derived from sort order.', 'المجموعات تُحدد من ترتيب العرض.')}
                             </p>
                           </div>
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('Stock Quantity', 'كمية المخزون')}</label>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={flavorForm.stock_quantity}
+                              onChange={e => setFlavorForm(prev => ({ ...prev, stock_quantity: Number(e.target.value) }))}
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1.5 block text-xs text-white/40">{t('Low Stock Threshold', 'حد المخزون المنخفض')}</label>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={flavorForm.low_stock_threshold}
+                              onChange={e => setFlavorForm(prev => ({ ...prev, low_stock_threshold: Number(e.target.value) }))}
+                              className="w-full rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2 text-sm text-white/80 transition-all focus:border-[#c8941a]/30 focus:outline-none"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between rounded-xl border border-red-500/15 bg-red-500/5 px-3 py-2">
+                            <div>
+                              <p className="text-sm font-medium text-red-200">{t('Force out of stock', 'إيقاف المخزون يدوياً')}</p>
+                              <p className="text-xs text-red-200/45">{t('Hide from customers even if active.', 'إخفاء من العملاء حتى لو نشطة.')}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFlavorForm(prev => ({ ...prev, is_manually_out_of_stock: !prev.is_manually_out_of_stock }))}
+                              className={`relative h-6 w-11 rounded-full transition-colors ${flavorForm.is_manually_out_of_stock ? 'bg-red-600' : 'bg-white/10'}`}
+                            >
+                              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${flavorForm.is_manually_out_of_stock ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </button>
+                          </div>
                           <div className="flex items-center justify-between rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-3 py-2">
                             <div>
                               <p className="text-sm font-medium text-white/70">{t('Active', 'نشط')}</p>
@@ -451,7 +507,10 @@ export default function AdminFlavorsPage() {
                             </span>
                           </div>
                           <div className="grid gap-2 lg:grid-cols-2">
-                            {options.map((flavor) => (
+                            {options.map((flavor) => {
+                              const stockState = getStockState(flavor)
+
+                              return (
                               <article
                                 key={flavor.id}
                                 className={`group rounded-xl border bg-[#180d04] px-4 py-3 transition-all ${
@@ -483,6 +542,21 @@ export default function AdminFlavorsPage() {
                                     </div>
                                   </div>
                                 </div>
+                                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/38">
+                                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${
+                                    stockState === 'out'
+                                      ? 'bg-red-500/10 text-red-300'
+                                      : stockState === 'low'
+                                        ? 'bg-amber-500/10 text-amber-300'
+                                        : 'bg-emerald-500/10 text-emerald-300'
+                                  }`}>
+                                    {stockState !== 'available' && <AlertTriangle className="h-3 w-3" />}
+                                    {stockState === 'out' ? t('Sold out', 'غير متاح') : stockState === 'low' ? t('Low stock', 'مخزون منخفض') : t('In stock', 'متاح')}
+                                  </span>
+                                  <span className="rounded-full bg-white/[0.04] px-2 py-0.5">
+                                    {t('Stock', 'المخزون')}: {Number(flavor.stock_quantity || 0)} / {Number(flavor.low_stock_threshold ?? 10)}
+                                  </span>
+                                </div>
                                 <div className="mt-3 flex flex-wrap items-center gap-2 sm:justify-end">
                                   <button
                                     type="button"
@@ -502,7 +576,8 @@ export default function AdminFlavorsPage() {
                                   </button>
                                 </div>
                               </article>
-                            ))}
+                              )
+                            })}
                           </div>
                         </div>
                       ))}

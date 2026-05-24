@@ -68,6 +68,9 @@ export async function PATCH(
         price_delta: priceDelta,
         option_type: normalizeOptionType(body.option_type),
         is_active: body.is_active !== false,
+        stock_quantity: Math.max(0, Math.floor(normalizeNumber(body.stock_quantity ?? 100))),
+        low_stock_threshold: Math.max(0, Math.floor(normalizeNumber(body.low_stock_threshold ?? 10))),
+        is_manually_out_of_stock: Boolean(body.is_manually_out_of_stock ?? false),
         sort_order: normalizeNumber(body.sort_order),
         updated_at: new Date().toISOString(),
       })
@@ -107,6 +110,9 @@ export async function PATCH(
 
     if ('option_type' in body) payload.option_type = normalizeOptionType(body.option_type)
     if ('is_active' in body) payload.is_active = body.is_active === true
+    if ('stock_quantity' in body) payload.stock_quantity = Math.max(0, Math.floor(normalizeNumber(body.stock_quantity)))
+    if ('low_stock_threshold' in body) payload.low_stock_threshold = Math.max(0, Math.floor(normalizeNumber(body.low_stock_threshold)))
+    if ('is_manually_out_of_stock' in body) payload.is_manually_out_of_stock = body.is_manually_out_of_stock === true
     if ('sort_order' in body) payload.sort_order = normalizeNumber(body.sort_order)
 
     const { data, error } = await admin

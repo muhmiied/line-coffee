@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('coffee_beans')
-    .select('id, name_en, name_ar, origin, description_en, description_ar, sort_order')
+    .select('id, name_en, name_ar, origin, description_en, description_ar, sort_order, stock_quantity, low_stock_threshold, is_manually_out_of_stock')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
 
@@ -17,5 +17,10 @@ export async function GET() {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true, data: data || [] })
+  const availableBeans = (data || []).filter((bean) =>
+    bean.is_manually_out_of_stock !== true &&
+    Number(bean.stock_quantity ?? 0) > 0
+  )
+
+  return NextResponse.json({ success: true, data: availableBeans })
 }

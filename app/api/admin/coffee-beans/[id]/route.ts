@@ -13,6 +13,9 @@ const COFFEE_BEAN_COLUMNS = `
   description_en,
   description_ar,
   is_active,
+  stock_quantity,
+  low_stock_threshold,
+  is_manually_out_of_stock,
   sort_order,
   family,
   price,
@@ -74,6 +77,9 @@ export async function PATCH(
   if ('description_ar' in body) payload.description_ar = String(body.description_ar || '').trim() || null
   if ('family' in body) payload.family = normalizeFamily(body.family)
   if ('is_active' in body) payload.is_active = body.is_active === true
+  if ('stock_quantity' in body) payload.stock_quantity = Math.max(0, Math.floor(normalizeNumber(body.stock_quantity)))
+  if ('low_stock_threshold' in body) payload.low_stock_threshold = Math.max(0, Math.floor(normalizeNumber(body.low_stock_threshold)))
+  if ('is_manually_out_of_stock' in body) payload.is_manually_out_of_stock = body.is_manually_out_of_stock === true
   if ('sort_order' in body) payload.sort_order = normalizeNumber(body.sort_order)
   if ('price' in body) {
     const price = normalizeNumber(body.price)

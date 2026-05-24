@@ -9,6 +9,7 @@ import {
   parseFreeShippingActive,
   parseFreeShippingThreshold,
 } from '@/lib/config/shipping'
+import { slugifyOptionId } from '@/lib/config/customization'
 
 const PAYMENT_LABELS: Record<string, string> = {
   cod: 'الدفع عند الاستلام',
@@ -63,6 +64,23 @@ type DiscountRow = {
 }
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>
+
+type CustomInventoryRow = {
+  id: string
+  name_en: string | null
+  name_ar: string | null
+  is_active: boolean | null
+  stock_quantity: number | null
+  is_manually_out_of_stock: boolean | null
+}
+
+type FlavorBaseInventoryRow = {
+  id: string
+  name_en: string | null
+  name_ar: string | null
+  is_active: boolean | null
+  options: CustomInventoryRow[] | null
+}
 
 async function getFreeShippingRule(admin: AdminClient): Promise<{ threshold: number; active: boolean }> {
   const { data, error } = await admin
@@ -130,6 +148,109 @@ function toCleanString(value: unknown, fallback: string, maxLength = 180): strin
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function customItemUnavailable(row: CustomInventoryRow | undefined, quantity: number) {
+  return !row ||
+    row.is_active === false ||
+    row.is_manually_out_of_stock === true ||
+    Number(row.stock_quantity ?? 0) < quantity
+}
+
+function customItemName(row: CustomInventoryRow | undefined, fallback: string) {
+  return row?.name_en || row?.name_ar || fallback
+}
+
+function readCustomSelectionIds(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => isRecord(item) ? String(item.id || '').trim() : '')
+    .filter(Boolean)
+}
+
+async function validateCustomItemAvailability(
+  admin: AdminClient,
+  customizations: Record<string, unknown> | undefined,
+  quantity: number,
+): Promise<{ error: string; status: number } | null> {
+  if (!customizations) return null
+
+  if (customizations.type === 'espresso-blend') {
+    const beanIds = readCustomSelectionIds(customizations.beans)
+    if (beanIds.length === 0) return { error: 'Custom espresso blend is missing bean selections', status: 400 }
+
+    const { data, error } = await admin
+      .from('coffee_beans')
+      .select('id, name_en, name_ar, is_active, stock_quantity, is_manually_out_of_stock')
+
+    if (error) return { error: 'Failed to validate espresso blend bean availability', status: 500 }
+
+    const beanMap = new Map<string, CustomInventoryRow>()
+    for (const row of (data || []) as CustomInventoryRow[]) {
+      beanMap.set(String(row.id), row)
+      beanMap.set(slugifyOptionId(String(row.name_en || row.id)), row)
+    }
+
+    for (const beanId of beanIds) {
+      const bean = beanMap.get(beanId)
+      if (customItemUnavailable(bean, quantity)) {
+        return { error: `${customItemName(bean, 'A selected espresso bean')} is currently unavailable`, status: 409 }
+      }
+    }
+  }
+
+  if (customizations.type === 'flavor') {
+    const base = isRecord(customizations.base) ? customizations.base : null
+    const baseId = String(base?.id || '').trim()
+    const flavorIds = readCustomSelectionIds(customizations.flavors)
+
+    if (!baseId || flavorIds.length === 0) {
+      return { error: 'Custom flavor item is missing base or flavor selections', status: 400 }
+    }
+
+    const { data, error } = await admin
+      .from('flavor_bases')
+      .select(`
+        id,
+        name_en,
+        name_ar,
+        is_active,
+        options:flavor_options(
+          id,
+          name_en,
+          name_ar,
+          is_active,
+          stock_quantity,
+          is_manually_out_of_stock
+        )
+      `)
+      .eq('is_active', true)
+
+    if (error) return { error: 'Failed to validate custom flavor availability', status: 500 }
+
+    const flavorBase = ((data || []) as FlavorBaseInventoryRow[]).find((row) =>
+      String(row.id) === baseId || slugifyOptionId(String(row.name_en || row.id)) === baseId
+    )
+
+    if (!flavorBase || flavorBase.is_active === false) {
+      return { error: 'The selected custom flavor base is currently unavailable', status: 409 }
+    }
+
+    const optionMap = new Map<string, CustomInventoryRow>()
+    for (const row of flavorBase.options || []) {
+      optionMap.set(String(row.id), row)
+      optionMap.set(slugifyOptionId(String(row.name_en || row.id)), row)
+    }
+
+    for (const flavorId of flavorIds) {
+      const flavor = optionMap.get(flavorId)
+      if (customItemUnavailable(flavor, quantity)) {
+        return { error: `${customItemName(flavor, 'A selected flavor')} is currently unavailable`, status: 409 }
+      }
+    }
+  }
+
+  return null
 }
 
 function buildWhatsAppMessage(payload: {
@@ -486,6 +607,14 @@ export async function POST(request: NextRequest) {
       const customPrice = toMoney(item.unit_price)
       if (customPrice === null || customPrice <= 0 || customPrice > 100000) {
         return NextResponse.json({ success: false, error: 'Invalid custom item price' }, { status: 400 })
+      }
+
+      const customAvailabilityError = await validateCustomItemAvailability(admin, baseCustomizations, quantity)
+      if (customAvailabilityError) {
+        return NextResponse.json(
+          { success: false, error: customAvailabilityError.error },
+          { status: customAvailabilityError.status },
+        )
       }
 
       sanitizedItems.push({

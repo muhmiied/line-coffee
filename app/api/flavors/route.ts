@@ -25,7 +25,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('flavor_bases')
-    .select('id, name_en, name_ar, sort_order, options:flavor_options(id, name_en, name_ar, sort_order, price_delta, option_type, is_active)')
+    .select('id, name_en, name_ar, sort_order, options:flavor_options(id, name_en, name_ar, sort_order, price_delta, option_type, is_active, stock_quantity, is_manually_out_of_stock)')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
 
@@ -39,7 +39,12 @@ export async function GET() {
     .map(base => ({
       ...base,
       options: (base.options || [])
-        .filter((option: { is_active: boolean; name_en?: string; name_ar?: string }) => option.is_active !== false && !isRemovedFlavor(option))
+        .filter((option: { is_active: boolean; name_en?: string; name_ar?: string; stock_quantity?: number; is_manually_out_of_stock?: boolean }) =>
+          option.is_active !== false &&
+          option.is_manually_out_of_stock !== true &&
+          Number(option.stock_quantity ?? 0) > 0 &&
+          !isRemovedFlavor(option)
+        )
         .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order),
     }))
 

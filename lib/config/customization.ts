@@ -12,6 +12,9 @@ export type CoffeeBeanOption = {
   origin?: string
   price: number
   isVisible: boolean
+  stockQuantity?: number
+  lowStockThreshold?: number
+  isManuallyOutOfStock?: boolean
 }
 
 export type FlavorBaseOption = {
@@ -30,6 +33,9 @@ export type FlavorAdditionOption = {
   sortOrder?: number
   /** Which base IDs this flavor applies to. Undefined = all bases. */
   bases?: string[]
+  stockQuantity?: number
+  lowStockThreshold?: number
+  isManuallyOutOfStock?: boolean
 }
 
 export const CUSTOM_BLEND_BEANS_KEY = 'custom_blend_beans'
@@ -338,6 +344,9 @@ export function normalizeBeanOptions(value: unknown): CoffeeBeanOption[] {
         origin: item.origin ? String(item.origin).trim() : undefined,
         price: toPositiveNumber(item.price),
         isVisible: item.isVisible !== false,
+        stockQuantity: toPositiveNumber(item.stockQuantity, 100),
+        lowStockThreshold: toPositiveNumber(item.lowStockThreshold, 10),
+        isManuallyOutOfStock: item.isManuallyOutOfStock === true,
       }
     })
     .filter((item) => item.nameAr && item.nameEn)

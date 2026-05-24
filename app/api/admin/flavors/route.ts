@@ -71,6 +71,9 @@ export async function GET() {
         price_delta,
         option_type,
         is_active,
+        stock_quantity,
+        low_stock_threshold,
+        is_manually_out_of_stock,
         sort_order,
         created_at,
         updated_at
