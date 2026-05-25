@@ -206,6 +206,7 @@ export function HeroSection() {
             alt={imageAlt}
             fill
             className="object-cover"
+            sizes="100vw"
             style={{ objectPosition: slides[currentSlide].objectPosition || 'center center', ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
             priority
           />

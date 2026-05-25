@@ -110,7 +110,7 @@ export default function ReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0806] py-20 md:py-28">
+    <div className="min-h-screen bg-[#0B0806] py-14 md:py-28">
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
 
       <div className="container relative mx-auto max-w-xl px-4">

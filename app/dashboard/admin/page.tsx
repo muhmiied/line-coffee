@@ -99,7 +99,7 @@ function StatCard({ label, value, change, icon: Icon, t }: {
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{value}</p>
       <p className="text-xs text-white/40 mt-1">{label}</p>
       {change !== undefined && (
         <p className="text-[10px] text-white/20 mt-0.5">{t('vs last month', 'مقارنة بالشهر الماضي')}</p>
@@ -118,7 +118,7 @@ function ActiveOrdersCard({ data, t }: {
         <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
           <Package className="h-5 w-5 text-blue-400" />
         </div>
-        <p className="text-2xl font-bold text-white">{data.totalCount}</p>
+        <p className="text-xl sm:text-2xl font-bold text-white">{data.totalCount}</p>
       </div>
       <p className="text-xs text-white/40 mb-3">{t('In Progress', 'قيد التنفيذ')}</p>
       <div className="space-y-1.5">
@@ -198,20 +198,20 @@ export default function AdminOverviewPage() {
   })
 
   return (
-    <div className="min-h-screen p-6 space-y-5 bg-[#0f0900]" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen p-4 sm:p-6 space-y-5 bg-[#0f0900]" dir={language === 'ar' ? 'rtl' : 'ltr'}>
 
       {/* ── Welcome banner (logo card) ── */}
       <div className="relative rounded-2xl overflow-hidden border border-[#c8941a]/15">
         <div className="absolute inset-0 bg-gradient-to-r from-[#1a0900] via-[#120600] to-[#0a0300]" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c8941a]/30 to-transparent" />
 
-        <div className="relative flex items-center justify-between px-6 py-5">
+        <div className="relative flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized className="object-contain mb-3" />
+            <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized className="w-28 sm:w-[170px] h-auto object-contain mb-2 sm:mb-3" />
             <p className="text-white/40 text-xs">{t("Here's what's happening with your store today.", 'إليك ملخص أداء متجرك اليوم')}</p>
           </div>
           <div className="text-right">
-            <p className="text-[#c8941a] text-3xl font-bold tracking-tight">
+            <p className="text-[#c8941a] text-xl sm:text-3xl font-bold tracking-tight">
               {loading ? '—' : `${(data?.stats.deliveredRevenue || 0).toLocaleString()} EGP`}
             </p>
             <p className="text-white/30 text-xs mt-1">{t('Collected Revenue', 'الإيرادات المحصلة')}</p>

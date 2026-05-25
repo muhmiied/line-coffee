@@ -83,7 +83,15 @@ export default function BlogListPage() {
                 >
                   <div className="relative h-40 overflow-hidden bg-[#1A120D] sm:h-48">
                     {post.cover_image ? (
-                      <Image src={post.cover_image} alt={title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
+                      <Image
+                        src={post.cover_image}
+                        alt={title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        loading="lazy"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        unoptimized
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <FileText className="h-12 w-12 text-[#B6885E]/35" />

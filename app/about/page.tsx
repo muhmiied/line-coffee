@@ -48,6 +48,7 @@ export default function AboutPage() {
           src={aboutTopMedia?.image_url || 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600'}
           alt={t(aboutTopMedia?.alt_en || 'About Line Coffee', aboutTopMedia?.alt_ar || aboutTopMedia?.alt_en || 'About Line Coffee')}
           fill
+          sizes="100vw"
           className="object-cover"
           style={{ objectPosition: aboutTopMedia ? getMediaObjectPosition(aboutTopMedia) : 'center center' }}
           priority
@@ -187,6 +188,8 @@ export default function AboutPage() {
                 src={aboutLowerMedia?.image_url || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800'}
                 alt={t(aboutLowerMedia?.alt_en || 'Coffee beans', aboutLowerMedia?.alt_ar || aboutLowerMedia?.alt_en || 'Coffee beans')}
                 fill
+                sizes="(min-width: 1024px) 44vw, 92vw"
+                loading="lazy"
                 className="object-cover"
                 style={{ objectPosition: aboutLowerMedia ? getMediaObjectPosition(aboutLowerMedia) : 'center center' }}
               />

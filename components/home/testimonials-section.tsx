@@ -157,9 +157,10 @@ export function TestimonialsSection() {
           src={sectionMedia!.image_url!}
           alt={sectionMedia?.alt_en || ''}
           fill
+          sizes="100vw"
+          loading="lazy"
           className={cn('object-cover', objPosClass(objectPosition))}
           style={hasBgFx && bgImgFilter ? { filter: bgImgFilter } : undefined}
-          priority={false}
         />
       )}
 
@@ -237,6 +238,7 @@ export function TestimonialsSection() {
                     fill
                     className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-[#2a1505] via-[#180c03] to-[#0B0806] flex items-center justify-center">

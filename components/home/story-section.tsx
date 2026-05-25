@@ -126,6 +126,8 @@ export function StorySection() {
             src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80"
             alt="Coffee farm"
             fill
+            sizes="100vw"
+            loading="lazy"
             className="object-cover opacity-10"
           />
         </motion.div>
@@ -251,6 +253,7 @@ export function StorySection() {
                     alt={t(storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story', storyMedia?.alt_ar || storyMedia?.alt_en || 'Line Coffee premium Arabica and Robusta story')}
                     fill
                     sizes="(min-width: 1024px) 44vw, 92vw"
+                    loading="lazy"
                     className={cn('object-cover object-center transition-transform duration-700 group-hover:scale-[1.035]', !storyHasFx && 'brightness-[0.82] contrast-[1.12] saturate-[1.08]')}
                     style={{ objectPosition: storyMedia ? getMediaObjectPosition(storyMedia) : 'center center', ...(storyHasFx && storyImgFilter ? { filter: storyImgFilter } : {}) }}
                   />

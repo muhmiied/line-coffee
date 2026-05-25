@@ -131,6 +131,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 alt={name}
                 fill
                 sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 320px"
+                loading="lazy"
                 className="object-cover object-center brightness-[0.82] contrast-[1.08] saturate-[1.05] transition-all duration-700 ease-out group-hover:scale-[1.08] group-hover:brightness-[0.9]"
               />
             ) : (
