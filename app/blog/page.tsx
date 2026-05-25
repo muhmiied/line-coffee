@@ -52,19 +52,21 @@ export default function BlogListPage() {
           <div className="grid gap-6 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="animate-pulse overflow-hidden rounded-2xl border border-[#B6885E]/12 bg-[#120D09]">
-                <div className="h-48 bg-[#B6885E]/8" />
-                <div className="space-y-3 p-6">
-                  <div className="h-5 w-3/4 rounded bg-[#B6885E]/8" />
-                  <div className="h-4 w-1/2 rounded bg-[#B6885E]/8" />
+                <div className="h-40 bg-[#B6885E]/12 sm:h-48" />
+                <div className="space-y-3 p-4 sm:p-6">
+                  <div className="h-5 w-3/4 rounded bg-[#B6885E]/12" />
+                  <div className="h-4 w-1/2 rounded bg-[#B6885E]/10" />
                 </div>
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="py-24 text-center">
-            <FileText className="mx-auto mb-4 h-16 w-16 text-[#B6885E]/30" />
-            <h2 className="mb-2 text-xl font-semibold text-[#F5E6D8]">{t('No posts yet', 'لا توجد مقالات بعد')}</h2>
-            <p className="text-[#D6B79A]/70">{t('Check back soon!', 'تابعنا قريباً!')}</p>
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#B6885E]/15 bg-[#B6885E]/8">
+              <FileText className="h-9 w-9 text-[#B6885E]/55" />
+            </div>
+            <h2 className="mb-2 font-serif text-xl font-semibold text-[#F5E6D8]">{t('No posts yet', 'لا توجد مقالات بعد')}</h2>
+            <p className="text-[#D6B79A]/60">{t('Check back soon!', 'تابعنا قريباً!')}</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">

@@ -30,7 +30,7 @@ function StarSelector({
           onMouseEnter={() => setHovered(i)}
           onMouseLeave={() => setHovered(0)}
           aria-label={`${i} star${i !== 1 ? 's' : ''}`}
-          className="transition-transform hover:scale-110"
+          className="transition-transform hover:scale-110 active:scale-90"
         >
           <Star
             className={cn(
@@ -239,7 +239,7 @@ export default function ReviewsPage() {
           <button
             type="submit"
             disabled={formState === 'submitting' || !name.trim() || !contentEn.trim()}
-            className="w-full rounded-full bg-[#D6A373] py-3.5 text-sm font-bold uppercase tracking-[0.15em] text-[#1a0e06] transition-all hover:bg-[#e0b48a] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full rounded-full bg-[#D6A373] py-3.5 text-sm font-bold uppercase tracking-[0.15em] text-[#1a0e06] transition-all duration-200 hover:bg-[#e0b48a] hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(182,136,94,0.35)] active:scale-[0.98] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {formState === 'submitting'
               ? t('Submitting...', 'جاري الإرسال...')

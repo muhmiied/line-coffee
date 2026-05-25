@@ -7,6 +7,7 @@ import { MEDIA_ALLOWED_MIME_TYPES, MEDIA_BUCKET, MEDIA_MAX_UPLOAD_SIZE } from '@
 
 async function guardAdmin() {
   const supabase = await createClient()
+  if (!supabase) return null
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdminEmail(user?.email)) return null
   return createAdminClient()
@@ -95,9 +96,9 @@ export async function POST(request: Request) {
         url: data.publicUrl,
       },
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Upload failed' },
+      { success: false, error: 'Upload failed' },
       { status: 400 },
     )
   }

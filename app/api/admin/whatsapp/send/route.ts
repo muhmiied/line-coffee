@@ -13,9 +13,13 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient()
   if (!admin) return NextResponse.json({ success: false, error: 'Service role not configured' }, { status: 503 })
 
-  const { phones, message } = await request.json()
+  const body = await request.json().catch(() => null)
+  const phones = Array.isArray(body?.phones)
+    ? body.phones.filter((phone: unknown): phone is string => typeof phone === 'string').slice(0, 25)
+    : []
+  const message = typeof body?.message === 'string' ? body.message.trim() : ''
 
-  if (!phones?.length || !message) {
+  if (!phones.length || !message || message.length > 1000) {
     return NextResponse.json({ success: false, error: 'phones and message are required' }, { status: 400 })
   }
 
@@ -32,8 +36,12 @@ export async function POST(request: NextRequest) {
 
   const results: { phone: string; ok: boolean; status?: number }[] = []
 
-  for (const phone of phones as string[]) {
+  for (const phone of phones) {
     const clean = phone.replace(/\s/g, '').replace(/^00/, '+')
+    if (!/^\+?\d{8,15}$/.test(clean)) {
+      results.push({ phone: clean, ok: false })
+      continue
+    }
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(clean)}&text=${encodeURIComponent(message)}&apikey=${apikey}`
     try {
       const res = await fetch(url)

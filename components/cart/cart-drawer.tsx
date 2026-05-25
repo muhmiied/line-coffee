@@ -104,7 +104,9 @@ export function CartDrawer() {
             <div className="flex-1 overflow-y-auto p-3 sm:p-4">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <ShoppingBag className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-border/30 bg-secondary/40">
+                    <ShoppingBag className="h-9 w-9 text-muted-foreground/40" />
+                  </div>
                   <h3 className="font-medium text-lg mb-2">
                     {t('Your cart is empty', 'سلتك فارغة')}
                   </h3>
@@ -136,7 +138,7 @@ export function CartDrawer() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: dir === 'rtl' ? -100 : 100 }}
-                      className="flex gap-3 p-3 bg-secondary/50 rounded-lg sm:gap-4"
+                      className="flex gap-3 p-3 bg-secondary/50 rounded-lg border border-border/40 sm:gap-4"
                     >
                       {/* Product Image */}
                       <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted shrink-0 sm:h-20 sm:w-20">

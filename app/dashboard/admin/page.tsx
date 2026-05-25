@@ -87,7 +87,7 @@ function StatCard({ label, value, change, icon: Icon, t }: {
 }) {
   const positive = (change ?? 0) >= 0
   return (
-    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 transition-colors">
+    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 transition-all duration-300">
       <div className="flex items-center justify-between mb-4">
         <div className="h-10 w-10 rounded-xl bg-[#c8941a]/10 border border-[#c8941a]/15 flex items-center justify-center">
           <Icon className="h-5 w-5 text-[#c8941a]" />
@@ -113,7 +113,7 @@ function ActiveOrdersCard({ data, t }: {
   t: (en: string, ar: string) => string
 }) {
   return (
-    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 transition-colors">
+    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 transition-all duration-300">
       <div className="flex items-center justify-between mb-3">
         <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
           <Package className="h-5 w-5 text-blue-400" />
@@ -164,7 +164,7 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function Sk({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-white/[0.05] rounded-xl ${className}`} />
+  return <div className={`animate-pulse bg-white/[0.07] rounded-xl ${className}`} />
 }
 
 export default function AdminOverviewPage() {
