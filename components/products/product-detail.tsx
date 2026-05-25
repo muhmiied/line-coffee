@@ -243,7 +243,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <span className="text-sm text-muted-foreground block mb-1">
                   {t('Roast Level', 'درجة التحميص')}
                 </span>
-                <Badge variant="outline" className="capitalize">
+                <Badge variant="outline" className="capitalize border-[#B6885E]/25 bg-[#B6885E]/8 text-[#D6B79A]">
                   {product.roast_level}
                 </Badge>
               </div>
@@ -255,7 +255,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {product.flavor_notes.map((note) => (
-                    <Badge key={note} variant="secondary">
+                    <Badge key={note} variant="secondary" className="border border-[#B6885E]/20 bg-[#B6885E]/10 text-[#D6B79A] hover:bg-[#B6885E]/16">
                       {note}
                     </Badge>
                   ))}
@@ -288,11 +288,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
                     <Label
                       htmlFor={size.id}
                       className={cn(
-                        'flex flex-col items-center justify-center px-6 py-3 rounded-lg border-2 cursor-pointer transition-all',
-                        'hover:border-primary/50',
+                        'flex flex-col items-center justify-center px-6 py-3 rounded-lg border-2 cursor-pointer transition-all duration-200',
                         selectedSize?.id === size.id
-                          ? 'border-[#D6A373]/45 bg-[#B6885E]/10 shadow-[0_0_26px_rgba(182,136,94,0.12)]'
-                          : 'border-[#B6885E]/15 bg-[#120D09]/50 hover:border-[#D6A373]/30'
+                          ? 'border-[#D6A373]/65 bg-[#B6885E]/14 shadow-[0_0_32px_rgba(182,136,94,0.22)] ring-1 ring-[#D6A373]/22 text-[#F5E6D8]'
+                          : 'border-[#B6885E]/18 bg-[#120D09]/55 text-[#D6B79A] hover:border-[#D6A373]/42 hover:bg-[#B6885E]/8 hover:text-[#F5E6D8]'
                       )}
                     >
                       <span className="font-medium">{size.size}</span>
@@ -337,28 +336,30 @@ export function ProductDetail({ product }: ProductDetailProps) {
               {t('Quantity', 'الكمية')}
             </Label>
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
+              <button
+                type="button"
+                aria-label={t('Decrease quantity', 'تقليل الكمية')}
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1 || isOutOfStock}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/42 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
               >
                 <Minus className="h-4 w-4" />
-              </Button>
-              <span className="w-12 text-center font-medium text-lg">{quantity}</span>
-              <Button
-                variant="outline"
-                size="icon"
+              </button>
+              <span className="w-12 text-center font-semibold text-lg text-[#F5E6D8]">{quantity}</span>
+              <button
+                type="button"
+                aria-label={t('Increase quantity', 'زيادة الكمية')}
                 onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
                 disabled={isOutOfStock || quantity >= maxQty}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/42 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
               >
                 <Plus className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
           </div>
 
           {/* Price & Add to Cart */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4 border-t">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4 border-t border-[#B6885E]/18">
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-primary">
@@ -414,7 +415,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Product assurances */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-[#B6885E]/15">
             <div className="premium-info-card flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Truck className="h-5 w-5 text-primary" />

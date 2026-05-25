@@ -466,8 +466,8 @@ function MakeYourEspressoBlend() {
                 outOfStock
                   ? 'cursor-not-allowed border-[#B6885E]/8 opacity-45 grayscale'
                   : selected
-                    ? 'border-[#D6A373]/55 shadow-[0_0_38px_rgba(182,136,94,0.16)] hover:-translate-y-1'
-                    : 'border-[#B6885E]/16 hover:-translate-y-1 hover:border-[#D6A373]/35',
+                    ? 'border-[#D6A373]/55 bg-[#B6885E]/9 shadow-[0_0_38px_rgba(182,136,94,0.18)] hover:-translate-y-1'
+                    : 'border-[#B6885E]/16 hover:-translate-y-1 hover:border-[#D6A373]/38 hover:bg-[#B6885E]/5',
               )}
             >
               {outOfStock && (
@@ -599,7 +599,7 @@ function MakeYourEspressoBlend() {
             </div>
 
             {selectedBeans.length === 0 ? (
-              <p className="mt-5 rounded-xl border border-dashed border-[#B6885E]/20 px-4 py-5 text-center text-sm text-[#D6B79A]/58">
+              <p className="mt-5 rounded-xl border border-dashed border-[#B6885E]/28 px-4 py-6 text-center text-sm text-[#D6B79A]/65">
                 {t('Selected beans will appear here.', 'Ø³ØªØ¸Ù‡Ø± Ø£Ù†ÙˆØ§Ø¹ Ø§Ù„Ø¨Ù† Ø§Ù„Ù…Ø®ØªØ§Ø±Ø© Ù‡Ù†Ø§.')}
               </p>
             ) : (
@@ -638,16 +638,16 @@ function MakeYourEspressoBlend() {
                   {t(`Selected Beans (${selectedBeans.length})`, `Ø§Ù„Ø­Ø¨ÙˆØ¨ Ø§Ù„Ù…Ø®ØªØ§Ø±Ø© (${selectedBeans.length})`)}
                 </p>
                 {selectedBeans.length === 0 ? (
-                  <p className="text-xs text-[#D6B79A]/45">
-                    {t('No beans selected yet.', 'Ù„Ù… ÙŠØªÙ… Ø§Ø®ØªÙŠØ§Ø± Ø­Ø¨ÙˆØ¨ Ø¨Ø¹Ø¯.')}
+                  <p className="rounded-lg border border-dashed border-[#B6885E]/18 px-3 py-3 text-center text-xs text-[#D6B79A]/50">
+                    {t('Select beans to start your blend.', 'Ø§Ø®ØªØ± Ø­Ø¨ÙˆØ¨ Ù„Ø¨Ø¯Ø¡ Ø§Ù„ØªÙˆÙ„ÙŠÙØ©.')}
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {finalBlendBeans.map((bean) => (
-                      <div key={bean.id} className="flex items-center justify-between gap-3 text-xs">
-                        <span className="truncate text-[#D6B79A]/75">{formatOptionName(language, bean)}</span>
+                      <div key={bean.id} className="flex items-center justify-between gap-3 rounded-lg border border-[#B6885E]/12 bg-[#120D09]/55 px-3 py-2 text-xs">
+                        <span className="truncate font-medium text-[#F5E6D8]/82">{formatOptionName(language, bean)}</span>
                         {blendMode === 'custom' && (
-                          <span className="shrink-0 font-semibold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</span>
+                          <span className="shrink-0 font-bold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</span>
                         )}
                       </div>
                     ))}
@@ -664,8 +664,8 @@ function MakeYourEspressoBlend() {
                     key={size}
                     onClick={() => setSelectedSize(size)}
                     className={cn(
-                      'rounded-xl border px-2 py-3 text-sm font-semibold transition-all',
-                      selectedSize === size ? 'border-[#D6A373]/50 bg-[#D6A373] text-[#0B0806]' : 'border-[#B6885E]/14 bg-[#120D09]/70 text-[#D6B79A] hover:border-[#D6A373]/30',
+                      'rounded-xl border px-2 py-3 text-sm font-semibold transition-all duration-200',
+                      selectedSize === size ? 'border-[#D6A373]/55 bg-[#D6A373] text-[#0B0806] shadow-[0_0_18px_rgba(182,136,94,0.22)]' : 'border-[#B6885E]/16 bg-[#120D09]/70 text-[#D6B79A] hover:border-[#D6A373]/38 hover:bg-[#B6885E]/8 hover:text-[#F5E6D8]',
                     )}
                   >
                     {size}
@@ -997,8 +997,8 @@ function CustomizeFlavor() {
                     key={size}
                     onClick={() => setSelectedSize(size)}
                     className={cn(
-                      'rounded-xl border px-2 py-3 text-sm font-semibold transition-all',
-                      selectedSize === size ? 'border-[#D6A373]/50 bg-[#D6A373] text-[#0B0806]' : 'border-[#B6885E]/14 bg-[#120D09]/70 text-[#D6B79A] hover:border-[#D6A373]/30',
+                      'rounded-xl border px-2 py-3 text-sm font-semibold transition-all duration-200',
+                      selectedSize === size ? 'border-[#D6A373]/55 bg-[#D6A373] text-[#0B0806] shadow-[0_0_18px_rgba(182,136,94,0.22)]' : 'border-[#B6885E]/16 bg-[#120D09]/70 text-[#D6B79A] hover:border-[#D6A373]/38 hover:bg-[#B6885E]/8 hover:text-[#F5E6D8]',
                     )}
                   >
                     {size}
@@ -1036,10 +1036,22 @@ function CustomizeFlavor() {
               <p className="mb-3 text-sm font-semibold text-[#F5E6D8]">
                 {t(`Selected Flavors (${selectedFlavors.length})`, `Ø§Ù„Ù†ÙƒÙ‡Ø§Øª Ø§Ù„Ù…Ø®ØªØ§Ø±Ø© (${selectedFlavors.length})`)}
               </p>
-              <p className="text-sm text-[#D6B79A]/72">
-                {formatOptionName(language, selectedBase)}
-                {selectedFlavors.length > 0 ? ` + ${selectedFlavors.map((flavor) => formatOptionName(language, flavor)).join(' + ')}` : ''}
+              <p className="mb-2.5 text-xs font-medium text-[#D6B79A]/60">
+                {t('Base', 'Ø§Ù„Ù‚Ø§Ø¹Ø¯Ø©')}: <span className="text-[#F5E6D8]/80">{formatOptionName(language, selectedBase)}</span>
               </p>
+              {selectedFlavors.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-[#B6885E]/18 px-3 py-3 text-center text-xs text-[#D6B79A]/50">
+                  {t('No flavors selected yet.', 'Ù„Ù… ÙŠØªÙ… Ø§Ø®ØªÙŠØ§Ø± Ù†ÙƒÙ‡Ø§Øª Ø¨Ø¹Ø¯.')}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedFlavors.map((flavor) => (
+                    <span key={flavor.id} className="rounded-full border border-[#D6A373]/32 bg-[#D6A373]/12 px-2.5 py-1 text-xs font-medium text-[#D6A373]">
+                      {formatOptionName(language, flavor)}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="mt-3 space-y-1 text-xs text-[#D6B79A]/62">
                 <div className="flex items-center justify-between gap-3">
                   <span>{t('Base price', 'Ø³Ø¹Ø± Ø§Ù„Ù‚Ø§Ø¹Ø¯Ø©')}</span>
