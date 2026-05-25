@@ -30,6 +30,8 @@ const heroSectionConfig = getWebsiteSection('hero')
 
 type HeroSlide = {
   image: string
+  eyebrowEn?: string
+  eyebrowAr?: string
   headingEn: string
   headingAr: string
   subheadingEn: string
@@ -45,6 +47,8 @@ type HeroSlide = {
   layout?: SectionBuilderLayout
   visualEffects?: VisualEffects
   animationDuration?: number
+  titleScale?: number
+  subtitleScale?: number
 }
 
 function elementTransform(layout: SectionBuilderLayout | undefined, elementId: string) {
@@ -57,34 +61,26 @@ function elementTransform(layout: SectionBuilderLayout | undefined, elementId: s
 const fallbackSlides: HeroSlide[] = [
   {
     image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
-    headingEn: 'Experience Coffee Like Never Before',
-    headingAr: 'اختبر القهوة كما لم تفعل من قبل',
-    subheadingEn: 'Discover our carefully sourced single-origin beans and signature blends, roasted to perfection for the ultimate coffee experience.',
-    subheadingAr: 'اكتشف حبوبنا من الأصل الواحد المختارة بعناية وخلطاتنا المميزة، المحمصة بإتقان لتجربة القهوة المثالية.',
+    headingEn: 'Every Cup, a Story Worth Savoring',
+    headingAr: 'كل فنجان قصةٌ تستحق التأمل',
+    subheadingEn: 'Hand-selected beans, precision-roasted to unlock depth, warmth, and character in every sip.',
+    subheadingAr: 'حبوب منتقاة بعناية، محمصة بدقة لتكشف العمق والدفء في كل رشفة.',
   },
   {
     image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80',
-    headingEn: 'Crafted With Passion & Precision',
-    headingAr: 'مصنوعة بشغف وإتقان',
-    subheadingEn: 'From the finest farms to your cup, we bring you exceptional quality with every sip.',
-    subheadingAr: 'من أفضل المزارع إلى كوبك، نقدم لك جودة استثنائية مع كل رشفة.',
+    headingEn: 'The Art of the Perfect Blend',
+    headingAr: 'فن التوليفة المثالية',
+    subheadingEn: 'Rich, complex, and unmistakably Line Coffee — crafted for those who settle for nothing less.',
+    subheadingAr: 'غنية ومعقدة لا تُنسى — صُنعت لمن لا يرضى إلا بالأفضل.',
   },
   {
     image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80',
-    headingEn: 'Your Daily Ritual, Elevated',
-    headingAr: 'طقوسك اليومية، بمستوى أعلى',
-    subheadingEn: 'Transform your morning routine with our premium Turkish coffee and specialty blends.',
-    subheadingAr: 'حوّل روتينك الصباحي مع قهوتنا التركية الفاخرة وخلطاتنا المميزة.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1459755486867-b55449bb39ff?w=1920&q=80',
-    headingEn: 'Bold Flavor. Smooth Finish.',
-    headingAr: 'نكهة قوية. نهاية ناعمة.',
-    subheadingEn: 'Signature blends crafted for cappuccino, coffee mix, and hot chocolate lovers—classic or flavored.',
-    subheadingAr: 'خلطات مميزة لعشاق الكابتشينو والكوفي ميكس والهوت شوكلت—كلاسيك أو نكهات.',
+    headingEn: 'Freshly Roasted, Delivered to Your Door',
+    headingAr: 'تحميص طازج يصل إلى بابك',
+    subheadingEn: 'Premium freshness delivered across Egypt — from our roaster straight to your kitchen.',
+    subheadingAr: 'نضارة فاخرة توصّل في كل أنحاء مصر — من محمصتنا إلى مطبخك مباشرةً.',
   },
 ]
-
 export function HeroSection() {
   const { t, dir } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -126,9 +122,9 @@ export function HeroSection() {
             return {
               image: item.image_url,
               headingEn: content.title_en || item.title_en || fallbackSlides[index % fallbackSlides.length].headingEn,
-              headingAr: content.title_ar || item.title_ar || item.title_en || fallbackSlides[index % fallbackSlides.length].headingAr,
+              headingAr: content.title_ar || item.title_ar || fallbackSlides[index % fallbackSlides.length].headingAr,
               subheadingEn: content.subtitle_en || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingEn,
-              subheadingAr: content.subtitle_ar || item.subtitle_ar || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingAr,
+              subheadingAr: content.subtitle_ar || item.subtitle_ar || fallbackSlides[index % fallbackSlides.length].subheadingAr,
               altEn: item.alt_en,
               altAr: item.alt_ar,
               objectPosition: getMediaObjectPosition(item),
@@ -140,6 +136,8 @@ export function HeroSection() {
               layout: getSectionBuilderLayout(heroSectionConfig, item),
               visualEffects: getVisualEffects(item),
               animationDuration: typeof item.animation_duration === 'number' && item.animation_duration > 0 ? item.animation_duration : 6000,
+              titleScale: typeof content.title_scale === 'number' ? Math.min(1.6, Math.max(0.6, content.title_scale)) : undefined,
+              subtitleScale: typeof content.subtitle_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.subtitle_scale)) : undefined,
             }
           })
 
@@ -162,10 +160,13 @@ export function HeroSection() {
 
   const headingText = currentHeroSlide ? t(currentHeroSlide.headingEn, currentHeroSlide.headingAr) : ''
   const subheadingText = currentHeroSlide ? t(currentHeroSlide.subheadingEn, currentHeroSlide.subheadingAr) : ''
+  const headingDir = /[؀-ۿ]/.test(headingText) ? 'rtl' : 'ltr'
   const imageAlt = currentHeroSlide ? t(currentHeroSlide.altEn || 'Coffee background', currentHeroSlide.altAr || currentHeroSlide.altEn || 'Coffee background') : 'Coffee background'
   const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Now', currentHeroSlide.buttonTextAr || currentHeroSlide.buttonTextEn || 'تسوق الآن') : ''
   const primaryButtonHref = currentHeroSlide?.buttonLink || '/products'
   const currentLayout = currentHeroSlide?.layout
+  const titleScale = currentHeroSlide?.titleScale ?? 1
+  const subtitleScale = currentHeroSlide?.subtitleScale ?? 1
   const heroStats = currentHeroSlide?.stats && currentHeroSlide.stats.length > 0
     ? currentHeroSlide.stats.filter((stat) => stat.is_active !== false)
     : [
@@ -186,7 +187,7 @@ export function HeroSection() {
     return (
       <section
         ref={ref}
-        className="relative flex min-h-[92svh] items-center overflow-hidden -mt-16 pt-32 pb-24 sm:-mt-[4.5rem] sm:pt-40 sm:pb-28 md:-mt-24 md:min-h-[110vh] md:pt-52 md:pb-44"
+        className="relative flex h-[86svh] min-h-[620px] items-center overflow-hidden -mt-16 pt-28 pb-16 sm:-mt-[4.5rem] sm:pt-32 sm:pb-20 md:-mt-24 md:h-[86vh] md:min-h-[720px] md:max-h-[820px] md:pt-44 md:pb-28"
         style={{ background: '#0B0806' }}
       >
         <div className="absolute inset-0 bg-[#0B0806]" />
@@ -198,7 +199,7 @@ export function HeroSection() {
   return (
     <section
       ref={ref}
-      className="relative flex min-h-[92svh] items-center overflow-hidden -mt-16 pt-32 pb-24 sm:-mt-[4.5rem] sm:pt-40 sm:pb-28 md:-mt-24 md:min-h-[110vh] md:pt-52 md:pb-44"
+      className="relative flex h-[86svh] min-h-[620px] items-center overflow-hidden -mt-16 pt-28 pb-16 sm:-mt-[4.5rem] sm:pt-32 sm:pb-20 md:-mt-24 md:h-[86vh] md:min-h-[720px] md:max-h-[820px] md:pt-44 md:pb-28"
       style={{ background: '#0B0806' }}
     >
       {/* ── Decorative coffee bean ── */}
@@ -225,7 +226,7 @@ export function HeroSection() {
             fill
             className="object-cover"
             sizes="100vw"
-            style={{ objectPosition: currentHeroSlide.objectPosition || 'center center', ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
+            style={{ objectPosition: currentHeroSlide.objectPosition || (dir === 'rtl' ? 'left center' : 'right center'), ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
             priority={currentSlide === 0}
           />
 
@@ -246,6 +247,14 @@ export function HeroSection() {
           <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
           {/* 5. Top scrim */}
           <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
+          <div
+            className={cn(
+              'absolute inset-0',
+              dir === 'rtl'
+                ? 'bg-[linear-gradient(270deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
+                : 'bg-[linear-gradient(90deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
+            )}
+          />
           {/* 6. Ambient gold glow — admin override or fixed */}
           {fxGlow > 0.05
             ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />
@@ -259,44 +268,29 @@ export function HeroSection() {
 
       {/* ── Hero content ── */}
       <motion.div style={{ opacity }} className="container mx-auto px-4 relative z-20">
-        <div className="max-w-6xl text-center mx-auto" style={elementTransform(currentLayout, 'main-copy')}>
-
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-8 flex flex-wrap justify-center gap-5 sm:gap-8 md:mb-12 md:gap-16"
-          >
-            {heroStats.map((stat) => {
-              const numericValue = Number(String(stat.value).replace(/\D/g, ''))
-              const suffix = String(stat.value).replace(/[0-9]/g, '')
-              return (
-              <div key={stat.id} className="text-center">
-                <p className="font-serif text-2xl md:text-3xl font-bold" style={{ color: '#D6A373' }}>
-                  {Number.isFinite(numericValue) ? <AnimatedCounter value={numericValue} suffix={suffix} /> : stat.value}
-                </p>
-                <p className="text-xs md:text-sm mt-0.5" style={{ color: 'rgba(245,230,216,0.55)' }}>
-                  {t(stat.label_en, stat.label_ar || stat.label_en)}
-                </p>
-                {/* Thin gold underline */}
-                <div className="mx-auto mt-1.5 h-px w-8 bg-gradient-to-r from-transparent via-[#B6885E]/50 to-transparent" />
-              </div>
-            )})}
-          </motion.div>
+        <div
+          className={cn(
+            'mx-auto flex max-w-7xl pt-2 md:pt-6',
+            dir === 'rtl' ? 'justify-end text-right' : 'justify-start text-left'
+          )}
+          style={elementTransform(currentLayout, 'main-copy')}
+        >
+          <div className="max-w-[35rem] md:max-w-[38rem]">
 
           {/* Headline */}
           <AnimatePresence mode="wait">
             <motion.h1
               key={`heading-${currentSlide}`}
+              dir={headingDir}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              className="relative mb-5 font-serif text-4xl font-extrabold leading-[1.05] text-balance min-[380px]:text-5xl md:mb-6 md:text-7xl lg:text-8xl"
+              className="relative mb-5 line-clamp-3 max-w-3xl font-serif text-4xl font-extrabold leading-[1.05] text-balance min-[380px]:text-5xl md:mb-6 md:text-6xl lg:text-7xl"
               style={{
                 color: '#F5E6D8',
                 textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
+                ...(titleScale !== 1 && { transform: `scale(${titleScale})`, transformOrigin: headingDir === 'rtl' ? 'top right' : 'top left' }),
               }}
             >
               <WordByWord text={headingText} />
@@ -308,8 +302,8 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.35 }}
-            className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty md:mb-10 md:text-xl"
-            style={{ color: 'rgba(214,183,154,0.85)' }}
+            className="mb-8 line-clamp-2 max-w-xl text-base leading-relaxed text-pretty md:mb-10 md:text-lg"
+            style={{ color: 'rgba(214,183,154,0.85)', ...(subtitleScale !== 1 && { transform: `scale(${subtitleScale})`, transformOrigin: dir === 'rtl' ? 'top right' : 'top left' }) }}
           >
             {subheadingText}
           </motion.p>
@@ -319,7 +313,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.55 }}
-            className="flex flex-col sm:flex-row justify-center gap-4"
+            className="flex flex-col gap-4 sm:flex-row"
           >
             {/* Primary — gold gradient */}
             <Link
@@ -373,6 +367,30 @@ export function HeroSection() {
             </Link>
           </motion.div>
 
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.05, duration: 0.5 }}
+            className="mt-12 grid max-w-xl grid-cols-1 gap-4 border-t border-[#B6885E]/22 pt-7 min-[420px]:grid-cols-3 sm:gap-7 md:mt-14 md:pt-8"
+          >
+            {heroStats.map((stat) => {
+              const numericValue = Number(String(stat.value).replace(/\D/g, ''))
+              const suffix = String(stat.value).replace(/[0-9]/g, '')
+              return (
+                <div key={stat.id}>
+                  <p className="font-serif text-2xl font-bold md:text-3xl" style={{ color: '#D6A373' }}>
+                    {Number.isFinite(numericValue) ? <AnimatedCounter value={numericValue} suffix={suffix} /> : stat.value}
+                  </p>
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] md:text-xs" style={{ color: 'rgba(245,230,216,0.55)' }}>
+                    {t(stat.label_en, stat.label_ar || stat.label_en)}
+                  </p>
+                </div>
+              )
+            })}
+          </motion.div>
+
+          </div>
         </div>
       </motion.div>
 

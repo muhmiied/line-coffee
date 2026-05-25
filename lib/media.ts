@@ -84,6 +84,10 @@ export type SectionBuilderContent = {
   features?: SectionTextBlock[]
   stats?: SectionStatBlock[]
   visual_effects?: VisualEffects
+  title_scale?: number
+  subtitle_scale?: number
+  eyebrow_scale?: number
+  stats_scale?: number
 }
 
 export type SectionElementPosition = {

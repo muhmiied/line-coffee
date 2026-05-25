@@ -535,6 +535,15 @@ function SectionPreview({
           {fxGrain > 0.05 && (
             <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />
           )}
+          {/* Horizontal side gradient — matches hero-section.tsx */}
+          <div
+            className={cn(
+              'absolute inset-0',
+              isRtl
+                ? 'bg-[linear-gradient(270deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
+                : 'bg-[linear-gradient(90deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
+            )}
+          />
 
           {/* Slide position indicator (right side, visual only) */}
           <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2">
@@ -544,6 +553,7 @@ function SectionPreview({
           </div>
 
           {/* Hero content — same layout as hero-section.tsx */}
+          <div className={cn('relative z-10 flex w-full', isRtl ? 'justify-end text-right' : 'justify-start text-left')}>
           <DraggableElement
             id="main-copy"
             layout={layout}
@@ -551,11 +561,11 @@ function SectionPreview({
             selected={selectedElement === 'main-copy'}
             onSelect={onSelectElement}
             onLayoutChange={onPatchLayout}
-            className="relative z-10 mx-auto w-full max-w-3xl text-center"
+            className="w-full max-w-[35rem]"
           >
             {/* Stats row — matches hero-section.tsx */}
             {heroStats.length > 0 && (
-              <div className={cn('mb-7 flex flex-wrap justify-center gap-6 md:gap-12', isRtl && 'flex-row-reverse')}>
+              <div className={cn('mb-7 flex flex-wrap gap-6 md:gap-12', isRtl ? 'justify-end flex-row-reverse' : 'justify-start')}>
                 {heroStats.slice(0, 4).map((stat) => (
                   <div key={stat.id} className="text-center">
                     <EditableText
@@ -617,6 +627,7 @@ function SectionPreview({
               </div>
             </div>
           </DraggableElement>
+          </div>
         </div>
       </div>
     )
@@ -1381,6 +1392,7 @@ export default function BannersPage() {
 
   const selectedLayout = activeSection && selectedSlide ? getSectionBuilderLayout(activeSection, selectedSlide) : {}
   const selectedElementPosition = selectedElementId ? selectedLayout.elements?.[selectedElementId] || {} : {}
+  const selectedContent = activeSection && selectedSlide ? getSectionBuilderContent(activeSection, selectedSlide) : {} as SectionBuilderContent
 
   if (activeSection) {
     return (
@@ -1521,7 +1533,7 @@ export default function BannersPage() {
             )}
           </main>
 
-          <aside className="space-y-4 rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/85 p-4">
+          <aside className="space-y-4 overflow-y-auto max-h-[calc(100vh-9rem)] rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/85 p-4">
             {selectedSlide && (
               <>
                 <div>
@@ -1677,14 +1689,71 @@ export default function BannersPage() {
                   </div>
                 )}
 
-                <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Visual Effects', 'Visual Effects')}</p>
+                {activeSection.editorTemplate === 'hero' && (
+                  <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group">
+                    <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">
+                      {t('Text Scale', 'Text Scale')}
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                      <div>
+                        <label className="mb-1 block text-[11px] text-white/45">
+                          {t('Title Scale', 'Title Scale')}: {(selectedContent.title_scale ?? 1).toFixed(2)}×
+                        </label>
+                        <input
+                          type="range" min={0.6} max={1.6} step={0.05}
+                          value={selectedContent.title_scale ?? 1}
+                          onChange={(e) => patchSelectedContent({ title_scale: Number(e.target.value) })}
+                          className="w-full accent-[#D6A373]"
+                          title="Title scale"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] text-white/45">
+                          {t('Subtitle Scale', 'Subtitle Scale')}: {(selectedContent.subtitle_scale ?? 1).toFixed(2)}×
+                        </label>
+                        <input
+                          type="range" min={0.6} max={1.4} step={0.05}
+                          value={selectedContent.subtitle_scale ?? 1}
+                          onChange={(e) => patchSelectedContent({ subtitle_scale: Number(e.target.value) })}
+                          className="w-full accent-[#D6A373]"
+                          title="Subtitle scale"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] text-white/45">
+                          {t('Stats Scale', 'Stats Scale')}: {(selectedContent.stats_scale ?? 1).toFixed(2)}×
+                        </label>
+                        <input
+                          type="range" min={0.6} max={1.4} step={0.05}
+                          value={selectedContent.stats_scale ?? 1}
+                          onChange={(e) => patchSelectedContent({ stats_scale: Number(e.target.value) })}
+                          className="w-full accent-[#D6A373]"
+                          title="Stats scale"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => patchSelectedContent({ title_scale: 1, subtitle_scale: 1, stats_scale: 1 })}
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/55 transition hover:text-white"
+                      >
+                        {t('Reset Scale', 'Reset Scale')}
+                      </button>
+                    </div>
+                  </details>
+                )}
+
+                <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group" open>
+                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">
+                    {t('Visual Effects', 'Visual Effects')}
+                  </summary>
+                  <div className="mt-3">
                   <VisualEffectsPanel
                     slide={selectedSlide}
                     onPatch={patchSelected}
                     onPatchContent={patchSelectedContent}
                   />
-                </div>
+                  </div>
+                </details>
 
                 {activeSection.supportsCta && (
                   <div>
