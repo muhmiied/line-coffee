@@ -65,7 +65,9 @@
       "Bash(xargs grep -l \"banners\")",
       "Bash(grep -E \"\\\\.\\(tsx?|sql\\)$\")",
       "Bash(Get-ChildItem app *)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(dir /s /b \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\*.tsx\")",
+      "Bash(findstr \"page.tsx\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mohamed Sayed\\AppData\\Local\\Microsoft\\Windows\\Fonts"
