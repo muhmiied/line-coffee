@@ -207,7 +207,7 @@ export function CategoriesSection() {
               <div
                 key={i}
                 className="aspect-[3/4] rounded-xl animate-pulse"
-                style={{ background: 'rgba(182,136,94,0.06)' }}
+                style={{ background: 'rgba(182,136,94,0.09)' }}
               />
             ))}
           </div>

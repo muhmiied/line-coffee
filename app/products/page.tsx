@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, PackageSearch, Sparkles, ChevronRight, Check, X, ShoppingBag, Coffee, Scale, SlidersHorizontal } from 'lucide-react'
+import { Search, PackageSearch, Sparkles, ChevronRight, Check, X, ShoppingBag, Coffee, Scale, SlidersHorizontal, Minus, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/product-card'
@@ -272,6 +272,7 @@ function MakeYourEspressoBlend() {
   )
   const [selectedBeans, setSelectedBeans] = useState<Array<CoffeeBeanOption & { percent: string }>>([])
   const [selectedSize, setSelectedSize] = useState<PackageSize>('250g')
+  const [blendQuantity, setBlendQuantity] = useState(1)
 
   const groupedBeans = useMemo(() => {
     const visible = beanOptions.filter((bean) => bean.isVisible)
@@ -301,6 +302,7 @@ function MakeYourEspressoBlend() {
   const totalPrice = finalBlendBeans.length > 0
     ? calculateBlendPrice(finalBlendBeans.map((bean) => ({ price: bean.price, percent: bean.finalPercent })), 'ratios', selectedSize, false)
     : 0
+  const blendDisplayPrice = totalPrice * blendQuantity
   const blendPartEn = finalBlendBeans
     .map((bean) => `${bean.nameEn} ${formatRatio(bean.finalPercent)}%`)
     .join(' + ')
@@ -317,7 +319,7 @@ function MakeYourEspressoBlend() {
     name_ar: 'توليفة الإسبريسو الخاصة بك',
     size: selectedSize,
     price: totalPrice,
-    quantity: 1,
+    quantity: blendQuantity,
     image: IMG_ESP,
     customizations: {
       type: 'espresso-blend',
@@ -338,11 +340,8 @@ function MakeYourEspressoBlend() {
       })),
     },
   } : null
-  const blendExistingQuantity = blendCartItem
-    ? items.find((item) => item.id === blendCartItem.id)?.quantity ?? 0
-    : 0
   const blendStockIssue = blendCartItem
-    ? getCustomStockIssue(items, blendCartItem, blendExistingQuantity + 1)
+    ? getCustomStockIssue(items, blendCartItem, blendQuantity)
     : null
 
   useEffect(() => {
@@ -629,7 +628,7 @@ function MakeYourEspressoBlend() {
         <aside className="h-fit rounded-2xl border border-[#B6885E]/18 bg-[#0B0806]/72 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] lg:sticky lg:top-28">
           <div className="mb-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#D6A373]/75">{t('Live Price', 'Ø§Ù„Ø³Ø¹Ø± Ø§Ù„Ù…Ø¨Ø§Ø´Ø±')}</p>
-            <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{totalPrice} {t('EGP', 'Ø¬.Ù…')}</p>
+            <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{blendDisplayPrice} {t('EGP', 'Ø¬.Ù…')}</p>
             <p className="mt-1 text-xs text-[#D6B79A]/58">{t('Updates instantly as you customize.', 'ÙŠØªØºÙŠØ± ÙÙˆØ±Ø§Ù‹ Ù…Ø¹ ÙƒÙ„ Ø§Ø®ØªÙŠØ§Ø±.')}</p>
           </div>
 
@@ -675,6 +674,31 @@ function MakeYourEspressoBlend() {
               </div>
             </div>
 
+            <div>
+              <p className="mb-2 text-sm font-semibold text-[#F5E6D8]">{t('Quantity', 'Ø§Ù„ÙƒÙ…ÙŠØ©')}</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  onClick={() => setBlendQuantity((q) => Math.max(1, q - 1))}
+                  disabled={blendQuantity <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/40 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-8 text-center text-base font-semibold text-[#F5E6D8]">{blendQuantity}</span>
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  onClick={() => setBlendQuantity((q) => q + 1)}
+                  disabled={!blendCartItem || Boolean(getCustomStockIssue(items, blendCartItem, blendQuantity + 1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/40 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
             {selectedBeans.length > 0 && blendMode === 'custom' && !ratioIsValid && (
               <p className="rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                 {t('Total ratio must equal 100%', 'Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„Ù†Ø³Ø¨ ÙŠØ¬Ø¨ Ø£Ù† ÙŠØ³Ø§ÙˆÙŠ 100%')}
@@ -712,6 +736,7 @@ function CustomizeFlavor() {
   const [selectedBase, setSelectedBase] = useState<FlavorBaseOption>(flavorBaseOptions[0])
   const [selectedFlavors, setSelectedFlavors] = useState<FlavorAdditionOption[]>([])
   const [selectedSize, setSelectedSize] = useState<PackageSize>('250g')
+  const [flavorQuantity, setFlavorQuantity] = useState(1)
   const valveBag = false
 
   const filteredAdditions = useMemo(() => {
@@ -734,6 +759,7 @@ function CustomizeFlavor() {
   const totalPrice = selectedBase
     ? calculateFlavorPrice(selectedBase.price, selectedFlavors, selectedSize, valveBag)
     : 0
+  const flavorDisplayPrice = totalPrice * flavorQuantity
   const selectedFlavorDeltaPerKg = selectedFlavors.reduce((sum, flavor) => sum + Number(flavor.price || 0), 0)
   const totalPricePerKg = Number(selectedBase?.price || 0) + selectedFlavorDeltaPerKg
   const flavorPartEn = selectedFlavors.map((flavor) => flavor.nameEn).join(' + ')
@@ -745,7 +771,7 @@ function CustomizeFlavor() {
     name_ar: `Ø§ØµÙ†Ø¹ Ù†ÙƒÙ‡ØªÙƒ Ø§Ù„Ø®Ø§ØµØ© - ${selectedBase.nameAr} - ${flavorPartAr}`,
     size: selectedSize,
     price: totalPrice,
-    quantity: 1,
+    quantity: flavorQuantity,
     image: getFlavorBaseImage(selectedBase.id),
     customizations: {
       type: 'flavor',
@@ -771,11 +797,8 @@ function CustomizeFlavor() {
       }),
     },
   } : null
-  const flavorExistingQuantity = flavorCartItem
-    ? items.find((item) => item.id === flavorCartItem.id)?.quantity ?? 0
-    : 0
   const flavorStockIssue = flavorCartItem
-    ? getCustomStockIssue(items, flavorCartItem, flavorExistingQuantity + 1)
+    ? getCustomStockIssue(items, flavorCartItem, flavorQuantity)
     : null
 
   const toggleFlavor = (flavor: FlavorAdditionOption) => {
@@ -960,7 +983,7 @@ function CustomizeFlavor() {
         <aside className="h-fit rounded-2xl border border-[#B6885E]/18 bg-[#0B0806]/72 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] lg:sticky lg:top-28">
           <div className="mb-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#D6A373]/75">{t('Live Price', 'Ø§Ù„Ø³Ø¹Ø± Ø§Ù„Ù…Ø¨Ø§Ø´Ø±')}</p>
-            <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{totalPrice} {t('EGP', 'Ø¬.Ù…')}</p>
+            <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{flavorDisplayPrice} {t('EGP', 'Ø¬.Ù…')}</p>
             <p className="mt-1 text-xs text-[#D6B79A]/58">{t('Updates from your base, flavors, and selected weight.', 'ÙŠØªØ­Ø¯Ø« Ø­Ø³Ø¨ Ø§Ù„Ù‚Ø§Ø¹Ø¯Ø© ÙˆØ§Ù„Ù†ÙƒÙ‡Ø§Øª ÙˆØ§Ù„ÙˆØ²Ù† Ø§Ù„Ù…Ø®ØªØ§Ø±.')}</p>
           </div>
 
@@ -981,6 +1004,31 @@ function CustomizeFlavor() {
                     {size}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-semibold text-[#F5E6D8]">{t('Quantity', 'Ø§Ù„ÙƒÙ…ÙŠØ©')}</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  onClick={() => setFlavorQuantity((q) => Math.max(1, q - 1))}
+                  disabled={flavorQuantity <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/40 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-8 text-center text-base font-semibold text-[#F5E6D8]">{flavorQuantity}</span>
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  onClick={() => setFlavorQuantity((q) => q + 1)}
+                  disabled={!flavorCartItem || Boolean(getCustomStockIssue(items, flavorCartItem, flavorQuantity + 1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/40 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
 

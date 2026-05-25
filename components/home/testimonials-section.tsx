@@ -228,7 +228,7 @@ export function TestimonialsSection() {
             return (
               <article
                 key={testimonial.id}
-                className="group relative h-[260px] overflow-hidden rounded-2xl border border-[#B6885E]/14 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-all duration-500 hover:border-[#D6A373]/30 hover:shadow-[0_32px_80px_rgba(0,0,0,0.55)] sm:h-[360px] md:h-[440px]"
+                className="group relative h-[260px] overflow-hidden rounded-2xl border border-[#B6885E]/14 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-all duration-500 hover:-translate-y-1 hover:border-[#D6A373]/30 hover:shadow-[0_32px_80px_rgba(0,0,0,0.55),0_0_28px_rgba(182,136,94,0.08)] sm:h-[360px] md:h-[440px]"
               >
                 {/* Portrait photo from testimonials.customer_avatar, or initials fallback */}
                 {testimonial.customer_avatar ? (

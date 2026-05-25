@@ -281,7 +281,7 @@ export function CartDrawer() {
 
                 {/* Actions */}
                 <div className="space-y-2">
-                  <Button asChild className="w-full" size="lg" onClick={closeCart}>
+                  <Button asChild className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(182,136,94,0.30)]" size="lg" onClick={closeCart}>
                     <Link href="/checkout">{t('Checkout', 'إتمام الطلب')}</Link>
                   </Button>
                   <Button

@@ -254,7 +254,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                   <div
                     key={weight}
                     className={cn(
-                      'rounded-lg border px-1 py-2 text-center transition-colors sm:px-1.5 sm:py-2.5',
+                      'rounded-lg border px-1 py-2 text-center transition-all duration-200 sm:px-1.5 sm:py-2.5',
                       unavailable
                         ? 'border-[#B6885E]/10 bg-[#0F0A07]/55 text-[#D6B79A]/35'
                         : 'border-[#B6885E]/22 bg-[#D6A373]/[0.055] text-[#F5E6D8] group-hover:border-[#D6A373]/36',

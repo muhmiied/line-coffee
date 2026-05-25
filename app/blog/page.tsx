@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Calendar, FileText } from 'lucide-react'
+import { ArrowRight, Calendar, FileText } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { cn } from '@/lib/utils'
 
 type Post = {
   id: string
@@ -21,7 +22,7 @@ type Post = {
 }
 
 export default function BlogListPage() {
-  const { t, language } = useLanguage()
+  const { t, language, dir } = useLanguage()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -81,7 +82,7 @@ export default function BlogListPage() {
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/72 transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35"
+                  className="group overflow-hidden rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/72 transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35 hover:shadow-[0_16px_40px_rgba(0,0,0,0.45),0_0_24px_rgba(182,136,94,0.09)]"
                 >
                   <div className="relative h-40 overflow-hidden bg-[#1A120D] sm:h-48">
                     {post.cover_image ? (
@@ -115,8 +116,9 @@ export default function BlogListPage() {
                         {excerpt.replace(/<[^>]*>/g, '')}
                       </p>
                     )}
-                    <p className="mt-4 text-sm font-semibold text-[#D6A373] group-hover:underline">
+                    <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#D6A373]">
                       {t('Read more', 'اقرأ المزيد')}
+                      <ArrowRight className={cn('h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1', dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1 group-hover:translate-x-0')} />
                     </p>
                   </div>
                 </Link>
