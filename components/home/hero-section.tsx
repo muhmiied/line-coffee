@@ -271,7 +271,7 @@ export function HeroSection() {
         <div
           className={cn(
             'mx-auto flex max-w-7xl pt-2 md:pt-6',
-            dir === 'rtl' ? 'justify-end text-right' : 'justify-start text-left'
+            dir === 'rtl' ? 'justify-start text-right' : 'justify-start text-left'
           )}
           style={elementTransform(currentLayout, 'main-copy')}
         >

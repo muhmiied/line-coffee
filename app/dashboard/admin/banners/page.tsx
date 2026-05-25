@@ -498,6 +498,8 @@ function SectionPreview({
   if (section.editorTemplate === 'hero') {
     const heroStats = stats.length > 0 ? stats : []
     const isRtl = language === 'ar'
+    const previewTitleScale = typeof content.title_scale === 'number' ? Math.min(1.6, Math.max(0.6, content.title_scale)) : 1
+    const previewSubtitleScale = typeof content.subtitle_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.subtitle_scale)) : 1
     return (
       <div
         className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/18 shadow-2xl transition-all', deviceClass(device))}
@@ -553,7 +555,7 @@ function SectionPreview({
           </div>
 
           {/* Hero content — same layout as hero-section.tsx */}
-          <div className={cn('relative z-10 flex w-full', isRtl ? 'justify-end text-right' : 'justify-start text-left')}>
+          <div className={cn('relative z-10 flex w-full', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
           <DraggableElement
             id="main-copy"
             layout={layout}
@@ -563,32 +565,7 @@ function SectionPreview({
             onLayoutChange={onPatchLayout}
             className="w-full max-w-[35rem]"
           >
-            {/* Stats row — matches hero-section.tsx */}
-            {heroStats.length > 0 && (
-              <div className={cn('mb-7 flex flex-wrap gap-6 md:gap-12', isRtl ? 'justify-end flex-row-reverse' : 'justify-start')}>
-                {heroStats.slice(0, 4).map((stat) => (
-                  <div key={stat.id} className="text-center">
-                    <EditableText
-                      fieldKey={`${slide.local_id}-${language}-${stat.id}-value`}
-                      value={stat.value}
-                      placeholder="10+"
-                      onCommit={(value) => commitStat(stat.id, 'value', value)}
-                      className="font-serif text-2xl font-bold text-[#D6A373] md:text-3xl"
-                    />
-                    <EditableText
-                      fieldKey={`${slide.local_id}-${language}-${stat.id}-label`}
-                      value={language === 'ar' ? stat.label_ar || stat.label_en : stat.label_en || stat.label_ar}
-                      placeholder="Label"
-                      onCommit={(value) => commitStat(stat.id, 'label', value)}
-                      className="mt-0.5 text-[11px] text-[#F5E6D8]/55"
-                    />
-                    <div className="mx-auto mt-1 h-px w-8 bg-gradient-to-r from-transparent via-[#B6885E]/50 to-transparent" />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Headline — matches hero text-4xl md:text-7xl lg:text-8xl */}
+            {/* Headline */}
             <EditableText
               fieldKey={`${slide.local_id}-${language}-hero-title`}
               value={title}
@@ -598,7 +575,10 @@ function SectionPreview({
                 'font-serif font-extrabold leading-[1.05] text-balance text-[#F5E6D8]',
                 device === 'mobile' ? 'text-4xl' : 'text-5xl md:text-6xl',
               )}
-              style={{ textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)' }}
+              style={{
+                textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
+                ...(previewTitleScale !== 1 && { transform: `scale(${previewTitleScale})`, transformOrigin: isRtl ? 'top right' : 'top left', display: 'block' }),
+              }}
             />
 
             {/* Subheadline */}
@@ -608,11 +588,12 @@ function SectionPreview({
               placeholder={section.defaultSubtitleEn}
               multiline
               onCommit={(value) => commitText('subtitle', value)}
-              className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#D6B79A]/85 md:text-lg"
+              className="mt-5 max-w-xl text-base leading-relaxed text-[#D6B79A]/85 md:text-lg"
+              style={previewSubtitleScale !== 1 ? { transform: `scale(${previewSubtitleScale})`, transformOrigin: isRtl ? 'top right' : 'top left', display: 'block' } : undefined}
             />
 
             {/* CTA button */}
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className={cn('mt-8 flex flex-col gap-3 sm:flex-row', isRtl ? 'items-end justify-end' : 'items-start justify-start')}>
               <div
                 className="inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold tracking-wide"
                 style={{ background: 'linear-gradient(135deg,#B6885E 0%,#D6A373 100%)', color: '#0B0806', boxShadow: '0 4px 24px rgba(182,136,94,0.35)' }}
@@ -626,6 +607,30 @@ function SectionPreview({
                 />
               </div>
             </div>
+
+            {/* Stats row — bottom, matches hero-section.tsx */}
+            {heroStats.length > 0 && (
+              <div className={cn('mt-10 grid grid-cols-3 gap-4 border-t border-[#B6885E]/22 pt-6', isRtl && 'direction-rtl')}>
+                {heroStats.slice(0, 3).map((stat) => (
+                  <div key={stat.id}>
+                    <EditableText
+                      fieldKey={`${slide.local_id}-${language}-${stat.id}-value`}
+                      value={stat.value}
+                      placeholder="10+"
+                      onCommit={(value) => commitStat(stat.id, 'value', value)}
+                      className="font-serif text-2xl font-bold text-[#D6A373]"
+                    />
+                    <EditableText
+                      fieldKey={`${slide.local_id}-${language}-${stat.id}-label`}
+                      value={language === 'ar' ? stat.label_ar || stat.label_en : stat.label_en || stat.label_ar}
+                      placeholder="Label"
+                      onCommit={(value) => commitStat(stat.id, 'label', value)}
+                      className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-[#F5E6D8]/55"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </DraggableElement>
           </div>
         </div>
@@ -1107,6 +1112,7 @@ export default function BannersPage() {
   const [uploading, setUploading] = useState(false)
   const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(null)
   const [dbError, setDbError] = useState(false)
+  const [livePreviewKey, setLivePreviewKey] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -1382,7 +1388,7 @@ export default function BannersPage() {
 
       toast.success(t('Section saved', 'Section saved'))
       await load()
-      closeEditor()
+      setLivePreviewKey((k) => k + 1)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('Failed to save section', 'Failed to save section'))
     } finally {
@@ -1458,7 +1464,7 @@ export default function BannersPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[280px_1fr_260px]">
+        <div className="grid gap-5 xl:grid-cols-[260px_1fr_260px]">
           <aside className="rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/85 p-4">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -1652,94 +1658,59 @@ export default function BannersPage() {
                 {selectedElementId && (
                   <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
                     <div className="mb-3 flex items-center justify-between gap-2">
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Element Position', 'Element Position')}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Position & Scale', 'Position & Scale')}</p>
                       <span className="rounded-full bg-[#D6A373]/10 px-2 py-1 text-[10px] text-[#D6A373]">{selectedElementId}</span>
                     </div>
-                    <label className="mb-2 block text-[11px] text-white/45">
-                      X: {Number(selectedElementPosition.x || 0)}px
-                    </label>
-                    <input
-                      type="range"
-                      min={-180}
-                      max={180}
-                      step={2}
+
+                    <label className="mb-2 block text-[11px] text-white/45">X: {Number(selectedElementPosition.x || 0)}px</label>
+                    <input type="range" min={-180} max={180} step={2}
                       value={Number(selectedElementPosition.x || 0)}
                       onChange={(event) => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { x: Number(event.target.value) }))}
-                      className="w-full accent-[#D6A373]"
+                      className="w-full accent-[#D6A373]" title="X position"
                     />
-                    <label className="mb-2 mt-3 block text-[11px] text-white/45">
-                      Y: {Number(selectedElementPosition.y || 0)}px
-                    </label>
-                    <input
-                      type="range"
-                      min={-180}
-                      max={180}
-                      step={2}
+                    <label className="mb-2 mt-3 block text-[11px] text-white/45">Y: {Number(selectedElementPosition.y || 0)}px</label>
+                    <input type="range" min={-180} max={180} step={2}
                       value={Number(selectedElementPosition.y || 0)}
                       onChange={(event) => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { y: Number(event.target.value) }))}
-                      className="w-full accent-[#D6A373]"
+                      className="w-full accent-[#D6A373]" title="Y position"
                     />
-                    <button
-                      type="button"
-                      onClick={() => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { x: 0, y: 0 }))}
-                      className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/55 transition hover:text-white"
-                    >
-                      {t('Reset Position', 'Reset Position')}
-                    </button>
-                  </div>
-                )}
 
-                {activeSection.editorTemplate === 'hero' && (
-                  <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group">
-                    <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">
-                      {t('Text Scale', 'Text Scale')}
-                    </summary>
-                    <div className="mt-3 space-y-3">
-                      <div>
-                        <label className="mb-1 block text-[11px] text-white/45">
-                          {t('Title Scale', 'Title Scale')}: {(selectedContent.title_scale ?? 1).toFixed(2)}×
-                        </label>
-                        <input
-                          type="range" min={0.6} max={1.6} step={0.05}
+                    {activeSection.editorTemplate === 'hero' && selectedElementId === 'main-copy' && (
+                      <>
+                        <div className="my-3 h-px bg-white/8" />
+                        <label className="mb-2 block text-[11px] text-white/45">{t('Title Scale', 'Title Scale')}: {(selectedContent.title_scale ?? 1).toFixed(2)}×</label>
+                        <input type="range" min={0.6} max={1.6} step={0.05}
                           value={selectedContent.title_scale ?? 1}
                           onChange={(e) => patchSelectedContent({ title_scale: Number(e.target.value) })}
-                          className="w-full accent-[#D6A373]"
-                          title="Title scale"
+                          className="w-full accent-[#D6A373]" title="Title scale"
                         />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] text-white/45">
-                          {t('Subtitle Scale', 'Subtitle Scale')}: {(selectedContent.subtitle_scale ?? 1).toFixed(2)}×
-                        </label>
-                        <input
-                          type="range" min={0.6} max={1.4} step={0.05}
+                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Subtitle Scale', 'Subtitle Scale')}: {(selectedContent.subtitle_scale ?? 1).toFixed(2)}×</label>
+                        <input type="range" min={0.6} max={1.4} step={0.05}
                           value={selectedContent.subtitle_scale ?? 1}
                           onChange={(e) => patchSelectedContent({ subtitle_scale: Number(e.target.value) })}
-                          className="w-full accent-[#D6A373]"
-                          title="Subtitle scale"
+                          className="w-full accent-[#D6A373]" title="Subtitle scale"
                         />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] text-white/45">
-                          {t('Stats Scale', 'Stats Scale')}: {(selectedContent.stats_scale ?? 1).toFixed(2)}×
-                        </label>
-                        <input
-                          type="range" min={0.6} max={1.4} step={0.05}
+                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Stats Scale', 'Stats Scale')}: {(selectedContent.stats_scale ?? 1).toFixed(2)}×</label>
+                        <input type="range" min={0.6} max={1.4} step={0.05}
                           value={selectedContent.stats_scale ?? 1}
                           onChange={(e) => patchSelectedContent({ stats_scale: Number(e.target.value) })}
-                          className="w-full accent-[#D6A373]"
-                          title="Stats scale"
+                          className="w-full accent-[#D6A373]" title="Stats scale"
                         />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => patchSelectedContent({ title_scale: 1, subtitle_scale: 1, stats_scale: 1 })}
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/55 transition hover:text-white"
-                      >
-                        {t('Reset Scale', 'Reset Scale')}
-                      </button>
-                    </div>
-                  </details>
+                      </>
+                    )}
+
+                    <button type="button"
+                      onClick={() => {
+                        patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { x: 0, y: 0 }))
+                        if (activeSection.editorTemplate === 'hero' && selectedElementId === 'main-copy') {
+                          patchSelectedContent({ title_scale: 1, subtitle_scale: 1, stats_scale: 1 })
+                        }
+                      }}
+                      className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/55 transition hover:text-white"
+                    >
+                      {t('Reset', 'Reset')}
+                    </button>
+                  </div>
                 )}
 
                 <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group" open>
