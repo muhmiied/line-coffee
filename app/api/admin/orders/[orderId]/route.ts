@@ -3,13 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/config/site'
 import { restoreOrderStock } from '@/lib/services'
-
-const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
+import { ORDER_STATUSES, canAdminTransition, normalizeOrderStatus } from '@/lib/order-status'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'pending',
   confirmed: 'confirmed',
-  processing: 'being prepared',
+  preparing: 'being prepared',
   shipped: 'out for delivery',
   delivered: 'delivered',
   cancelled: 'cancelled',
@@ -42,12 +41,29 @@ export async function PATCH(
   const { orderId } = await params
 
   const updatePayload: Record<string, unknown> = {}
+  let nextStatus: string | undefined
+
+  const { data: currentOrder, error: currentError } = await admin
+    .from('orders')
+    .select('id, status')
+    .eq('id', orderId)
+    .single()
+
+  if (currentError || !currentOrder) {
+    return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 })
+  }
 
   if (body.status !== undefined) {
-    const status = String(body.status)
-    if (!ALLOWED_STATUSES.includes(status)) {
+    const status = normalizeOrderStatus(body.status)
+    if (!status || !ORDER_STATUSES.includes(status)) {
       return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 })
     }
+
+    if (!canAdminTransition(currentOrder.status, status)) {
+      return NextResponse.json({ success: false, error: 'Invalid status transition' }, { status: 409 })
+    }
+
+    nextStatus = status
     updatePayload.status = status
   }
 
@@ -65,7 +81,7 @@ export async function PATCH(
   }
 
   // Handle cancellation reason — append to notes
-  if (body.cancellation_reason && body.status === 'cancelled') {
+  if (body.cancellation_reason && nextStatus === 'cancelled') {
     const reason = String(body.cancellation_reason).trim()
     const existingNotes = body.notes || ''
     updatePayload.notes = existingNotes
@@ -73,7 +89,7 @@ export async function PATCH(
       : `سبب الإلغاء: ${reason}`
   }
 
-  if (body.status === 'cancelled') {
+  if (nextStatus === 'cancelled' && normalizeOrderStatus(currentOrder.status) !== 'cancelled') {
     await restoreOrderStock(orderId)
     updatePayload.cancelled_at = new Date().toISOString()
     updatePayload.cancellation_initiated_by = 'admin'
@@ -90,22 +106,21 @@ export async function PATCH(
     .from('orders')
     .update(updatePayload)
     .eq('id', orderId)
-    .select('*, items:order_items(product_name, size, quantity, unit_price, total_price)')
+    .select('*, items:order_items(product_name, size, quantity, unit_price, total_price, customizations)')
     .single()
 
   if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to update order' }, { status: 500 })
   }
 
   let notificationCreated = false
-  if (body.status !== undefined && data?.user_id) {
-    const status = String(body.status)
+  if (nextStatus && data?.user_id) {
     const { error: notificationError } = await admin
       .from('notifications')
       .insert({
         user_id: data.user_id,
         title: 'Order status updated',
-        message: `Your order #${data.order_number || orderId} is now ${STATUS_LABELS[status] || status}.`,
+        message: `Your order #${data.order_number || orderId} is now ${STATUS_LABELS[nextStatus] || nextStatus}.`,
         type: 'order_status',
         related_order_id: data.id,
       })
@@ -131,7 +146,7 @@ export async function PATCH(
       ? {
           phone: customerPhoneE164,
           orderNumber: data?.order_number,
-          newStatus: body.status,
+          newStatus: nextStatus || data?.status,
           cancellationReason: body.cancellation_reason || null,
         }
       : null,

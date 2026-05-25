@@ -107,6 +107,7 @@ export interface Address {
 export type OrderStatus =
   | 'pending'
   | 'confirmed'
+  | 'preparing'
   | 'processing'
   | 'shipped'
   | 'delivered'

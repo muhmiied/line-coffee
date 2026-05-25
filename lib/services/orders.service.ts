@@ -7,6 +7,7 @@ import {
   parseFreeShippingActive,
   parseFreeShippingThreshold,
 } from '@/lib/config/shipping'
+import { canCustomerCancel, normalizeOrderStatus } from '@/lib/order-status'
 import type { Address, Order, OrderWithItems } from '@/lib/types/database'
 import { clearCart, getCartItems } from './cart.service'
 
@@ -226,16 +227,18 @@ export async function cancelOrder(orderId: string, userId: string) {
 
   if (!order) throw new Error('Order not found')
 
-  if (order.status === 'cancelled') return order as Order
+  const normalizedStatus = normalizeOrderStatus(order.status)
+  if (normalizedStatus === 'cancelled') return order as Order
 
-  const createdAt = new Date(order.created_at).getTime()
-  const hoursSinceOrder = (Date.now() - createdAt) / (1000 * 60 * 60)
-
-  if (hoursSinceOrder > 24) {
-    throw new Error('Cancellation window expired. Please contact support.')
-  }
-
-  if (['shipped', 'delivered'].includes(order.status)) {
+  if (!canCustomerCancel(order.status, order.created_at)) {
+    const createdAt = new Date(order.created_at).getTime()
+    const hoursSinceOrder = (Date.now() - createdAt) / (1000 * 60 * 60)
+    if (normalizedStatus === 'shipped' || normalizedStatus === 'delivered') {
+      throw new Error('This order can no longer be cancelled online. Please contact support.')
+    }
+    if (hoursSinceOrder > 24) {
+      throw new Error('Cancellation window expired. Please contact support.')
+    }
     throw new Error('This order can no longer be cancelled online. Please contact support.')
   }
 

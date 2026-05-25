@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Package, Search, ChevronDown, RefreshCw, Banknote, Wallet, CreditCard, MapPin, Phone, Mail, User, MessageCircle, X } from 'lucide-react'
+import { Package, Search, ChevronDown, RefreshCw, Banknote, Wallet, CreditCard, MapPin, Phone, Mail, User, MessageCircle, X, Coffee } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
+import { getOrderItemDetailLines } from '@/lib/order-item-details'
+import { normalizeOrderStatus } from '@/lib/order-status'
 
 type Order = {
   id: string
@@ -36,6 +38,7 @@ type Order = {
     quantity: number
     unit_price: number
     total_price: number
+    customizations?: Record<string, unknown> | null
   }>
 }
 
@@ -45,7 +48,7 @@ type WhatsAppPending = { phone: string; orderNumber: string; newStatus: string; 
 const STATUSES = [
   { value: 'pending',    en: 'Pending',          ar: 'معلق',          color: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20' },
   { value: 'confirmed',  en: 'Confirmed',         ar: 'مؤكد',          color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
-  { value: 'processing', en: 'Preparing',         ar: 'قيد التجهيز',   color: 'bg-purple-500/15 text-purple-400 border-purple-500/20' },
+  { value: 'preparing',  en: 'Preparing',         ar: 'قيد التجهيز',   color: 'bg-purple-500/15 text-purple-400 border-purple-500/20' },
   { value: 'shipped',    en: 'Out for Delivery',  ar: 'في الطريق',     color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20' },
   { value: 'delivered',  en: 'Delivered',         ar: 'تم التسليم',    color: 'bg-green-500/15 text-green-400 border-green-500/20' },
   { value: 'cancelled',  en: 'Cancelled',         ar: 'ملغي',          color: 'bg-red-500/15 text-red-400 border-red-500/20' },
@@ -59,7 +62,7 @@ const PAYMENT_ICONS: Record<string, React.ReactNode> = {
 
 const STATUS_WA_MESSAGES: Record<string, (n: string, r?: string | null) => string> = {
   confirmed:  (n: string) => `✅ طلبك رقم *#${n}* تم تأكيده بنجاح 🎉\n\nشكراً لتسوقك من *لاين كوفي* ☕`,
-  processing: (n: string) => `☕ طلبك رقم *#${n}* قيد التجهيز الآن!\n\nنعمل على تحضيره بأفضل جودة 💛`,
+  preparing: (n: string) => `☕ طلبك رقم *#${n}* قيد التجهيز الآن!\n\nنعمل على تحضيره بأفضل جودة 💛`,
   shipped:    (n: string) => `🚗 طلبك رقم *#${n}* في الطريق إليك!\n\nستصلك قريباً إن شاء الله 🙏`,
   delivered:  (n: string) => `✅ طلبك رقم *#${n}* وصل!\n\nنتمنى تكون بخير وتعجبك قهوتنا ☕💛\n*لاين كوفي*`,
   cancelled:  (n: string, r?: string | null) =>
@@ -74,7 +77,8 @@ function buildWhatsAppUrl(phone: string, orderNumber: string, status: string, re
 }
 
 function statusMeta(value: string) {
-  return STATUSES.find((s) => s.value === value) || { en: value, ar: value, color: 'bg-white/5 text-white/40 border-white/10' }
+  const status = normalizeOrderStatus(value) || value
+  return STATUSES.find((s) => s.value === status) || { en: value, ar: value, color: 'bg-white/5 text-white/40 border-white/10' }
 }
 
 export default function AdminOrdersPage() {
@@ -109,7 +113,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     let list = [...orders]
-    if (filterStatus !== 'all') list = list.filter((o) => o.status === filterStatus)
+    if (filterStatus !== 'all') list = list.filter((o) => (normalizeOrderStatus(o.status) || o.status) === filterStatus)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(
@@ -145,7 +149,8 @@ export default function AdminOrdersPage() {
         return
       }
 
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
+      const savedStatus = json?.data?.status || status
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: savedStatus } : o)))
       toast.success(t('Order status updated', 'تم تحديث حالة الطلب'))
 
       // If server returned WhatsApp info, prompt admin to notify customer
@@ -176,7 +181,7 @@ export default function AdminOrdersPage() {
   }
 
   const statusCounts = STATUSES.reduce<Record<string, number>>((acc, s) => {
-    acc[s.value] = orders.filter((o) => o.status === s.value).length
+    acc[s.value] = orders.filter((o) => (normalizeOrderStatus(o.status) || o.status) === s.value).length
     return acc
   }, {})
 
@@ -316,6 +321,7 @@ export default function AdminOrdersPage() {
             const expanded = expandedId === order.id
             const customerName = getCustomerName(order)
             const customerPhone = getCustomerPhone(order)
+            const normalizedStatus = normalizeOrderStatus(order.status) || order.status
 
             return (
               <div
@@ -353,7 +359,7 @@ export default function AdminOrdersPage() {
                   {/* Status selector */}
                   <div className="relative">
                     <select
-                      value={order.status}
+                      value={normalizedStatus}
                       disabled={updating === order.id}
                       onChange={(e) => handleStatusChange(order, e.target.value)}
                       aria-label={t('Change order status', 'تغيير حالة الطلب')}
@@ -427,17 +433,54 @@ export default function AdminOrdersPage() {
                     {order.items && order.items.length > 0 && (
                       <div>
                         <p className="text-[#c8941a]/50 text-[10px] font-semibold uppercase tracking-wider mb-2">{t('Products', 'المنتجات')}</p>
-                        <div className="space-y-1.5 bg-[#180d04] rounded-xl border border-[#c8941a]/10 p-3">
-                          {order.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-sm">
-                              <span className="text-white/60">
-                                {item.product_name}
-                                {item.size && <span className="text-white/30 text-xs ml-1">({item.size})</span>}
-                                {' × '}{item.quantity}
-                              </span>
-                              <span className="font-medium text-[#c8941a]/80 text-xs">{item.total_price} {t('EGP', 'ج.م')}</span>
-                            </div>
-                          ))}
+                        <div className="space-y-1 bg-[#180d04] rounded-xl border border-[#c8941a]/10 p-3">
+                          {order.items.map((item, idx) => {
+                            const isCustom = item.product_name.includes('Make Your') || item.product_name.includes('اختر')
+                            const detailLines = getOrderItemDetailLines(item.customizations)
+                            const sizeParts = !detailLines.length && item.size
+                              ? item.size.split(/[|/,]/).map((p: string) => p.trim()).filter(Boolean)
+                              : []
+                            return (
+                              <div key={idx} className="py-2 border-b border-[#c8941a]/5 last:border-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {isCustom && (
+                                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#c8941a]/15 text-[#c8941a] font-medium shrink-0">
+                                          <Coffee className="h-2.5 w-2.5" />
+                                          {t('Custom', 'مخصص')}
+                                        </span>
+                                      )}
+                                      <span className="text-white/70 text-sm">{item.product_name}</span>
+                                    </div>
+                                    {detailLines.length > 0 ? (
+                                      <div className="mt-1.5 space-y-0.5">
+                                        {detailLines.map((line, li) => (
+                                          <p key={li} className="text-[11px] text-white/40 leading-snug">
+                                            {language === 'ar' ? line.ar : line.en}
+                                          </p>
+                                        ))}
+                                        {item.size && <p className="text-[11px] text-[#c8941a]/40">{item.size}</p>}
+                                        <span className="text-[10px] text-white/25">× {item.quantity}</span>
+                                      </div>
+                                    ) : sizeParts.length > 1 ? (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {sizeParts.map((part: string, pi: number) => (
+                                          <span key={pi} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 border border-white/[0.07]">{part}</span>
+                                        ))}
+                                        <span className="text-[10px] text-white/25 self-center">× {item.quantity}</span>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-white/30 mt-0.5">
+                                        {item.size ? `${item.size} · ` : ''}× {item.quantity}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <span className="font-semibold text-[#c8941a]/80 text-xs shrink-0 mt-0.5">{item.total_price} {t('EGP', 'ج.م')}</span>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     )}

@@ -7,6 +7,8 @@ import { ArrowLeft, ArrowRight, CreditCard, MapPin, Package, ReceiptText } from 
 import { toast } from 'sonner'
 import { useLanguage } from '@/lib/context/language'
 import { Button } from '@/components/ui/button'
+import { getOrderItemDetailLines } from '@/lib/order-item-details'
+import { canCustomerCancel, normalizeOrderStatus } from '@/lib/order-status'
 
 type ShippingAddress = {
   first_name?: string | null
@@ -27,12 +29,13 @@ type OrderItem = {
   quantity: number
   unit_price?: number | null
   total_price?: number | null
+  customizations?: Record<string, unknown> | null
 }
 
 type Order = {
   id: string
   order_number: string
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'preparing' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
   subtotal?: number | null
   shipping_cost?: number | null
   discount_amount?: number | null
@@ -52,12 +55,39 @@ type Order = {
 }
 
 const statusStyles: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  processing: 'bg-indigo-100 text-indigo-800',
-  shipped: 'bg-purple-100 text-purple-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  pending:    'bg-amber-500/10 text-amber-700 border border-amber-500/25',
+  confirmed:  'bg-blue-500/10 text-blue-700 border border-blue-500/25',
+  preparing:  'bg-purple-500/10 text-purple-700 border border-purple-500/25',
+  processing: 'bg-purple-500/10 text-purple-700 border border-purple-500/25',
+  shipped:    'bg-indigo-500/10 text-indigo-700 border border-indigo-500/25',
+  delivered:  'bg-green-500/10 text-green-700 border border-green-500/25',
+  cancelled:  'bg-red-500/10 text-red-600 border border-red-500/25',
+}
+
+const ORDER_STEPS = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered']
+
+function MiniTimeline({ status }: { status: string }) {
+  const normalizedStatus = normalizeOrderStatus(status) || status
+  if (normalizedStatus === 'cancelled') return null
+  const currentIdx = ORDER_STEPS.indexOf(normalizedStatus)
+  return (
+    <div className="flex items-center mt-3 gap-0">
+      {ORDER_STEPS.map((step, idx) => {
+        const done = idx <= currentIdx
+        const current = idx === currentIdx
+        return (
+          <div key={step} className="flex items-center flex-1 last:flex-none">
+            <div className={`h-2 w-2 rounded-full shrink-0 transition-all duration-300 ${
+              done ? 'bg-primary' : 'bg-muted-foreground/20'
+            } ${current ? 'ring-2 ring-primary/30 ring-offset-1 ring-offset-background scale-125' : ''}`} />
+            {idx < ORDER_STEPS.length - 1 && (
+              <div className={`h-0.5 flex-1 transition-all duration-300 ${idx < currentIdx ? 'bg-primary/60' : 'bg-muted-foreground/15'}`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function formatCurrency(value: number | null | undefined, currencyLabel: string) {
@@ -85,7 +115,8 @@ function getStatusLabel(status: string, t: (en: string, ar: string) => string) {
     case 'confirmed':
       return t('Confirmed', 'تم التأكيد')
     case 'processing':
-      return t('Processing', 'قيد التجهيز')
+    case 'preparing':
+      return t('Preparing', 'قيد التجهيز')
     case 'shipped':
       return t('Shipped', 'تم الشحن')
     case 'delivered':
@@ -161,11 +192,26 @@ export default function DashboardOrdersPage() {
           </div>
 
           {loading ? (
-            <div className="text-muted-foreground">{t('Loading...', 'جاري التحميل...')}</div>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="h-4 w-28 rounded bg-muted" />
+                      <div className="h-3 w-40 rounded bg-muted" />
+                    </div>
+                    <div className="h-6 w-20 rounded-full bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : orders.length === 0 ? (
-            <div className="bg-card border border-border rounded-xl p-8 text-center">
-              <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">{t('No orders yet', 'لا توجد طلبات حتى الآن')}</p>
+            <div className="rounded-xl border border-border bg-card p-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                <Package className="h-7 w-7 text-primary" />
+              </div>
+              <p className="font-serif text-lg font-semibold">{t('No orders yet', 'لا توجد طلبات حتى الآن')}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t('Your orders will appear here once placed.', 'ستظهر طلباتك هنا بعد إتمام أول طلب.')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -183,9 +229,10 @@ export default function DashboardOrdersPage() {
                   shipping?.email,
                 ].filter(Boolean)
                 const customerName = order.customer_name || [shipping?.first_name, shipping?.last_name].filter(Boolean).join(' ')
+                const normalizedStatus = normalizeOrderStatus(order.status) || order.status
                 const hoursSinceOrder = (Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60)
-                const statusAllowsCancel = ['pending', 'confirmed', 'processing'].includes(order.status)
-                const canCancel = statusAllowsCancel && hoursSinceOrder <= 24
+                const statusAllowsCancel = ['pending', 'confirmed', 'preparing'].includes(normalizedStatus)
+                const canCancel = canCustomerCancel(order.status, order.created_at)
                 const cancellationExpired = statusAllowsCancel && hoursSinceOrder > 24
 
                 return (
@@ -201,12 +248,14 @@ export default function DashboardOrdersPage() {
                         <p className="text-sm text-muted-foreground">{orderDate}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[order.status] || 'bg-secondary text-foreground'}`}>
-                          {getStatusLabel(order.status, t)}
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[normalizedStatus] || 'bg-secondary/50 text-foreground border border-border'}`}>
+                          {getStatusLabel(normalizedStatus, t)}
                         </span>
                         <span className="font-semibold">{formatCurrency(order.total, currencyLabel)}</span>
                       </div>
                     </div>
+
+                    <MiniTimeline status={normalizedStatus} />
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}>
@@ -215,6 +264,13 @@ export default function DashboardOrdersPage() {
                       {canCancel && (
                         <Button variant="destructive" size="sm" onClick={() => cancelOrder(order.id)}>
                           {t('Cancel order', 'إلغاء الطلب')}
+                        </Button>
+                      )}
+                      {normalizedStatus === 'delivered' && (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href="/contact">
+                            {t('Share a review', 'شارك تقييمك')}
+                          </Link>
                         </Button>
                       )}
                     </div>
@@ -230,7 +286,7 @@ export default function DashboardOrdersPage() {
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                           <DetailCard label={t('Order number', 'رقم الطلب')} value={order.order_number} />
                           <DetailCard label={t('Date', 'التاريخ')} value={orderDate} />
-                          <DetailCard label={t('Status', 'الحالة')} value={getStatusLabel(order.status, t)} />
+                          <DetailCard label={t('Status', 'الحالة')} value={getStatusLabel(normalizedStatus, t)} />
                           <DetailCard label={t('Payment', 'الدفع')} value={getPaymentLabel(order.payment_method, t)} />
                         </div>
 
@@ -306,14 +362,32 @@ export default function DashboardOrdersPage() {
                                 const lineTotal = Number(item.total_price || 0)
                                 const unitPrice = Number(item.unit_price || (item.quantity ? lineTotal / item.quantity : 0))
 
+                                const isCustomItem = item.product_name.includes('Make Your') || item.product_name.includes('اختر')
+                                const detailLines = getOrderItemDetailLines(item.customizations)
+                                const sizeSegments = item.size && detailLines.length === 0
+                                  ? item.size.split(/[|/,]/).map(p => p.trim()).filter(Boolean)
+                                  : []
                                 return (
                                   <div key={item.id} className="rounded-lg border border-border bg-card/70 p-3">
                                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                      <div className="min-w-0">
-                                        <p className="break-words text-sm font-medium">{item.product_name}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {t('Weight/variant:', 'الوزن/النوع:')} {item.size || '-'}
-                                        </p>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                                          {isCustomItem && (
+                                            <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                                              {t('Custom', 'مخصص')}
+                                            </span>
+                                          )}
+                                          <p className="break-words text-sm font-medium">{item.product_name}</p>
+                                        </div>
+                                        {sizeSegments.length > 1 ? (
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {sizeSegments.map((seg, si) => (
+                                              <span key={si} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{seg}</span>
+                                            ))}
+                                          </div>
+                                        ) : item.size ? (
+                                          <p className="text-xs text-muted-foreground">{item.size}</p>
+                                        ) : null}
                                       </div>
                                       <p className="shrink-0 text-sm font-semibold text-primary">
                                         {formatCurrency(lineTotal, currencyLabel)}
@@ -324,6 +398,14 @@ export default function DashboardOrdersPage() {
                                       <span>{t('Unit', 'الوحدة')}: {formatCurrency(unitPrice, currencyLabel)}</span>
                                       <span>{t('Line', 'الإجمالي')}: {formatCurrency(lineTotal, currencyLabel)}</span>
                                     </div>
+                                    {detailLines.length > 0 && (
+                                      <div className="mt-3 rounded-lg border border-border/60 bg-background/45 p-2 text-xs text-muted-foreground">
+                                        {detailLines.map((line, lineIndex) => (
+                                          <p key={lineIndex}>{t(line.en, line.ar)}</p>
+                                        ))}
+                                        {item.size && <p>{item.size}</p>}
+                                      </div>
+                                    )}
                                   </div>
                                 )
                               })}

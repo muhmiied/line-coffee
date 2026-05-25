@@ -87,12 +87,11 @@ export async function PATCH(
     
   } catch (error) {
     console.error('API Error:', error)
+    const message = error instanceof Error ? error.message : 'Failed to update order'
+    const status = message === 'Order not found' ? 404 : 400
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update order' 
-      },
-      { status: 500 }
+      { success: false, error: message },
+      { status }
     )
   }
 }
