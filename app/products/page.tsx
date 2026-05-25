@@ -691,7 +691,7 @@ function MakeYourEspressoBlend() {
                   type="button"
                   aria-label="Increase quantity"
                   onClick={() => setBlendQuantity((q) => q + 1)}
-                  disabled={!blendCartItem || Boolean(getCustomStockIssue(items, blendCartItem, blendQuantity + 1))}
+                  disabled={!blendCartItem}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/40 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -1024,7 +1024,7 @@ function CustomizeFlavor() {
                   type="button"
                   aria-label="Increase quantity"
                   onClick={() => setFlavorQuantity((q) => q + 1)}
-                  disabled={!flavorCartItem || Boolean(getCustomStockIssue(items, flavorCartItem, flavorQuantity + 1))}
+                  disabled={!flavorCartItem}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-[#B6885E]/22 bg-[#120D09]/70 text-[#D6B79A] transition-all duration-200 hover:border-[#D6A373]/40 hover:text-[#F5E6D8] disabled:cursor-not-allowed disabled:opacity-35"
                 >
                   <Plus className="h-3.5 w-3.5" />

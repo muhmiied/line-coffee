@@ -48,7 +48,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: result.error }, { status: result.status })
   }
 
-  const body = await request.json()
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+  }
   const rows: Array<{ key: string; value: string }> = []
 
   if (typeof body.wa_phone === 'string') {

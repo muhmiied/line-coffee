@@ -49,12 +49,16 @@ export async function POST(request: Request) {
     const maxUses = input.max_uses === null || input.max_uses === undefined || input.max_uses === ''
       ? null
       : Number(input.max_uses)
+    const rawAssignedEmails = Array.isArray(input.assigned_emails) ? input.assigned_emails : null
     const assignedEmails = Array.isArray(input.assigned_emails)
       ? input.assigned_emails
           .filter((email): email is string => typeof email === 'string')
           .map((email) => email.trim().toLowerCase())
           .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
           .slice(0, 200)
+      : null
+    const expiresAt = typeof input.expires_at === 'string' && input.expires_at.trim()
+      ? input.expires_at.trim()
       : null
 
     if (!code || code.length > 40 || !DISCOUNT_TYPES.includes(type as (typeof DISCOUNT_TYPES)[number])) {
@@ -69,20 +73,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Invalid discount limits' }, { status: 400 })
     }
 
-    const payload = {
+    if (rawAssignedEmails && rawAssignedEmails.length > 0 && (!assignedEmails || assignedEmails.length !== rawAssignedEmails.length)) {
+      return NextResponse.json({ success: false, error: 'Invalid assigned email address' }, { status: 400 })
+    }
+
+    if (expiresAt && Number.isNaN(Date.parse(expiresAt))) {
+      return NextResponse.json({ success: false, error: 'Invalid expiry date' }, { status: 400 })
+    }
+
+    const payload: Record<string, unknown> = {
       code,
       type,
       value,
       min_order: minOrder,
       max_uses: maxUses,
-      expires_at: typeof input.expires_at === 'string' && input.expires_at ? input.expires_at : null,
+      expires_at: expiresAt,
       is_active: input.is_active !== false,
-      assigned_emails: assignedEmails && assignedEmails.length > 0 ? assignedEmails : null,
       uses: 0,
     }
+    if (assignedEmails && assignedEmails.length > 0) payload.assigned_emails = assignedEmails
 
     const { data, error } = await admin.from('discounts').insert(payload).select().single()
-    if (error) throw error
+    if (error) {
+      const message = assignedEmails?.length && /assigned_emails/i.test(error.message)
+        ? 'Assigned email discounts require the assigned_emails column'
+        : 'Failed to create discount'
+      return NextResponse.json({ success: false, error: message }, { status: 400 })
+    }
     return NextResponse.json({ success: true, data })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to create discount' }, { status: 400 })

@@ -113,7 +113,13 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
     const {
       productId,
       clientItemId,
@@ -124,7 +130,7 @@ export async function POST(request: NextRequest) {
       price,
       image,
       customizations,
-    } = body
+    } = body as Record<string, any>
     
     if (!productId || !size) {
       return NextResponse.json(
@@ -213,8 +219,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const items = Array.isArray(body?.items) ? body.items : []
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+    const input = body as Record<string, unknown>
+    const items = Array.isArray(input.items) ? input.items as Parameters<typeof mergeCartItems>[1] : []
 
     for (const item of items) {
       if (!isPositiveQuantity(item?.quantity)) {

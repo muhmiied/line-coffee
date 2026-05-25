@@ -94,8 +94,14 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const body = await request.json()
-    const { productId, action } = body
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+    const { productId, action } = body as { productId?: string; action?: string }
     
     if (!productId) {
       return NextResponse.json(
@@ -196,12 +202,19 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const items = Array.isArray(body?.items) ? body.items : []
-    const removedProductIds = Array.isArray(body?.removedProductIds)
-      ? body.removedProductIds.filter(isUuid)
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+    const input = body as Record<string, unknown>
+    const items = Array.isArray(input.items) ? input.items as Parameters<typeof mergeWishlistItems>[1] : []
+    const removedProductIds = Array.isArray(input.removedProductIds)
+      ? input.removedProductIds.filter(isUuid)
       : []
-    const shouldClear = body?.clear === true
+    const shouldClear = input.clear === true
 
     for (const item of items) {
       const validationError = await validateWishlistProduct(supabase, item?.productId)

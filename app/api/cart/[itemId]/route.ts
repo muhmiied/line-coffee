@@ -35,8 +35,14 @@ export async function PATCH(
     }
     
     const { itemId } = await params
-    const body = await request.json()
-    const { quantity } = body
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+    const { quantity } = body as Record<string, unknown>
     
     if (typeof quantity !== 'number') {
       return NextResponse.json(

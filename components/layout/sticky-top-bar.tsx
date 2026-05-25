@@ -84,14 +84,15 @@ function normalizeSpeed(speed: unknown): number {
 export function StickyTopBar() {
   const pathname = usePathname()
   const { language } = useLanguage()
-  const [annActive, setAnnActive] = useState(true)
+  const [annLoading, setAnnLoading] = useState(true)
+  const [annActive, setAnnActive] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [announcement, setAnnouncement] = useState<Required<AnnouncementData>>({
-    text: DEFAULT_TEXT,
-    active: true,
-    messages: [DEFAULT_TEXT],
-    messages_ar: [DEFAULT_TEXT],
-    messages_en: [DEFAULT_TEXT],
+    text: '',
+    active: false,
+    messages: [],
+    messages_ar: [],
+    messages_en: [],
     items: [],
     animation: 'fade',
     speed: DEFAULT_SPEED,
@@ -100,19 +101,24 @@ export function StickyTopBar() {
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
-    if (pathname.startsWith('/dashboard/admin')) return
+    if (pathname.startsWith('/dashboard/admin')) {
+      setAnnLoading(false)
+      return
+    }
+    setAnnLoading(true)
     fetch('/api/settings/announcement')
       .then((r) => r.json())
       .then((d: AnnouncementData) => {
         const messages = normalizeMessages(d, language)
+        const displayMessages = messages.length > 0 ? messages : [{ text: DEFAULT_TEXT }]
 
         setAnnouncement({
-          text: messages[0]?.text ?? DEFAULT_TEXT,
+          text: displayMessages[0]?.text ?? DEFAULT_TEXT,
           active: d?.active !== false,
-          messages: messages.map((message) => message.text),
+          messages: displayMessages.map((message) => message.text),
           messages_ar: Array.isArray(d.messages_ar) ? d.messages_ar : [],
           messages_en: Array.isArray(d.messages_en) ? d.messages_en : [],
-          items: d.items ?? [],
+          items: messages.length > 0 ? d.items ?? [] : [],
           animation: d?.animation === 'marquee' ? 'marquee' : 'fade',
           speed: normalizeSpeed(d?.speed),
         })
@@ -121,7 +127,21 @@ export function StickyTopBar() {
         // Only hide if the admin explicitly deactivated (strict false, not null/undefined/error).
         setAnnActive(d?.active !== false)
       })
-      .catch(() => {})
+      .catch(() => {
+        setAnnouncement({
+          text: DEFAULT_TEXT,
+          active: true,
+          messages: [DEFAULT_TEXT],
+          messages_ar: [DEFAULT_TEXT],
+          messages_en: [DEFAULT_TEXT],
+          items: [],
+          animation: 'fade',
+          speed: DEFAULT_SPEED,
+        })
+        setMessageIndex(0)
+        setAnnActive(true)
+      })
+      .finally(() => setAnnLoading(false))
   }, [language, pathname])
 
   const messages = useMemo(() => normalizeMessages(announcement, language), [announcement, language])
@@ -142,7 +162,9 @@ export function StickyTopBar() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
-      {annActive && !dismissed && (
+      {annLoading && !dismissed ? (
+        <div className="min-h-[38px] border-b border-[#B6885E]/15 bg-[#120D09]/95" />
+      ) : annActive && !dismissed && (
         <div className="relative flex min-h-[38px] items-center justify-center border-b border-[#B6885E]/15 bg-[#120D09]/95 px-10 py-2.5 text-center text-sm text-[#F5E6D8] shadow-[0_10px_34px_rgba(0,0,0,0.28)]">
           <motion.div
             aria-hidden
