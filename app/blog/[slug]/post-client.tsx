@@ -54,7 +54,14 @@ export function BlogPostClient({ initialPost }: Props) {
 
         {initialPost.cover_image && (
           <div className="relative mb-8 h-72 overflow-hidden rounded-2xl border border-[#B6885E]/14 md:h-96">
-            <Image src={initialPost.cover_image} alt={title} fill className="object-cover" unoptimized />
+            <Image
+              src={initialPost.cover_image}
+              alt={title}
+              fill
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-cover"
+              unoptimized
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/72 to-transparent" />
           </div>
         )}

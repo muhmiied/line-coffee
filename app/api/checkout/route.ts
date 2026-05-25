@@ -10,7 +10,12 @@ import {
   parseFreeShippingThreshold,
 } from '@/lib/config/shipping'
 import { packageSizeToKg } from '@/lib/custom-stock'
-import { slugifyOptionId } from '@/lib/config/customization'
+import {
+  calculateBlendPrice,
+  calculateFlavorPrice,
+  slugifyOptionId,
+  type PackageSize,
+} from '@/lib/config/customization'
 
 const PAYMENT_LABELS: Record<string, string> = {
   cod: 'الدفع عند الاستلام',
@@ -62,6 +67,7 @@ type DiscountRow = {
   max_uses: number | null
   uses: number | null
   expires_at: string | null
+  assigned_emails: string[] | null
 }
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>
@@ -73,6 +79,8 @@ type CustomInventoryRow = {
   is_active: boolean | null
   stock_quantity: number | null
   is_manually_out_of_stock: boolean | null
+  price?: number | string | null
+  price_delta?: number | string | null
 }
 
 type FlavorBaseInventoryRow = {
@@ -80,6 +88,7 @@ type FlavorBaseInventoryRow = {
   name_en: string | null
   name_ar: string | null
   is_active: boolean | null
+  price: number | string | null
   options: CustomInventoryRow[] | null
 }
 
@@ -87,6 +96,12 @@ type CustomUsageEntry = {
   requiredKg: number
   stockKg: number
   name: string
+}
+
+type StockDeductionPayload = {
+  id: string
+  quantity?: number
+  required_kg?: number
 }
 
 async function getFreeShippingRule(admin: AdminClient): Promise<{ threshold: number; active: boolean }> {
@@ -161,6 +176,23 @@ function formatKg(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
 }
 
+function asPackageSize(value: string): PackageSize | null {
+  return value === '250g' || value === '500g' || value === '1kg' ? value : null
+}
+
+function readPositiveMoney(value: unknown) {
+  const amount = Number(value)
+  return Number.isFinite(amount) && amount > 0 ? amount : null
+}
+
+function isDiscountAssignedToEmail(discount: DiscountRow, email: string | null) {
+  const assigned = Array.isArray(discount.assigned_emails)
+    ? discount.assigned_emails.map((item) => String(item).trim().toLowerCase()).filter(Boolean)
+    : []
+  if (assigned.length === 0) return true
+  return Boolean(email && assigned.includes(email.toLowerCase()))
+}
+
 function customItemUnavailable(row: CustomInventoryRow | undefined, requiredKg: number) {
   return !row ||
     row.is_active === false ||
@@ -209,14 +241,37 @@ function addCustomUsage(
   return null
 }
 
-async function validateCustomItemAvailability(
+function toStockKg(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return null
+  return Math.round(value * 10000) / 10000
+}
+
+function splitCustomStockUsage(usage: Map<string, CustomUsageEntry>) {
+  const beans: StockDeductionPayload[] = []
+  const flavors: StockDeductionPayload[] = []
+
+  for (const [key, entry] of usage.entries()) {
+    const [type, id] = key.split(':')
+    const requiredKg = toStockKg(entry.requiredKg)
+    if (!id || !isUuid(id) || requiredKg === null) continue
+
+    if (type === 'bean') beans.push({ id, required_kg: requiredKg })
+    if (type === 'flavor') flavors.push({ id, required_kg: requiredKg })
+  }
+
+  return { beans, flavors }
+}
+
+async function validateAndPriceCustomItem(
   admin: AdminClient,
   customizations: Record<string, unknown> | undefined,
   quantity: number,
   size: string,
   usage: Map<string, CustomUsageEntry>,
-): Promise<{ error: string; status: number } | null> {
-  if (!customizations) return null
+): Promise<{ unitPrice: number } | { error: string; status: number }> {
+  if (!customizations) return { error: 'Custom item details are required', status: 400 }
+  const packageSize = asPackageSize(size)
+  if (!packageSize) return { error: 'Custom item has an invalid weight', status: 400 }
   const itemWeightKg = packageSizeToKg(size)
   if (itemWeightKg <= 0) return { error: 'Custom item has an invalid weight', status: 400 }
 
@@ -227,7 +282,7 @@ async function validateCustomItemAvailability(
 
     const { data, error } = await admin
       .from('coffee_beans')
-      .select('id, name_en, name_ar, is_active, stock_quantity, is_manually_out_of_stock')
+      .select('id, name_en, name_ar, price, is_active, stock_quantity, is_manually_out_of_stock')
 
     if (error) return { error: 'Failed to validate espresso blend bean availability', status: 500 }
 
@@ -237,19 +292,43 @@ async function validateCustomItemAvailability(
       beanMap.set(slugifyOptionId(String(row.name_en || row.id)), row)
     }
 
+    const explicitPercents = beanRows
+      .map((row) => Number(row.percent))
+      .filter((percent) => Number.isFinite(percent))
+    const useFallbackPercents = explicitPercents.length === 0
     const fallbackPercent = beanRows.length > 0 ? 100 / beanRows.length : 0
-    for (const [index, beanRow] of beanRows.entries()) {
+    const percentTotal = useFallbackPercents
+      ? 100
+      : explicitPercents.reduce((sum, percent) => sum + Math.max(0, percent), 0)
+
+    if (!useFallbackPercents && Math.abs(percentTotal - 100) > 0.2) {
+      return { error: 'Custom espresso blend ratios must total 100%', status: 400 }
+    }
+
+    const pricedBeans: Array<{ price: number; percent: number }> = []
+    for (const beanRow of beanRows) {
       const beanId = String(beanRow.id || '').trim()
       const bean = beanMap.get(beanId)
       const percent = Number(beanRow.percent)
-      const requiredKg = itemWeightKg * quantity * (Number.isFinite(percent) ? Math.max(0, percent) : fallbackPercent) / 100
+      const finalPercent = useFallbackPercents ? fallbackPercent : Math.max(0, percent)
+      const beanPrice = readPositiveMoney(bean?.price)
+      const requiredKg = itemWeightKg * quantity * finalPercent / 100
 
       if (customItemUnavailable(bean, requiredKg)) {
         return { error: `${customItemName(bean, 'A selected espresso bean')} is currently unavailable`, status: 409 }
       }
 
+      if (beanPrice === null) {
+        return { error: `${customItemName(bean, 'A selected espresso bean')} has invalid pricing`, status: 400 }
+      }
+
       const usageError = bean ? addCustomUsage(usage, `bean:${bean.id}`, bean, requiredKg) : null
       if (usageError) return { error: usageError, status: 409 }
+      pricedBeans.push({ price: beanPrice, percent: finalPercent })
+    }
+
+    return {
+      unitPrice: calculateBlendPrice(pricedBeans, 'ratios', packageSize, false),
     }
   }
 
@@ -268,11 +347,13 @@ async function validateCustomItemAvailability(
         id,
         name_en,
         name_ar,
+        price,
         is_active,
         options:flavor_options(
           id,
           name_en,
           name_ar,
+          price_delta,
           is_active,
           stock_quantity,
           is_manually_out_of_stock
@@ -296,20 +377,36 @@ async function validateCustomItemAvailability(
       optionMap.set(slugifyOptionId(String(row.name_en || row.id)), row)
     }
 
+    const basePrice = readPositiveMoney(flavorBase.price)
+    if (basePrice === null) {
+      return { error: 'The selected custom flavor base has invalid pricing', status: 400 }
+    }
+
+    const pricedFlavors: Array<{ price: number }> = []
     for (const flavorId of flavorIds) {
       const flavor = optionMap.get(flavorId)
       const requiredKg = itemWeightKg * quantity
+      const flavorPrice = readPositiveMoney(flavor?.price_delta)
 
       if (customItemUnavailable(flavor, requiredKg)) {
         return { error: `${customItemName(flavor, 'A selected flavor')} is currently unavailable`, status: 409 }
       }
 
+      if (flavorPrice === null) {
+        return { error: `${customItemName(flavor, 'A selected flavor')} has invalid pricing`, status: 400 }
+      }
+
       const usageError = flavor ? addCustomUsage(usage, `flavor:${flavor.id}`, flavor, requiredKg) : null
       if (usageError) return { error: usageError, status: 409 }
+      pricedFlavors.push({ price: flavorPrice })
+    }
+
+    return {
+      unitPrice: calculateFlavorPrice(basePrice, pricedFlavors, packageSize, false),
     }
   }
 
-  return null
+  return { error: 'Unsupported custom item type', status: 400 }
 }
 
 function buildWhatsAppMessage(payload: {
@@ -550,6 +647,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = user.id
+    const userEmail = user.email?.trim().toLowerCase() || null
 
     // Use service-role client for all DB writes (bypasses RLS, supports guests)
     const admin = createAdminClient()
@@ -604,6 +702,7 @@ export async function POST(request: NextRequest) {
 
     const sanitizedItems: SanitizedCheckoutItem[] = []
     const customUsage = new Map<string, CustomUsageEntry>()
+    const productUsage = new Map<string, number>()
 
     for (const item of inputItems) {
       const quantity = toQuantity(item.quantity)
@@ -638,7 +737,9 @@ export async function POST(request: NextRequest) {
           )
         }
         const availableQty = typeof product.stock_quantity === 'number' ? product.stock_quantity : Infinity
-        if (availableQty < quantity) {
+        const requestedQty = (productUsage.get(originalProductId) || 0) + quantity
+        productUsage.set(originalProductId, requestedQty)
+        if (availableQty < requestedQty) {
           const productName = product.name_en || product.name_ar || 'A product'
           return NextResponse.json(
             { success: false, error: `Insufficient stock for ${productName}. Only ${availableQty} available.` },
@@ -664,18 +765,14 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const customPrice = toMoney(item.unit_price)
-      if (customPrice === null || customPrice <= 0 || customPrice > 100000) {
-        return NextResponse.json({ success: false, error: 'Invalid custom item price' }, { status: 400 })
-      }
-
-      const customAvailabilityError = await validateCustomItemAvailability(admin, baseCustomizations, quantity, size, customUsage)
-      if (customAvailabilityError) {
+      const customPriceResult = await validateAndPriceCustomItem(admin, baseCustomizations, quantity, size, customUsage)
+      if ('error' in customPriceResult) {
         return NextResponse.json(
-          { success: false, error: customAvailabilityError.error },
-          { status: customAvailabilityError.status },
+          { success: false, error: customPriceResult.error },
+          { status: customPriceResult.status },
         )
       }
+      const customPrice = customPriceResult.unitPrice
 
       sanitizedItems.push({
         product_id: null,
@@ -707,7 +804,7 @@ export async function POST(request: NextRequest) {
       const requestedCode = discount_code.trim().toUpperCase()
       const { data: discount, error: discountError } = await admin
         .from('discounts')
-        .select('code, type, value, min_order, max_uses, uses, expires_at')
+        .select('code, type, value, min_order, max_uses, uses, expires_at, assigned_emails')
         .eq('code', requestedCode)
         .eq('is_active', true)
         .maybeSingle()
@@ -726,6 +823,10 @@ export async function POST(request: NextRequest) {
 
       if (validDiscount.max_uses !== null && (validDiscount.uses || 0) >= validDiscount.max_uses) {
         return NextResponse.json({ success: false, error: 'This discount code has reached its usage limit' }, { status: 400 })
+      }
+
+      if (!isDiscountAssignedToEmail(validDiscount, userEmail)) {
+        return NextResponse.json({ success: false, error: 'This discount code is not assigned to this account' }, { status: 403 })
       }
 
       if (computedSubtotal < minOrder) {
@@ -821,20 +922,33 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Deduct stock ──────────────────────────────────────────────
-    // Use the already-fetched catalogProducts snapshot for deduction — avoids
-    // a second round-trip and ensures we deduct exactly what was validated.
-    for (const item of sanitizedItems) {
-      if (!item.product_id) continue
-      const catalogProduct = catalogProducts.get(item.product_id)
-      if (catalogProduct && typeof catalogProduct.stock_quantity === 'number') {
-        const newQty = Math.max(0, catalogProduct.stock_quantity - item.quantity)
-        await admin
-          .from('products')
-          .update({ stock_quantity: newQty })
-          .eq('id', item.product_id)
-        // Update local snapshot so subsequent items in the same order see the deducted value
-        catalogProducts.set(item.product_id, { ...catalogProduct, stock_quantity: newQty })
-      }
+    // Deduct product and custom inventory in one DB transaction.
+    const productDeductions = Array.from(productUsage.entries()).flatMap(([id, quantity]) => {
+      const catalogProduct = catalogProducts.get(id)
+      return catalogProduct && typeof catalogProduct.stock_quantity === 'number'
+        ? [{ id, quantity }]
+        : []
+    })
+    const customDeductions = splitCustomStockUsage(customUsage)
+    const { error: stockError } = await admin.rpc('deduct_checkout_stock', {
+      p_products: productDeductions,
+      p_beans: customDeductions.beans,
+      p_flavors: customDeductions.flavors,
+    })
+
+    if (stockError) {
+      console.error('Error deducting checkout stock:', stockError)
+      await admin.from('orders').delete().eq('id', order.id)
+      const isStockConflict = /INSUFFICIENT_(PRODUCT|BEAN|FLAVOR)_STOCK/.test(stockError.message || '')
+      return NextResponse.json(
+        {
+          success: false,
+          error: isStockConflict
+            ? 'Some items are no longer available in the requested quantity'
+            : 'Failed to reserve order stock',
+        },
+        { status: isStockConflict ? 409 : 500 }
+      )
     }
 
     // ── Increment discount usage ──────────────────────────────────

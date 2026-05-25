@@ -384,7 +384,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 onClick={handleAddToCart}
                 disabled={!selectedSize || isOutOfStock}
               >
-                <ShoppingBag className="h-5 w-5 mr-2" />
+                <ShoppingBag className="h-5 w-5 me-2" />
                 {isOutOfStock ? t('Out of Stock', 'نفد المخزون') : t('Add to Cart', 'أضف للسلة')}
               </Button>
               <Button

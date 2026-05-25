@@ -19,10 +19,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const admin = createAdminClient()
   if (!admin) return staticRoutes
 
-  const [{ data: products }, { data: posts }] = await Promise.all([
+  const [{ data: products }, { data: categories }, { data: posts }] = await Promise.all([
     admin.from('products').select('slug, created_at').eq('is_visible', true),
+    admin.from('categories').select('slug, created_at').eq('is_visible', true),
     admin.from('blog_posts').select('slug, published_at, created_at').eq('is_published', true),
-  ]).catch(() => [{ data: [] }, { data: [] }])
+  ]).catch(() => [{ data: [] }, { data: [] }, { data: [] }])
 
   const productRoutes = (products || [])
     .filter((product) => product.slug)
@@ -31,6 +32,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: product.created_at ? new Date(product.created_at) : undefined,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
+    }))
+
+  const categoryRoutes = (categories || [])
+    .filter((category) => category.slug)
+    .map((category) => ({
+      url: absoluteUrl(`/products?category=${encodeURIComponent(category.slug)}`),
+      lastModified: category.created_at ? new Date(category.created_at) : undefined,
+      changeFrequency: 'weekly' as const,
+      priority: 0.75,
     }))
 
   const blogRoutes = (posts || [])
@@ -42,5 +52,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-  return [...staticRoutes, ...productRoutes, ...blogRoutes]
+  return [...staticRoutes, ...categoryRoutes, ...productRoutes, ...blogRoutes].filter(({ url }) => {
+    try {
+      return new URL(url).pathname.replace(/\/$/, '') !== '/lander'
+    } catch {
+      return !url.includes('/lander')
+    }
+  })
 }

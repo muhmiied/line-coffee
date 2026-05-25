@@ -28,7 +28,7 @@ export default function DashboardWishlistPage() {
             href="/dashboard"
             className="mb-6 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className={cn('mr-2 h-4 w-4', dir === 'rtl' && 'rotate-180')} />
+            <ArrowLeft className={cn('me-2 h-4 w-4', dir === 'rtl' && 'rotate-180')} />
             {t('Back to Dashboard', 'العودة للوحة التحكم')}
           </Link>
 
@@ -41,8 +41,8 @@ export default function DashboardWishlistPage() {
             </div>
             {wishlistItems.length > 0 && (
               <Button variant="outline" onClick={clearWishlist}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('Clear wishlist', 'مسح المفضلة')}
+                <Trash2 className="me-2 h-4 w-4" />
+                {t('Clear Wishlist', 'إفراغ المفضلة')}
               </Button>
             )}
           </div>
@@ -56,7 +56,7 @@ export default function DashboardWishlistPage() {
               </p>
               <Button asChild className="mt-6">
                 <Link href="/products">
-                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  <ShoppingBag className="me-2 h-4 w-4" />
                   {t('Shop Products', 'تسوق المنتجات')}
                 </Link>
               </Button>

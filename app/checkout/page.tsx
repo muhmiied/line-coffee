@@ -263,47 +263,88 @@ export default function CheckoutPage() {
   // ── Order Success Screen ──────────────────────────────────────
   if (orderPlaced) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16 px-4">
+      <div className="min-h-screen flex items-center justify-center py-16 px-4" style={{ background: '#0B0806' }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md"
+          className="w-full max-w-lg"
         >
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
-          </div>
-          <h1 className="font-serif text-3xl font-bold mb-4">
-            {t('Order Confirmed!', 'تم تأكيد الطلب!')}
-          </h1>
-          <p className="text-muted-foreground mb-2">
-            {t('Thank you for your order', 'شكراً لطلبك')}
-          </p>
-          <p className="text-lg font-semibold text-primary mb-2">
-            {t('Order Number:', 'رقم الطلب:')} {orderNumber}
-          </p>
-          <p className="text-sm font-medium text-muted-foreground mb-6">
-            {t('Status:', 'الحالة:')} {orderStatus || 'pending'}
-          </p>
-          <p className="text-sm text-muted-foreground mb-8">
-            {t(
-              'Your order was saved. WhatsApp should open with your order summary so you can press Send manually.',
-              'تم حفظ طلبك. من المفترض أن يفتح واتساب بملخص الطلب لتضغط إرسال بنفسك.'
-            )}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {whatsAppUrl && (
-              <Button asChild variant="secondary">
-                <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
+          <div
+            className="rounded-2xl p-8 text-center"
+            style={{
+              background: 'rgba(24,18,13,0.92)',
+              border: '1px solid rgba(182,136,94,0.18)',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.45)',
+            }}
+          >
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{
+                background: 'linear-gradient(135deg, rgba(182,136,94,0.16), rgba(214,163,115,0.10))',
+                border: '1.5px solid rgba(214,163,115,0.32)',
+              }}
+            >
+              <CheckCircle2 className="w-10 h-10" style={{ color: '#D6A373' }} />
+            </div>
+            <h1 className="font-serif text-3xl font-bold mb-3" style={{ color: '#F5E6D8' }}>
+              {t('Order Confirmed!', 'تم تأكيد الطلب!')}
+            </h1>
+            <p className="mb-5" style={{ color: 'rgba(214,183,154,0.68)' }}>
+              {t('Thank you for your order', 'شكراً لطلبك')}
+            </p>
+            <div
+              className="rounded-xl px-6 py-4 mb-5"
+              style={{ background: 'rgba(182,136,94,0.08)', border: '1px solid rgba(182,136,94,0.15)' }}
+            >
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: 'rgba(214,183,154,0.5)' }}>
+                {t('Order Number', 'رقم الطلب')}
+              </p>
+              <p className="font-serif text-2xl font-bold tracking-wider" style={{ color: '#D6A373' }}>
+                {orderNumber}
+              </p>
+              {orderStatus && (
+                <p className="text-xs mt-1 uppercase tracking-wide" style={{ color: 'rgba(214,183,154,0.5)' }}>
+                  {orderStatus}
+                </p>
+              )}
+            </div>
+            <p className="text-sm mb-7" style={{ color: 'rgba(214,183,154,0.58)' }}>
+              {t(
+                'Your order was saved. WhatsApp should open with your order summary so you can press Send manually.',
+                'تم حفظ طلبك. من المفترض أن يفتح واتساب بملخص الطلب لتضغط إرسال بنفسك.'
+              )}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href={`/track?order=${orderNumber}`}
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
+                style={{
+                  background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
+                  color: '#0B0806',
+                  boxShadow: '0 4px 16px rgba(182,136,94,0.28)',
+                }}
+              >
+                {t('Track My Order', 'تتبع طلبي')}
+              </Link>
+              {whatsAppUrl && (
+                <a
+                  href={whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
+                  style={{ border: '1px solid rgba(182,136,94,0.28)', color: '#D6A373' }}
+                >
                   {t('Open WhatsApp Again', 'فتح واتساب مرة أخرى')}
                 </a>
-              </Button>
-            )}
-            <Button asChild>
-              <Link href="/products">{t('Continue Shopping', 'متابعة التسوق')}</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/orders">{t('My Orders', 'طلباتي')}</Link>
-            </Button>
+              )}
+              <Link
+                href="/products"
+                className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-medium transition-all duration-200"
+                style={{ border: '1px solid rgba(182,136,94,0.15)', color: 'rgba(214,183,154,0.62)' }}
+              >
+                {t('Continue Shopping', 'متابعة التسوق')}
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -313,18 +354,31 @@ export default function CheckoutPage() {
   // ── Empty Cart ────────────────────────────────────────────────
   if (items.length === 0 && !isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16 px-4">
+      <div className="min-h-screen flex items-center justify-center py-16 px-4" style={{ background: '#0B0806' }}>
         <div className="text-center">
-          <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-          <h1 className="font-serif text-2xl font-bold mb-2">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: 'rgba(182,136,94,0.08)', border: '1px solid rgba(182,136,94,0.15)' }}
+          >
+            <ShoppingBag className="w-9 h-9" style={{ color: 'rgba(182,136,94,0.4)' }} />
+          </div>
+          <h1 className="font-serif text-2xl font-bold mb-2" style={{ color: '#F5E6D8' }}>
             {t('Your cart is empty', 'سلتك فارغة')}
           </h1>
-          <p className="text-muted-foreground mb-6">
+          <p className="mb-6" style={{ color: 'rgba(214,183,154,0.6)' }}>
             {t('Add some products to checkout', 'أضف بعض المنتجات للمتابعة')}
           </p>
-          <Button asChild>
-            <Link href="/products">{t('Browse Products', 'تصفح المنتجات')}</Link>
-          </Button>
+          <Link
+            href="/products"
+            className="inline-flex items-center justify-center rounded-xl px-7 py-3 text-sm font-semibold transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
+              color: '#0B0806',
+              boxShadow: '0 4px 16px rgba(182,136,94,0.25)',
+            }}
+          >
+            {t('Browse Products', 'تصفح المنتجات')}
+          </Link>
         </div>
       </div>
     )
@@ -352,11 +406,11 @@ export default function CheckoutPage() {
   ]
 
   return (
-    <div className="min-h-screen py-8 md:py-16">
+    <div className="min-h-screen py-8 md:py-16" style={{ background: '#0B0806' }}>
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <Button variant="ghost" asChild className="mb-4">
+          <Button variant="ghost" asChild className="mb-4 text-[#D6B79A] hover:text-[#F5E6D8]">
             <Link href="/products">
               {dir === 'rtl' ? (
                 <ArrowRight className="w-4 h-4 mr-2" />
@@ -366,16 +420,16 @@ export default function CheckoutPage() {
               {t('Continue Shopping', 'متابعة التسوق')}
             </Link>
           </Button>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold">
+          <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: '#F5E6D8' }}>
             {t('Checkout', 'إتمام الطلب')}
           </h1>
         </div>
 
         {/* Login required prompt */}
         {!authLoading && !user && (
-          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-primary/35 bg-primary/10 p-4 sm:flex-row sm:items-center">
-            <LogIn className="w-5 h-5 text-primary shrink-0" />
-            <p className="text-sm text-muted-foreground flex-1">
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-[#B6885E]/22 bg-[#B6885E]/6 p-4 sm:flex-row sm:items-center">
+            <LogIn className="w-5 h-5 text-[#D6A373] shrink-0" />
+            <p className="text-sm flex-1" style={{ color: 'rgba(214,183,154,0.72)' }}>
               {t(
                 'Please login to complete your order. Orders are now account-only for your privacy and tracking.',
                 'من فضلك سجل الدخول لإتمام طلبك. الطلبات مرتبطة بالحساب لحماية بياناتك وتتبع الطلب.'
@@ -401,9 +455,9 @@ export default function CheckoutPage() {
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
               {/* Contact Information */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5 text-primary" />
+              <div className="rounded-2xl border border-[#B6885E]/15 bg-[#18120D]/80 p-6 [&_input]:bg-[#120D09]/70 [&_input]:text-[#F5E6D8] [&_label]:text-[#D6B79A]">
+                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-[#F5E6D8]">
+                  <User className="w-5 h-5 text-[#D6A373]" />
                   {t('Contact Information', 'معلومات الاتصال')}
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -489,9 +543,9 @@ export default function CheckoutPage() {
               </div>
 
               {/* Shipping Address */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
+              <div className="rounded-2xl border border-[#B6885E]/15 bg-[#18120D]/80 p-6 [&_input]:bg-[#120D09]/70 [&_input]:text-[#F5E6D8] [&_label]:text-[#D6B79A]">
+                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-[#F5E6D8]">
+                  <MapPin className="w-5 h-5 text-[#D6A373]" />
                   {t('Shipping Address', 'عنوان الشحن')}
                 </h2>
                 <div className="space-y-4">
@@ -549,9 +603,9 @@ export default function CheckoutPage() {
               </div>
 
               {/* Notes */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" />
+              <div className="rounded-2xl border border-[#B6885E]/15 bg-[#18120D]/80 p-6 [&_input]:bg-[#120D09]/70 [&_input]:text-[#F5E6D8] [&_label]:text-[#D6B79A]">
+                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-[#F5E6D8]">
+                  <MessageSquare className="w-5 h-5 text-[#D6A373]" />
                   {t('Order Notes', 'ملاحظات الطلب')}
                 </h2>
                 <div>
@@ -566,15 +620,15 @@ export default function CheckoutPage() {
                       'Any special instructions for your order...',
                       'أي تعليمات خاصة لطلبك...'
                     )}
-                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                    className="w-full mt-1 rounded-md border border-[#B6885E]/18 bg-[#120D09]/70 px-3 py-2 text-sm text-[#F5E6D8] placeholder:text-[#D6B79A]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6A373]/25 resize-none"
                   />
                 </div>
               </div>
 
               {/* Payment Method */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-primary" />
+              <div className="rounded-2xl border border-[#B6885E]/15 bg-[#18120D]/80 p-6 [&_input]:bg-[#120D09]/70 [&_input]:text-[#F5E6D8] [&_label]:text-[#D6B79A]">
+                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-[#F5E6D8]">
+                  <CreditCard className="w-5 h-5 text-[#D6A373]" />
                   {t('Payment Method', 'طريقة الدفع')}
                 </h2>
                 <RadioGroup
@@ -590,15 +644,15 @@ export default function CheckoutPage() {
                       className={cn(
                         'flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors',
                         formData.paymentMethod === method.value
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30'
+                          ? 'border-[#D6A373]/55 bg-[#D6A373]/8 text-[#F5E6D8]'
+                          : 'border-[#B6885E]/18 hover:border-[#B6885E]/38'
                       )}
                     >
                       <RadioGroupItem value={method.value} id={method.value} />
-                      <method.icon className="w-5 h-5 text-muted-foreground shrink-0" />
+                      <method.icon className="w-5 h-5 text-[#D6B79A] shrink-0" />
                       <Label htmlFor={method.value} className="flex-1 cursor-pointer">
                         <span className="font-medium">{method.label}</span>
-                        <p className="text-sm text-muted-foreground">{method.description}</p>
+                        <p className="text-sm text-[#D6B79A]/65">{method.description}</p>
                       </Label>
                     </div>
                   ))}
@@ -610,7 +664,7 @@ export default function CheckoutPage() {
                 <Button
                   type={user ? 'submit' : 'button'}
                   size="lg"
-                  className="w-full"
+                  className="premium-button w-full rounded-xl py-3 text-base font-semibold"
                   disabled={isLoading}
                   onClick={!user ? redirectToLogin : undefined}
                 >
@@ -635,18 +689,18 @@ export default function CheckoutPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="bg-card rounded-xl border border-border p-6 sticky top-24">
-              <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-primary" />
+            <div className="rounded-2xl border border-[#B6885E]/15 bg-[#18120D]/80 p-6 sticky top-24">
+              <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-[#F5E6D8]">
+                <ShoppingBag className="w-5 h-5 text-[#D6A373]" />
                 {t('Order Summary', 'ملخص الطلب')} ({items.length}{' '}
-                {t('items', 'عناصر')})
+                {t('items', 'منتجات')})
               </h2>
 
               {/* Items */}
               <div className="space-y-4 max-h-[300px] overflow-y-auto mb-6">
                 {items.map(item => (
                   <div key={item.id} className="flex gap-3">
-                    <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                    <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-[#120D09] shrink-0">
                       {item.image && (
                         <Image
                           src={item.image}
@@ -657,13 +711,13 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">
+                      <h4 className="font-medium text-sm truncate text-[#F5E6D8]">
                         {language === 'ar' ? item.name_ar : item.name_en}
                       </h4>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-[#D6B79A]/60">
                         {item.size} × {item.quantity}
                       </p>
-                      <p className="text-sm font-semibold">
+                      <p className="text-sm font-semibold text-[#D6A373]">
                         {item.price * item.quantity} {t('EGP', 'ج.م')}
                       </p>
                     </div>
@@ -672,18 +726,18 @@ export default function CheckoutPage() {
               </div>
 
               {/* Promo Code */}
-              <div className="border-t border-border pt-4 mb-4">
-                <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                  <Tag className="w-4 h-4 text-primary" />
+              <div className="border-t border-[#B6885E]/12 pt-4 mb-4">
+                <p className="text-sm font-medium mb-2 flex items-center gap-1.5 text-[#D6B79A]">
+                  <Tag className="w-4 h-4 text-[#D6A373]" />
                   {t('Promo Code', 'كود الخصم')}
                 </p>
                 {promoApplied ? (
-                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'rgba(214,163,115,0.08)', border: '1px solid rgba(214,163,115,0.2)' }}>
                     <div>
-                      <p className="text-green-700 font-semibold text-sm font-mono">
+                      <p className="font-semibold text-sm font-mono" style={{ color: '#D6A373' }}>
                         {promoApplied.code}
                       </p>
-                      <p className="text-green-600 text-xs">
+                      <p className="text-xs" style={{ color: 'rgba(214,163,115,0.7)' }}>
                         {t(
                           `Saving ${promoApplied.discount_amount} EGP`,
                           `وفرت ${promoApplied.discount_amount} ج.م`
@@ -694,7 +748,8 @@ export default function CheckoutPage() {
                       type="button"
                       onClick={removePromo}
                       aria-label={t('Remove', 'إزالة')}
-                      className="text-green-600 hover:text-green-800 transition-colors"
+                      className="transition-colors hover:opacity-100 opacity-60"
+                      style={{ color: '#D6A373' }}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -709,13 +764,14 @@ export default function CheckoutPage() {
                       }}
                       onKeyDown={e => e.key === 'Enter' && applyPromo()}
                       placeholder={t('Enter code', 'أدخل الكود')}
-                      className="flex-1 border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
+                      className="flex-1 border border-[#B6885E]/18 rounded-lg px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#D6A373]/25 bg-[#120D09]/70 text-[#F5E6D8] placeholder:text-[#D6B79A]/40"
                     />
                     <button
                       type="button"
                       onClick={applyPromo}
                       disabled={promoLoading || !promoCode.trim()}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                      className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-all duration-200"
+                      style={{ background: 'linear-gradient(135deg, #B6885E, #D6A373)', color: '#0B0806' }}
                     >
                       {promoLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -731,28 +787,28 @@ export default function CheckoutPage() {
               </div>
 
               {/* Totals */}
-              <div className="border-t border-border pt-4 space-y-2">
+              <div className="border-t border-[#B6885E]/12 pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t('Subtotal', 'المجموع الفرعي')}</span>
+                  <span className="text-[#D6B79A]/65">{t('Subtotal', 'المجموع الفرعي')}</span>
                   <span>
                     {subtotal} {t('EGP', 'ج.م')}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-[#D6B79A]/65">
                     <Truck className="w-4 h-4" />
                     {t('Shipping', 'الشحن')}
                   </span>
                   <span>
                     {shipping === 0 ? (
-                      <span className="text-green-600">{t('Free Delivery', 'توصيل مجاني')}</span>
+                      <span className="text-[#D6A373]">{t('Free Delivery', 'توصيل مجاني')}</span>
                     ) : (
                       `${shipping} ${t('EGP', 'ج.م')}`
                     )}
                   </span>
                 </div>
                 {promoApplied && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-[#D6A373]">
                     <span className="flex items-center gap-1">
                       <Tag className="w-3.5 h-3.5" />
                       {promoApplied.code}
@@ -763,16 +819,16 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 {freeShippingRemaining > 0 && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[#D6B79A]/50">
                     {t(
                       `Add ${freeShippingRemaining} EGP to get free delivery`,
                       `أضف ${freeShippingRemaining} ج للحصول على توصيل مجاني`
                     )}
                   </p>
                 )}
-                <div className="flex justify-between font-semibold text-lg pt-2 border-t border-border">
-                  <span>{t('Total', 'الإجمالي')}</span>
-                  <span className="text-primary">
+                <div className="flex justify-between font-semibold text-lg pt-2 border-t border-[#B6885E]/12">
+                  <span className="text-[#F5E6D8]">{t('Total', 'الإجمالي')}</span>
+                  <span className="text-[#D6A373]">
                     {total} {t('EGP', 'ج.م')}
                   </span>
                 </div>
@@ -784,7 +840,7 @@ export default function CheckoutPage() {
                   type={user ? 'submit' : 'button'}
                   form="checkout-form"
                   size="lg"
-                  className="w-full"
+                  className="premium-button w-full rounded-xl py-3 text-base font-semibold"
                   disabled={isLoading}
                   onClick={!user ? redirectToLogin : undefined}
                 >
@@ -799,7 +855,7 @@ export default function CheckoutPage() {
                 </Button>
               </div>
 
-              <p className="text-xs text-center text-muted-foreground mt-4">
+              <p className="text-xs text-center mt-4 text-[#D6B79A]/45">
                 {t(
                   'Your order information is secure and encrypted',
                   'معلومات طلبك آمنة ومشفرة'

@@ -86,9 +86,9 @@ export function StorySection() {
   const storyFeatures = (storyContent.features || []).filter((item) => item.is_active !== false)
   const storyStats = (storyContent.stats || []).filter((item) => item.is_active !== false)
   const storyTitle = t(storyContent.title_en || storySectionConfig.defaultTitleEn, storyContent.title_ar || storyContent.title_en || storySectionConfig.defaultTitleAr)
-  const storyEyebrow = t(storyContent.eyebrow_en || 'Our Story', storyContent.eyebrow_ar || storyContent.eyebrow_en || 'Ù‚ØµØªÙ†Ø§')
+  const storyEyebrow = t(storyContent.eyebrow_en || 'Our Story', storyContent.eyebrow_ar || storyContent.eyebrow_en || 'قصتنا')
   const storyBody = t(storyContent.body_en || storyContent.subtitle_en || storySectionConfig.defaultSubtitleEn, storyContent.body_ar || storyContent.subtitle_ar || storyContent.body_en || storySectionConfig.defaultSubtitleAr)
-  const storyButtonText = t(storyContent.button_text_en || 'Learn More About Us', storyContent.button_text_ar || storyContent.button_text_en || 'ØªØ¹Ø±Ù Ø¹Ù„ÙŠÙ†Ø§ Ø£ÙƒØ«Ø±')
+  const storyButtonText = t(storyContent.button_text_en || 'Learn More About Us', storyContent.button_text_ar || storyContent.button_text_en || 'تعرف علينا أكثر')
   const storyButtonHref = storyContent.button_link || storyMedia?.button_link || storyMedia?.link_url || '/about'
 
   const values = [

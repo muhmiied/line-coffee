@@ -181,7 +181,7 @@ export default function DashboardOrdersPage() {
           <div className="mb-6">
             <Button variant="ghost" size="sm" asChild className="mb-4">
               <Link href="/dashboard">
-                {dir === 'rtl' ? <ArrowRight className="mr-2 h-4 w-4" /> : <ArrowLeft className="mr-2 h-4 w-4" />}
+                {dir === 'rtl' ? <ArrowRight className="me-2 h-4 w-4" /> : <ArrowLeft className="me-2 h-4 w-4" />}
                 {t('Back to Dashboard', 'العودة إلى لوحة التحكم')}
               </Link>
             </Button>
@@ -268,7 +268,7 @@ export default function DashboardOrdersPage() {
                       )}
                       {normalizedStatus === 'delivered' && (
                         <Button variant="outline" size="sm" asChild>
-                          <Link href="/contact">
+                          <Link href="/reviews">
                             {t('Share a review', 'شارك تقييمك')}
                           </Link>
                         </Button>

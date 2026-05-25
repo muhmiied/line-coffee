@@ -26,6 +26,8 @@ export function CTASection() {
               src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1920&q=80"
               alt="Coffee background"
               fill
+              sizes="(max-width: 768px) 100vw, 1200px"
+              loading="lazy"
               className="object-cover opacity-30"
             />
           </div>

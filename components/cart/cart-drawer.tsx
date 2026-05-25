@@ -91,7 +91,7 @@ export function CartDrawer() {
                 </h2>
                 {items.length > 0 && (
                   <span className="text-sm text-muted-foreground">
-                    ({items.length} {t('items', 'عناصر')})
+                    ({items.length} {t('items', 'منتجات')})
                   </span>
                 )}
               </div>
@@ -242,8 +242,8 @@ export function CartDrawer() {
                       onClick={clearCart}
                       className="w-full text-muted-foreground hover:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t('Clear Cart', 'مسح السلة')}
+                      <Trash2 className="h-4 w-4 me-2" />
+                      {t('Clear Cart', 'إفراغ السلة')}
                     </Button>
                   )}
                 </div>

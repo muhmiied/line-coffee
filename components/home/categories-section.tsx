@@ -143,6 +143,8 @@ export function CategoriesSection() {
                     src={category.image}
                     alt={t(category.nameEn, category.nameAr)}
                     fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 14vw"
+                    loading="lazy"
                     className="object-cover brightness-[0.82] contrast-[1.08] saturate-[1.04] transition-all duration-700 group-hover:scale-110 group-hover:brightness-[0.9]"
                     style={{ objectPosition: category.objectPosition || 'center center' }}
                   />

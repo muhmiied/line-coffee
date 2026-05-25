@@ -312,7 +312,7 @@ export default function ContactPage() {
                     <div className="h-5 w-5 border-2 border-[#0B0806]/40 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <Send className="h-4 w-4 mr-2" />
+                      <Send className="h-4 w-4 me-2" />
                       {t('Send Message', 'إرسال الرسالة')}
                     </>
                   )}

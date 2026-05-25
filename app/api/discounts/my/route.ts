@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
   const supabase = await createClient()
@@ -9,8 +10,11 @@ export async function GET() {
   if (!user?.email) return NextResponse.json({ discount: null })
 
   try {
+    const admin = createAdminClient()
+    if (!admin) return NextResponse.json({ discount: null })
+
     // Find active discounts assigned to this user's email
-    const { data } = await supabase
+    const { data } = await admin
       .from('discounts')
       .select('code, type, value, expires_at, assigned_emails')
       .eq('is_active', true)

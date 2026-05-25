@@ -226,7 +226,7 @@ export function HeroSection() {
             className="object-cover"
             sizes="100vw"
             style={{ objectPosition: currentHeroSlide.objectPosition || 'center center', ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
-            priority
+            priority={currentSlide === 0}
           />
 
           {/* Cinematic grading stack */}

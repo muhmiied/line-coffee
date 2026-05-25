@@ -46,7 +46,7 @@ type SidebarCategory = {
 
 // ─── Fallback categories shown when DB fetch returns empty ────────────────────
 const FALLBACK_DB_CATEGORIES: DbCategory[] = [
-  { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'القهوة التركي',    image_url: null },
+  { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'القهوة التركية',   image_url: null },
   { id: 'esp', slug: 'espresso',        name_en: 'Espresso',         name_ar: 'الإسبريسو',        image_url: null },
   { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'القهوة بالنكهات', image_url: null },
   { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',        image_url: null },
