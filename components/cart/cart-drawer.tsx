@@ -5,12 +5,14 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getCustomItemMaxQuantity, getCustomStockIssue } from '@/lib/custom-stock'
 import { useLanguage } from '@/lib/context/language'
 import { calculateShippingCost, getFreeShippingRemaining } from '@/lib/config/shipping'
 import { useFreeShippingThreshold } from '@/lib/hooks/use-free-shipping-threshold'
 import { useCartStore } from '@/lib/store/cart'
 import type { CartItem } from '@/lib/store/cart'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 type BlendBeanDetail = {
   nameEn: string
@@ -120,6 +122,12 @@ export function CartDrawer() {
                 <div className="space-y-4">
                   {items.map((item) => {
                     const espressoBlendBeans = getEspressoBlendBeans(item)
+                    const maxQuantity = Math.min(
+                      item.stock_quantity ?? Infinity,
+                      getCustomItemMaxQuantity(items, item),
+                    )
+                    const canIncrease = item.quantity < maxQuantity
+                    const increaseIssue = getCustomStockIssue(items, item, item.quantity + 1)
 
                     return (
                     <motion.div
@@ -186,7 +194,17 @@ export function CartDrawer() {
                               variant="outline"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => {
+                                if (!canIncrease || increaseIssue) {
+                                  if (!increaseIssue) {
+                                    toast.error(t('Not enough stock available', 'المخزون المتاح لا يكفي'))
+                                    return
+                                  }
+                                  toast.error(t(increaseIssue.messageEn, increaseIssue.messageAr))
+                                  return
+                                }
+                                updateQuantity(item.id, item.quantity + 1)
+                              }}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>

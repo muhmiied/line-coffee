@@ -17,10 +17,5 @@ export async function GET() {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
-  const availableBeans = (data || []).filter((bean) =>
-    bean.is_manually_out_of_stock !== true &&
-    Number(bean.stock_quantity ?? 0) > 0
-  )
-
-  return NextResponse.json({ success: true, data: availableBeans })
+  return NextResponse.json({ success: true, data: data || [] })
 }

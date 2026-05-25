@@ -8,8 +8,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getCustomStockIssue, type CustomStockCartItem } from '@/lib/custom-stock'
 import { createClient } from '@/lib/supabase/server'
 import { updateCartItem, removeFromCart } from '@/lib/services'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function isUuid(value: string) {
+  return UUID_RE.test(value)
+}
 
 // تحديث كمية عنصر
 export async function PATCH(
@@ -36,6 +43,41 @@ export async function PATCH(
         { success: false, error: 'Quantity is required' },
         { status: 400 }
       )
+    }
+
+    if (quantity > 0) {
+      const { data: cartRows, error: cartRowsError } = await supabase
+        .from('cart_items')
+        .select('id, client_item_id, size, quantity, customizations')
+        .eq('user_id', user.id)
+
+      if (cartRowsError) throw cartRowsError
+
+      const targetRow = (cartRows || []).find((row) =>
+        isUuid(itemId) ? row.id === itemId : row.client_item_id === itemId
+      )
+
+      if (targetRow) {
+        const storeItems: CustomStockCartItem[] = (cartRows || []).map((row) => ({
+          id: row.client_item_id || row.id,
+          size: row.size || undefined,
+          quantity: Number(row.quantity || 1),
+          customizations: row.customizations && typeof row.customizations === 'object'
+            ? row.customizations as Record<string, unknown>
+            : undefined,
+        }))
+        const targetItem = storeItems.find((item) => item.id === (targetRow.client_item_id || targetRow.id))
+
+        if (targetItem) {
+          const stockIssue = getCustomStockIssue(storeItems, targetItem, quantity)
+          if (stockIssue) {
+            return NextResponse.json(
+              { success: false, error: stockIssue.messageEn },
+              { status: 409 }
+            )
+          }
+        }
+      }
     }
     
     const item = await updateCartItem(itemId, user.id, quantity)

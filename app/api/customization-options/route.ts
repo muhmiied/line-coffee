@@ -73,7 +73,7 @@ export async function GET() {
       stockQuantity: Number(bean.stock_quantity ?? 0),
       lowStockThreshold: Number(bean.low_stock_threshold ?? 10),
       isManuallyOutOfStock: bean.is_manually_out_of_stock === true,
-    })).filter((bean) => bean.nameEn && bean.nameAr && bean.price > 0 && bean.isVisible && !bean.isManuallyOutOfStock && Number(bean.stockQuantity || 0) > 0)
+    })).filter((bean) => bean.nameEn && bean.nameAr && bean.price > 0 && bean.isVisible)
     : []
 
   const { data: settingsData, error: settingsError } = await admin
@@ -141,33 +141,44 @@ export async function GET() {
       flavorOptionsLoadedFromDb = true
 
       for (const row of flavorOptionRows) {
-        const baseSlug = baseUuidToSlug.get(String(row.base_id))
-        if (!baseSlug) continue  // skip orphaned rows
-        if (isRemovedFlavor(row.name_en, row.name_ar)) continue
-        if (row.is_manually_out_of_stock === true || Number(row.stock_quantity ?? 0) <= 0) continue
+      const baseSlug = baseUuidToSlug.get(String(row.base_id))
+      if (!baseSlug) continue  // skip orphaned rows
+      if (isRemovedFlavor(row.name_en, row.name_ar)) continue
 
-        const type = normalizeAdditionType(row.option_type)
-        const mapKey = `${String(row.name_en).toLowerCase()}|${type}`
+      const type = normalizeAdditionType(row.option_type)
+      const mapKey = `${String(row.name_en).toLowerCase()}|${type}`
+      const availability = {
+        stockQuantity: Number(row.stock_quantity ?? 0),
+        lowStockThreshold: Number(row.low_stock_threshold ?? 10),
+        isManuallyOutOfStock: row.is_manually_out_of_stock === true,
+      }
 
-        if (flavorOptionMap.has(mapKey)) {
-          const existing = flavorOptionMap.get(mapKey)!
-          if (!(existing.bases ?? []).includes(baseSlug)) {
-            existing.bases = [...(existing.bases ?? []), baseSlug]
-          }
-        } else {
-          flavorOptionMap.set(mapKey, {
-            id: slugifyOptionId(String(row.name_en || row.id)),
-            nameEn: String(row.name_en || ''),
-            nameAr: String(row.name_ar || ''),
-            type,
-            price: Number(row.price_delta ?? (type === 'chunks' ? 70 : 50)),
-            sortOrder: Number(row.sort_order || 0),
-            stockQuantity: Number(row.stock_quantity ?? 0),
-            lowStockThreshold: Number(row.low_stock_threshold ?? 10),
-            isManuallyOutOfStock: row.is_manually_out_of_stock === true,
-            bases: [baseSlug],
-          })
+      if (flavorOptionMap.has(mapKey)) {
+        const existing = flavorOptionMap.get(mapKey)!
+        if (!(existing.bases ?? []).includes(baseSlug)) {
+          existing.bases = [...(existing.bases ?? []), baseSlug]
         }
+        existing.availabilityByBase = {
+          ...(existing.availabilityByBase ?? {}),
+          [baseSlug]: availability,
+        }
+      } else {
+        flavorOptionMap.set(mapKey, {
+          id: slugifyOptionId(String(row.name_en || row.id)),
+          nameEn: String(row.name_en || ''),
+          nameAr: String(row.name_ar || ''),
+          type,
+          price: Number(row.price_delta ?? (type === 'chunks' ? 70 : 50)),
+          sortOrder: Number(row.sort_order || 0),
+          stockQuantity: availability.stockQuantity,
+          lowStockThreshold: availability.lowStockThreshold,
+          isManuallyOutOfStock: availability.isManuallyOutOfStock,
+          availabilityByBase: {
+            [baseSlug]: availability,
+          },
+          bases: [baseSlug],
+        })
+      }
       }
     }
   }

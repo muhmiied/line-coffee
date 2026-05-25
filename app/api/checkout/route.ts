@@ -9,6 +9,7 @@ import {
   parseFreeShippingActive,
   parseFreeShippingThreshold,
 } from '@/lib/config/shipping'
+import { packageSizeToKg } from '@/lib/custom-stock'
 import { slugifyOptionId } from '@/lib/config/customization'
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -82,6 +83,12 @@ type FlavorBaseInventoryRow = {
   options: CustomInventoryRow[] | null
 }
 
+type CustomUsageEntry = {
+  requiredKg: number
+  stockKg: number
+  name: string
+}
+
 async function getFreeShippingRule(admin: AdminClient): Promise<{ threshold: number; active: boolean }> {
   const { data, error } = await admin
     .from('site_settings')
@@ -150,11 +157,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function customItemUnavailable(row: CustomInventoryRow | undefined, quantity: number) {
+function formatKg(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
+function customItemUnavailable(row: CustomInventoryRow | undefined, requiredKg: number) {
   return !row ||
     row.is_active === false ||
     row.is_manually_out_of_stock === true ||
-    Number(row.stock_quantity ?? 0) < quantity
+    Number(row.stock_quantity ?? 0) + 0.0001 < requiredKg
 }
 
 function customItemName(row: CustomInventoryRow | undefined, fallback: string) {
@@ -168,16 +179,51 @@ function readCustomSelectionIds(value: unknown) {
     .filter(Boolean)
 }
 
+function readCustomSelectionRows(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.filter(isRecord)
+}
+
+function addCustomUsage(
+  usage: Map<string, CustomUsageEntry>,
+  key: string,
+  row: CustomInventoryRow,
+  requiredKg: number,
+) {
+  const current = usage.get(key)
+  const stockKg = Number(row.stock_quantity ?? 0)
+  const name = customItemName(row, 'Selected item')
+
+  if (current) {
+    current.requiredKg += requiredKg
+    current.stockKg = Math.min(current.stockKg, stockKg)
+  } else {
+    usage.set(key, { requiredKg, stockKg, name })
+  }
+
+  const next = usage.get(key)!
+  if (next.requiredKg - next.stockKg > 0.0001) {
+    return `${next.name} has only ${formatKg(next.stockKg)}kg available`
+  }
+
+  return null
+}
+
 async function validateCustomItemAvailability(
   admin: AdminClient,
   customizations: Record<string, unknown> | undefined,
   quantity: number,
+  size: string,
+  usage: Map<string, CustomUsageEntry>,
 ): Promise<{ error: string; status: number } | null> {
   if (!customizations) return null
+  const itemWeightKg = packageSizeToKg(size)
+  if (itemWeightKg <= 0) return { error: 'Custom item has an invalid weight', status: 400 }
 
   if (customizations.type === 'espresso-blend') {
-    const beanIds = readCustomSelectionIds(customizations.beans)
-    if (beanIds.length === 0) return { error: 'Custom espresso blend is missing bean selections', status: 400 }
+    const beanRows = readCustomSelectionRows(customizations.beans)
+    const beanIds = beanRows.map((row) => String(row.id || '').trim()).filter(Boolean)
+    if (beanRows.length === 0 || beanIds.length === 0) return { error: 'Custom espresso blend is missing bean selections', status: 400 }
 
     const { data, error } = await admin
       .from('coffee_beans')
@@ -191,11 +237,19 @@ async function validateCustomItemAvailability(
       beanMap.set(slugifyOptionId(String(row.name_en || row.id)), row)
     }
 
-    for (const beanId of beanIds) {
+    const fallbackPercent = beanRows.length > 0 ? 100 / beanRows.length : 0
+    for (const [index, beanRow] of beanRows.entries()) {
+      const beanId = String(beanRow.id || '').trim()
       const bean = beanMap.get(beanId)
-      if (customItemUnavailable(bean, quantity)) {
+      const percent = Number(beanRow.percent)
+      const requiredKg = itemWeightKg * quantity * (Number.isFinite(percent) ? Math.max(0, percent) : fallbackPercent) / 100
+
+      if (customItemUnavailable(bean, requiredKg)) {
         return { error: `${customItemName(bean, 'A selected espresso bean')} is currently unavailable`, status: 409 }
       }
+
+      const usageError = bean ? addCustomUsage(usage, `bean:${bean.id}`, bean, requiredKg) : null
+      if (usageError) return { error: usageError, status: 409 }
     }
   }
 
@@ -244,9 +298,14 @@ async function validateCustomItemAvailability(
 
     for (const flavorId of flavorIds) {
       const flavor = optionMap.get(flavorId)
-      if (customItemUnavailable(flavor, quantity)) {
+      const requiredKg = itemWeightKg * quantity
+
+      if (customItemUnavailable(flavor, requiredKg)) {
         return { error: `${customItemName(flavor, 'A selected flavor')} is currently unavailable`, status: 409 }
       }
+
+      const usageError = flavor ? addCustomUsage(usage, `flavor:${flavor.id}`, flavor, requiredKg) : null
+      if (usageError) return { error: usageError, status: 409 }
     }
   }
 
@@ -544,6 +603,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sanitizedItems: SanitizedCheckoutItem[] = []
+    const customUsage = new Map<string, CustomUsageEntry>()
 
     for (const item of inputItems) {
       const quantity = toQuantity(item.quantity)
@@ -609,7 +669,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Invalid custom item price' }, { status: 400 })
       }
 
-      const customAvailabilityError = await validateCustomItemAvailability(admin, baseCustomizations, quantity)
+      const customAvailabilityError = await validateCustomItemAvailability(admin, baseCustomizations, quantity, size, customUsage)
       if (customAvailabilityError) {
         return NextResponse.json(
           { success: false, error: customAvailabilityError.error },

@@ -36,6 +36,11 @@ export type FlavorAdditionOption = {
   stockQuantity?: number
   lowStockThreshold?: number
   isManuallyOutOfStock?: boolean
+  availabilityByBase?: Record<string, {
+    stockQuantity?: number
+    lowStockThreshold?: number
+    isManuallyOutOfStock?: boolean
+  }>
 }
 
 export const CUSTOM_BLEND_BEANS_KEY = 'custom_blend_beans'

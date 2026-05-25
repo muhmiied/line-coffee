@@ -2,7 +2,12 @@
 
 You are working on the Line Coffee project.
 
-This is a premium coffee brand website built with Next.js, React, TailwindCSS, and modern UI principles.
+This is a premium coffee brand website built with:
+- Next.js
+- React
+- TypeScript
+- TailwindCSS
+- Supabase
 
 The website aesthetic is:
 - Premium
@@ -11,6 +16,9 @@ The website aesthetic is:
 - Elegant
 - Warm
 - Luxury coffee brand
+
+IMPORTANT:
+Minimize token and limit usage whenever possible.
 
 ---
 
@@ -62,7 +70,7 @@ English Font:
 Playfair Display
 
 Arabic Font:
-VLAX
+Cairo
 
 Typography Rules:
 - Elegant heading hierarchy
@@ -109,6 +117,11 @@ Rules:
 - Modify only related files
 - Preserve existing architecture
 - Do not rewrite working sections unnecessarily
+- Use minimal patches only
+- Never rewrite full files unless explicitly requested
+- Read only files directly related to the task
+- Avoid repository-wide scans
+- Avoid unnecessary explanations
 
 ---
 
@@ -164,12 +177,13 @@ Rules:
 # Before Making Changes
 
 You MUST:
-1. Analyze the issue first
-2. Explain the root cause
-3. Describe the planned fix
-4. Modify only necessary files
-5. Preserve existing branding
-6. Avoid unrelated edits
+1. Analyze briefly first
+2. Identify exact files needed
+3. Explain root cause in short form
+4. Describe minimal fix only
+5. Modify only necessary files
+6. Preserve existing branding
+7. Avoid unrelated edits
 
 Do NOT immediately rewrite sections.
 
@@ -179,9 +193,9 @@ Do NOT immediately rewrite sections.
 
 Always provide:
 - Modified files
-- Summary of changes
+- Short summary
 - Why the fix works
-- Responsive considerations
+- Test steps only
 
 ---
 
@@ -194,6 +208,8 @@ DO NOT:
 - Add random dependencies
 - Perform unnecessary refactors
 - Change unrelated components
+- Rewrite entire files unnecessarily
+- Scan the entire repository without permission
 
 ALWAYS:
 - Think visually before coding
@@ -201,3 +217,22 @@ ALWAYS:
 - Maintain premium aesthetics
 - Keep the UI polished
 - Preserve consistency
+- Keep responses concise
+- Prefer patch-style edits
+- Return only changed sections when possible
+
+---
+
+# Token Saving Rules
+
+IMPORTANT:
+- Minimize token usage whenever possible
+- Keep responses concise
+- Avoid long explanations
+- Do not repeat code unnecessarily
+- Return only changed sections when possible
+- Prefer patch-style edits over full rewrites
+- Ask before reading many files
+- Avoid unnecessary audits
+- Avoid unnecessary refactors
+- Do not inspect unrelated files

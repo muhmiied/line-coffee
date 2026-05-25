@@ -39,10 +39,8 @@ export async function GET() {
     .map(base => ({
       ...base,
       options: (base.options || [])
-        .filter((option: { is_active: boolean; name_en?: string; name_ar?: string; stock_quantity?: number; is_manually_out_of_stock?: boolean }) =>
+        .filter((option: { is_active: boolean; name_en?: string; name_ar?: string }) =>
           option.is_active !== false &&
-          option.is_manually_out_of_stock !== true &&
-          Number(option.stock_quantity ?? 0) > 0 &&
           !isRemovedFlavor(option)
         )
         .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order),

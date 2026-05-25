@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { getCustomItemMaxQuantity } from '@/lib/custom-stock'
 
 export interface CartItem {
   id: string
@@ -94,23 +95,36 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (item) => {
         const quantityToAdd = item.quantity || 1
-        const maxQty = item.stock_quantity ?? Infinity
-        set((state) => {
-          const existingIndex = state.items.findIndex((i) => i.id === item.id)
+        const state = get()
+        const existingIndex = state.items.findIndex((i) => i.id === item.id)
+        const existingItem = existingIndex >= 0 ? state.items[existingIndex] : null
+        const desiredQty = (existingItem?.quantity ?? 0) + quantityToAdd
+        const customMaxQty = getCustomItemMaxQuantity(
+          state.items,
+          { ...(existingItem ?? item), ...item, quantity: desiredQty },
+        )
+        const maxQty = Math.min(item.stock_quantity ?? Infinity, customMaxQty)
+        const nextQty = Math.min(desiredQty, maxQty)
+        const syncDelta = existingItem ? Math.max(0, nextQty - existingItem.quantity) : nextQty
 
+        if (nextQty <= 0 || syncDelta <= 0) {
+          set({ isOpen: true })
+          return
+        }
+
+        set((state) => {
           if (existingIndex >= 0) {
             const newItems = [...state.items]
-            const newQty = Math.min(newItems[existingIndex].quantity + quantityToAdd, maxQty)
-            newItems[existingIndex] = { ...newItems[existingIndex], quantity: newQty, stock_quantity: item.stock_quantity }
+            newItems[existingIndex] = { ...newItems[existingIndex], ...item, quantity: nextQty, stock_quantity: item.stock_quantity }
             return { items: newItems, isOpen: true }
           }
 
           return {
-            items: [...state.items, { ...item, quantity: Math.min(quantityToAdd, maxQty) }],
+            items: [...state.items, { ...item, quantity: nextQty }],
             isOpen: true,
           }
         })
-        syncAddItem(item, Math.min(quantityToAdd, maxQty), get().ownerId)
+        syncAddItem(item, syncDelta, get().ownerId)
       },
 
       removeItem: (id) => {
@@ -126,17 +140,27 @@ export const useCartStore = create<CartStore>()(
           return
         }
 
+        const state = get()
+        const target = state.items.find((i) => i.id === id)
+        if (!target) return
+
+        const customMaxQty = getCustomItemMaxQuantity(state.items, target)
+        const maxQty = Math.min(target.stock_quantity ?? Infinity, customMaxQty)
+        const capped = Math.min(quantity, maxQty)
+
+        if (capped <= 0) {
+          get().removeItem(id)
+          return
+        }
+
         set((state) => {
-          const target = state.items.find((i) => i.id === id)
-          const maxQty = target?.stock_quantity ?? Infinity
-          const capped = Math.min(quantity, maxQty)
           return {
             items: state.items.map((item) =>
               item.id === id ? { ...item, quantity: capped } : item
             ),
           }
         })
-        syncQuantity(id, quantity, get().ownerId)
+        syncQuantity(id, capped, get().ownerId)
       },
 
       clearCart: () => {

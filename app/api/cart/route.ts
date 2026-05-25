@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getCustomStockIssue, type CustomStockCartItem } from '@/lib/custom-stock'
 import { createClient } from '@/lib/supabase/server'
 import { getCartItems, getStoreCartItems, addToCart, mergeCartItems, clearCart, getCartTotal } from '@/lib/services'
 
@@ -146,6 +147,29 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const clientId = String(clientItemId || productId)
+    const existingStoreItems = await getStoreCartItems(user.id)
+    const targetQuantity = Number(existingStoreItems.find((item) => item.id === clientId)?.quantity || 0) + Number(quantity || 1)
+    const stockIssue = getCustomStockIssue(
+      existingStoreItems,
+      {
+        id: clientId,
+        size: String(size),
+        quantity,
+        customizations: customizations && typeof customizations === 'object'
+          ? customizations as Record<string, unknown>
+          : undefined,
+      },
+      targetQuantity,
+    )
+
+    if (stockIssue) {
+      return NextResponse.json(
+        { success: false, error: stockIssue.messageEn },
+        { status: 409 }
+      )
+    }
     
     const item = await addToCart({
       userId: user.id,
@@ -212,6 +236,24 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json(
           { success: false, error: validationError },
           { status: 400 }
+        )
+      }
+    }
+
+    const customStockItems: CustomStockCartItem[] = items.map((item: Record<string, unknown>) => ({
+      id: String(item?.id || item?.product_id || ''),
+      size: typeof item?.size === 'string' ? item.size : undefined,
+      quantity: Number(item?.quantity || 1),
+      customizations: item?.customizations && typeof item.customizations === 'object'
+        ? item.customizations as Record<string, unknown>
+        : undefined,
+    }))
+    for (const item of customStockItems) {
+      const stockIssue = getCustomStockIssue(customStockItems, item, item.quantity)
+      if (stockIssue) {
+        return NextResponse.json(
+          { success: false, error: stockIssue.messageEn },
+          { status: 409 }
         )
       }
     }
