@@ -55,6 +55,7 @@ import {
   type VisualPreset,
   type WebsiteSectionConfig,
 } from '@/lib/media'
+import { HeroBackground } from '@/components/home/hero-background'
 import { cn } from '@/lib/utils'
 
 type EditorSlide = SiteMediaItem & {
@@ -349,6 +350,8 @@ function DraggableElement({
   children,
   onSelect,
   onLayoutChange,
+  onScaleChange,
+  currentScale,
 }: {
   id: string
   layout: SectionBuilderLayout
@@ -358,6 +361,8 @@ function DraggableElement({
   children: ReactNode
   onSelect: (id: string) => void
   onLayoutChange: (layout: SectionBuilderLayout) => void
+  onScaleChange?: (scale: number) => void
+  currentScale?: number
 }) {
   const position = layout.elements?.[id] || {}
   const x = Number(position.x || 0)
@@ -390,6 +395,28 @@ function DraggableElement({
     window.addEventListener('pointerup', stop)
   }
 
+  const startScaleDrag = (event: ReactPointerEvent<HTMLDivElement>, xSign: 1 | -1) => {
+    if (!editable || !onScaleChange) return
+    event.preventDefault()
+    event.stopPropagation()
+
+    const startX = event.clientX
+    const startScale = currentScale ?? 1
+
+    const move = (moveEvent: PointerEvent) => {
+      const delta = (moveEvent.clientX - startX) * xSign / 200
+      onScaleChange(Math.min(1.6, Math.max(0.6, startScale + delta)))
+    }
+
+    const stop = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', stop)
+    }
+
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', stop)
+  }
+
   return (
     <div
       className={cn('relative transition-transform', editable && 'rounded-xl', editable && selected && 'ring-1 ring-[#D6A373]/70', className)}
@@ -409,6 +436,16 @@ function DraggableElement({
         >
           <Move className="h-3.5 w-3.5" />
         </button>
+      )}
+      {editable && selected && onScaleChange && (
+        <>
+          {/* TL: drag left=shrink, drag right=grow — avoids Move button at top-right */}
+          <div onPointerDown={(e) => startScaleDrag(e, -1)} className="absolute -left-2 -top-2 z-20 h-3 w-3 cursor-nwse-resize rounded-full border-2 border-[#D6A373] bg-[#0B0806]" title="Scale" />
+          {/* BL */}
+          <div onPointerDown={(e) => startScaleDrag(e, -1)} className="absolute -bottom-2 -left-2 z-20 h-3 w-3 cursor-nesw-resize rounded-full border-2 border-[#D6A373] bg-[#0B0806]" title="Scale" />
+          {/* BR: drag right=grow */}
+          <div onPointerDown={(e) => startScaleDrag(e, 1)}  className="absolute -bottom-2 -right-2 z-20 h-3 w-3 cursor-nwse-resize rounded-full border-2 border-[#D6A373] bg-[#0B0806]" title="Scale" />
+        </>
       )}
       {children}
     </div>
@@ -445,7 +482,7 @@ function SectionPreview({
   const eyebrow = getContentText(content, language, 'eyebrow', section.labelEn)
   const subtitle = getContentText(content, language, 'subtitle', section.defaultSubtitleEn)
   const body = getContentText(content, language, 'body', subtitle)
-  const buttonText = getContentText(content, language, 'button_text', section.defaultButtonTextEn || 'Shop Now')
+  const buttonText = getContentText(content, language, 'button_text', language === 'ar' ? 'تسوق الآن' : (section.defaultButtonTextEn || 'Shop Now'))
   const overlayOpacity = getMediaOverlayOpacity(slide, 0.55)
   const fx = getVisualEffects(slide)
   const hasFx = Object.keys(fx).length > 0
@@ -468,6 +505,14 @@ function SectionPreview({
   }
 
   const commitText = (key: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text', value: string) => {
+    // Guard: never save pure-English text into an Arabic field.
+    // This prevents the editor from corrupting AR content when the EN fallback
+    // is displayed in the textarea and the user blurs without actually typing Arabic.
+    if (language === 'ar' && value && !/[؀-ۿ]/.test(value)) {
+      const enVal = content[contentField('en', key)]
+      if (enVal === value) return
+    }
+
     onPatchContent({ [contentField(language, key)]: value } as Partial<SectionBuilderContent>)
 
     if (key === 'title') onPatch(language === 'ar' ? { title_ar: value } : { title_en: value })
@@ -496,10 +541,15 @@ function SectionPreview({
 
   // ── Hero template — same cinematic rendering as hero-section.tsx ──────────
   if (section.editorTemplate === 'hero') {
-    const heroStats = stats.length > 0 ? stats : []
+    const heroStats = stats.length > 0 ? stats : [
+      { id: 'countries', value: '15+', label_en: 'Countries Sourced', label_ar: 'دولة مصدر' },
+      { id: 'customers', value: '50K+', label_en: 'Happy Customers', label_ar: 'عميل سعيد' },
+      { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
+    ]
     const isRtl = language === 'ar'
     const previewTitleScale = typeof content.title_scale === 'number' ? Math.min(1.6, Math.max(0.6, content.title_scale)) : 1
     const previewSubtitleScale = typeof content.subtitle_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.subtitle_scale)) : 1
+    const previewStatsScale = typeof content.stats_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.stats_scale)) : 1
     return (
       <div
         className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/18 shadow-2xl transition-all', deviceClass(device))}
@@ -507,44 +557,22 @@ function SectionPreview({
         onDrop={handleDrop}
       >
         <div
-          className={cn('relative flex flex-col items-center justify-center overflow-hidden', device === 'mobile' ? 'min-h-[680px] px-4 py-20' : 'min-h-[580px] px-6 py-16')}
+          className={cn(
+            'relative flex items-center overflow-hidden',
+            device === 'mobile' ? 'min-h-[640px] px-4 py-16' :
+            device === 'tablet' ? 'min-h-[520px] px-6 py-12' :
+            'aspect-[16/9] min-h-[620px] px-8'
+          )}
           style={{ background: '#0B0806' }}
         >
-          {/* Background image with visual effects filter */}
-          <img
-            src={image}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ ...sharedStyle, ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
-          />
-
-          {/* Cinematic grading stack — identical to hero-section.tsx */}
-          {hasFx
-            ? <div className="absolute inset-0" style={{ background: overlayGrad }} />
-            : <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
-          }
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
-          {fxVignette > 0.05
-            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />
-            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
-          }
-          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
-          {fxGlow > 0.05
-            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />
-            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
-          }
-          {fxGrain > 0.05 && (
-            <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />
-          )}
-          {/* Horizontal side gradient — matches hero-section.tsx */}
-          <div
-            className={cn(
-              'absolute inset-0',
-              isRtl
-                ? 'bg-[linear-gradient(270deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
-                : 'bg-[linear-gradient(90deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
-            )}
+          {/* ── Shared cinematic background (same component as live hero) ── */}
+          <HeroBackground
+            image={image}
+            objectPosition={getMediaObjectPosition(slide)}
+            overlayOpacity={overlayOpacity}
+            visualEffects={fx}
+            isRtl={isRtl}
+            useImgTag
           />
 
           {/* Slide position indicator (right side, visual only) */}
@@ -554,8 +582,9 @@ function SectionPreview({
             <div className="h-1.5 w-1.5 rounded-full bg-white/30" />
           </div>
 
-          {/* Hero content — same layout as hero-section.tsx */}
-          <div className={cn('relative z-10 flex w-full', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
+          {/* ── Hero content — mirrors live hero's container › max-w-7xl › max-w-[35rem] ── */}
+          <div className="relative z-10 w-full px-4">
+            <div dir={isRtl ? 'rtl' : 'ltr'} className={cn('mx-auto flex max-w-7xl', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
           <DraggableElement
             id="main-copy"
             layout={layout}
@@ -563,6 +592,8 @@ function SectionPreview({
             selected={selectedElement === 'main-copy'}
             onSelect={onSelectElement}
             onLayoutChange={onPatchLayout}
+            onScaleChange={(s) => onPatchContent({ title_scale: s })}
+            currentScale={previewTitleScale}
             className="w-full max-w-[35rem]"
           >
             {/* Headline */}
@@ -592,7 +623,7 @@ function SectionPreview({
               style={previewSubtitleScale !== 1 ? { transform: `scale(${previewSubtitleScale})`, transformOrigin: isRtl ? 'top right' : 'top left', display: 'block' } : undefined}
             />
 
-            {/* CTA button */}
+            {/* CTA buttons */}
             <div className={cn('mt-8 flex flex-col gap-3 sm:flex-row', isRtl ? 'items-end justify-end' : 'items-start justify-start')}>
               <div
                 className="inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold tracking-wide"
@@ -606,11 +637,21 @@ function SectionPreview({
                   className="text-[#0B0806]"
                 />
               </div>
+              <div
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold tracking-wide"
+                style={{ background: 'rgba(182,136,94,0.08)', color: '#D6A373', border: '1px solid rgba(182,136,94,0.35)', backdropFilter: 'blur(8px)' }}
+              >
+                {language === 'ar' ? 'قصتنا' : 'Our Story'}
+              </div>
             </div>
 
             {/* Stats row — bottom, matches hero-section.tsx */}
             {heroStats.length > 0 && (
-              <div className={cn('mt-10 grid grid-cols-3 gap-4 border-t border-[#B6885E]/22 pt-6', isRtl && 'direction-rtl')}>
+              <div
+                dir={isRtl ? 'rtl' : 'ltr'}
+                className="mt-10 grid grid-cols-3 gap-4 border-t border-[#B6885E]/22 pt-6"
+                style={previewStatsScale !== 1 ? { transform: `scale(${previewStatsScale})`, transformOrigin: isRtl ? 'top right' : 'top left' } : undefined}
+              >
                 {heroStats.slice(0, 3).map((stat) => (
                   <div key={stat.id}>
                     <EditableText
@@ -633,6 +674,7 @@ function SectionPreview({
             )}
           </DraggableElement>
           </div>
+        </div>
         </div>
       </div>
     )
@@ -1408,6 +1450,7 @@ export default function BannersPage() {
             <button
               type="button"
               onClick={closeEditor}
+              title="Back to sections"
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/55 transition hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -1444,6 +1487,7 @@ export default function BannersPage() {
                     key={item.id}
                     type="button"
                     onClick={() => setDevice(item.id as PreviewDevice)}
+                    title={item.id.charAt(0).toUpperCase() + item.id.slice(1)}
                     className={cn('flex h-8 w-9 items-center justify-center rounded-lg transition', device === item.id ? 'bg-[#D6A373] text-black' : 'text-white/45 hover:text-white')}
                   >
                     <Icon className="h-4 w-4" />
@@ -1471,7 +1515,7 @@ export default function BannersPage() {
                 <p className="text-sm font-bold text-[#F5E6D8]">{t('Slides', 'Slides')}</p>
                 <p className="text-xs text-[#D6B79A]/45">{slides.length} {t('items', 'items')}</p>
               </div>
-              <button type="button" onClick={addSlide} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black">
+              <button type="button" onClick={addSlide} title="Add slide" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black">
                 <Plus className="h-4 w-4" />
               </button>
             </div>
@@ -1568,11 +1612,13 @@ export default function BannersPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Slide Animation', 'Slide Animation')}</p>
+                <details className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Slide Animation', 'Slide Animation')}</summary>
+                  <div className="mt-3">
                   <select
                     value={selectedSlide.animation_type || 'fade'}
                     onChange={(event) => patchSelected({ animation_type: event.target.value })}
+                    title="Animation type"
                     className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/75 outline-none focus:border-[#D6A373]/45"
                   >
                     <option value="fade">Fade</option>
@@ -1589,9 +1635,11 @@ export default function BannersPage() {
                     step={500}
                     value={Number(selectedSlide.animation_duration || 6000)}
                     onChange={(event) => patchSelected({ animation_duration: Number(event.target.value) })}
+                    title="Slide duration"
                     className="w-full accent-[#D6A373]"
                   />
-                </div>
+                  </div>
+                </details>
 
                 <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Replace Image', 'Replace Image')}</p>
@@ -1621,6 +1669,7 @@ export default function BannersPage() {
                     <select
                       value={selectedSlide.usage_area || 'category:turkish-coffee'}
                       onChange={(event) => patchSelected({ usage_area: event.target.value, media_type: 'category' })}
+                      title="Target category"
                       className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/75 outline-none focus:border-[#D6A373]/45"
                     >
                       {MEDIA_USAGE_OPTIONS.filter((option) => option.mediaType === 'category').map((option) => (
@@ -1632,9 +1681,9 @@ export default function BannersPage() {
                   </div>
                 )}
 
-                <div>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Image Position', 'Image Position')}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                <details className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Image Position', 'Image Position')}</summary>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     {OBJECT_POSITION_OPTIONS.map((option) => (
                       <button
                         key={option.value}
@@ -1653,7 +1702,7 @@ export default function BannersPage() {
                       </button>
                     ))}
                   </div>
-                </div>
+                </details>
 
                 {selectedElementId && (
                   <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
@@ -1713,7 +1762,7 @@ export default function BannersPage() {
                   </div>
                 )}
 
-                <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group" open>
+                <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group">
                   <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">
                     {t('Visual Effects', 'Visual Effects')}
                   </summary>

@@ -11,22 +11,26 @@ import { cn } from '@/lib/utils'
 import { WordByWord } from '@/components/ui/motion-primitives'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
 import {
-  buildEffectsFilter,
-  buildOverlayGradient,
   getMediaObjectPosition,
   getMediaOverlayOpacity,
   getSectionBuilderContent,
   getSectionBuilderLayout,
   getVisualEffects,
   getWebsiteSection,
-  GRAIN_SVG,
   type SectionBuilderLayout,
   type SectionStatBlock,
   type SiteMediaItem,
   type VisualEffects,
 } from '@/lib/media'
+import { HeroBackground } from '@/components/home/hero-background'
 
 const heroSectionConfig = getWebsiteSection('hero')
+
+// Only trust a string as Arabic if it actually contains Arabic characters.
+// Prevents English text saved-as-Arabic (editor bug) from overriding proper fallbacks.
+function realArabic(s: string | null | undefined): string {
+  return s && /[؀-ۿ]/.test(s) ? s : ''
+}
 
 type HeroSlide = {
   image: string
@@ -122,9 +126,9 @@ export function HeroSection() {
             return {
               image: item.image_url,
               headingEn: content.title_en || item.title_en || fallbackSlides[index % fallbackSlides.length].headingEn,
-              headingAr: content.title_ar || item.title_ar || fallbackSlides[index % fallbackSlides.length].headingAr,
+              headingAr: realArabic(content.title_ar) || realArabic(item.title_ar) || fallbackSlides[index % fallbackSlides.length].headingAr,
               subheadingEn: content.subtitle_en || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingEn,
-              subheadingAr: content.subtitle_ar || item.subtitle_ar || fallbackSlides[index % fallbackSlides.length].subheadingAr,
+              subheadingAr: realArabic(content.subtitle_ar) || realArabic(item.subtitle_ar) || fallbackSlides[index % fallbackSlides.length].subheadingAr,
               altEn: item.alt_en,
               altAr: item.alt_ar,
               objectPosition: getMediaObjectPosition(item),
@@ -162,7 +166,7 @@ export function HeroSection() {
   const subheadingText = currentHeroSlide ? t(currentHeroSlide.subheadingEn, currentHeroSlide.subheadingAr) : ''
   const headingDir = /[؀-ۿ]/.test(headingText) ? 'rtl' : 'ltr'
   const imageAlt = currentHeroSlide ? t(currentHeroSlide.altEn || 'Coffee background', currentHeroSlide.altAr || currentHeroSlide.altEn || 'Coffee background') : 'Coffee background'
-  const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Now', currentHeroSlide.buttonTextAr || currentHeroSlide.buttonTextEn || 'تسوق الآن') : ''
+  const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Now', realArabic(currentHeroSlide.buttonTextAr) || 'تسوق الآن') : ''
   const primaryButtonHref = currentHeroSlide?.buttonLink || '/products'
   const currentLayout = currentHeroSlide?.layout
   const titleScale = currentHeroSlide?.titleScale ?? 1
@@ -175,13 +179,6 @@ export function HeroSection() {
         { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
       ]
 
-  const currentFx = currentHeroSlide?.visualEffects || {}
-  const hasFx = Object.keys(currentFx).length > 0
-  const imgFilter = buildEffectsFilter(currentFx)
-  const overlayGrad = buildOverlayGradient(currentFx.gradient_type, currentFx.overlay_color, currentHeroSlide?.overlayOpacity ?? 0.6)
-  const fxVignette = Number(currentFx.vignette ?? 0)
-  const fxGlow = Number(currentFx.glow ?? 0)
-  const fxGrain = Number(currentFx.grain ?? 0)
 
   if (!currentHeroSlide || !slides) {
     return (
@@ -220,48 +217,15 @@ export function HeroSection() {
           style={{ y }}
           className="absolute inset-0 z-0"
         >
-          <Image
-            src={currentHeroSlide.image}
-            alt={imageAlt}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            style={{ objectPosition: currentHeroSlide.objectPosition || (dir === 'rtl' ? 'left center' : 'right center'), ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
+          <HeroBackground
+            image={currentHeroSlide.image}
+            imageAlt={imageAlt}
+            objectPosition={currentHeroSlide.objectPosition || (dir === 'rtl' ? 'left center' : 'right center')}
+            overlayOpacity={currentHeroSlide.overlayOpacity ?? 0.6}
+            visualEffects={currentHeroSlide.visualEffects}
+            isRtl={dir === 'rtl'}
             priority={currentSlide === 0}
           />
-
-          {/* Cinematic grading stack */}
-          {/* 1. Dark base overlay — dynamic gradient when effects configured, solid black otherwise */}
-          {hasFx
-            ? <div className="absolute inset-0" style={{ background: overlayGrad }} />
-            : <div className="absolute inset-0 bg-black" style={{ opacity: currentHeroSlide.overlayOpacity ?? 0.6 }} />
-          }
-          {/* 2. Warm brown tone cast — luxury cinema feel */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
-          {/* 3. Vignette — admin-configured or hardcoded fallback */}
-          {fxVignette > 0.05
-            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />
-            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
-          }
-          {/* 4. Bottom lift — keeps content readable */}
-          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
-          {/* 5. Top scrim */}
-          <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
-          <div
-            className={cn(
-              'absolute inset-0',
-              dir === 'rtl'
-                ? 'bg-[linear-gradient(270deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
-                : 'bg-[linear-gradient(90deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
-            )}
-          />
-          {/* 6. Ambient gold glow — admin override or fixed */}
-          {fxGlow > 0.05
-            ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />
-            : <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
-          }
-          {/* 7. Film grain (admin-configured) */}
-          {fxGrain > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />}
 
         </motion.div>
       </AnimatePresence>
