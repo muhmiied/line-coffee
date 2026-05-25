@@ -13,6 +13,7 @@ import { WishlistDrawer } from '@/components/wishlist/wishlist-drawer'
 import { WhatsAppButton } from '@/components/ui/whatsapp-button'
 import { ScrollProgress } from '@/components/ui/scroll-progress'
 import { DiscountBanner } from '@/components/ui/discount-banner'
+import { DEFAULT_OG_IMAGE, SITE_URL } from '@/lib/seo'
 
 import './globals.css'
 
@@ -38,6 +39,7 @@ const cairo = Cairo({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Line Coffee | قهوتك بطعم مختلف',
     template: '%s | Line Coffee',
@@ -53,15 +55,20 @@ export const metadata: Metadata = {
     siteName: 'Line Coffee',
     title: 'Line Coffee | قهوتك بطعم مختلف',
     description: 'قهوة مميزة بطعم مختلف. اكتشف أجود أنواع القهوة.',
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: 'Line Coffee' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Line Coffee | قهوتك بطعم مختلف',
     description: 'قهوة مميزة بطعم مختلف. اكتشف أجود أنواع القهوة.',
+    images: [DEFAULT_OG_IMAGE],
   },
   robots: {
     index: true,
     follow: true,
+  },
+  alternates: {
+    canonical: '/',
   },
 }
 

@@ -182,10 +182,10 @@ export function CartDrawer() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-9 w-9 shrink-0"
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             >
-                              <Minus className="h-3 w-3" />
+                              <Minus className="h-3.5 w-3.5" />
                             </Button>
                             <span className="w-6 text-center text-sm font-medium">
                               {item.quantity}
@@ -193,7 +193,7 @@ export function CartDrawer() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-9 w-9 shrink-0"
                               onClick={() => {
                                 if (!canIncrease || increaseIssue) {
                                   if (!increaseIssue) {
@@ -223,7 +223,7 @@ export function CartDrawer() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive shrink-0"
                         onClick={() => removeItem(item.id)}
                       >
                         <Trash2 className="h-4 w-4" />

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createPageMetadata } from '@/lib/seo'
 import { BlogPostClient, type BlogPost } from './post-client'
 
 const BLOG_SELECT = 'id, title_ar, title_en, slug, cover_image, content_ar, content_en, excerpt_ar, excerpt_en, published_at, sort_order, created_at'
@@ -45,25 +46,27 @@ export async function generateMetadata(
   const post = await getPublishedPost(slug)
 
   if (!post) {
-    return {
+    return createPageMetadata({
       title: 'Blog Post | Line Coffee',
       description: 'Line Coffee blog article',
-    }
+      path: `/blog/${slug}`,
+    })
   }
 
   const title = `${post.title_en || post.title_ar} | Line Coffee`
-  const description = plainExcerpt(post.excerpt_en || post.content_en || post.excerpt_ar || post.content_ar)
-  const images = post.cover_image ? [{ url: post.cover_image }] : undefined
+  const description = plainExcerpt(post.excerpt_en || post.content_en || post.excerpt_ar || post.content_ar) || 'Line Coffee blog article'
 
   return {
-    title,
-    description,
-    openGraph: {
+    ...createPageMetadata({
       title,
       description,
-      images,
+      path: `/blog/${slug}`,
+      image: post.cover_image,
       type: 'article',
-    },
+    }),
+    authors: [{ name: 'Line Coffee' }],
+    title,
+    description,
   }
 }
 

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ProductDetail } from '@/components/products/product-detail'
 import { RelatedProducts } from '@/components/products/related-products'
 import type { Metadata } from 'next'
+import { createPageMetadata } from '@/lib/seo'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -19,20 +20,23 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     .single()
 
   if (!product) {
-    return {
+    return createPageMetadata({
       title: 'Product Not Found',
-    }
+      description: 'The requested Line Coffee product could not be found.',
+      path: `/products/${slug}`,
+    })
   }
 
-  return {
-    title: product.name_en,
-    description: product.description_en || `Shop ${product.name_en} - Premium artisan coffee from Line Coffee`,
-    openGraph: {
-      title: product.name_en,
-      description: product.description_en || undefined,
-      images: product.images?.[0] ? [product.images[0]] : undefined,
-    },
-  }
+  const title = `${product.name_en || product.name_ar} | Line Coffee`
+  const description = product.description_en || `Shop ${product.name_en || product.name_ar} from Line Coffee. Premium coffee delivered in Egypt.`
+  const image = Array.isArray(product.images) ? product.images[0] : null
+
+  return createPageMetadata({
+    title,
+    description,
+    path: `/products/${slug}`,
+    image,
+  })
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {

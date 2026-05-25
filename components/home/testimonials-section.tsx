@@ -148,7 +148,7 @@ export function TestimonialsSection() {
 
   return (
     <SectionReveal
-      className="cinematic-section relative overflow-hidden py-20 md:py-28"
+      className="cinematic-section relative overflow-hidden py-14 md:py-28"
       style={{ background: '#0B0806' }}
     >
       {/* Admin-controlled background image (section_key=testimonials in banners table) */}
@@ -181,7 +181,7 @@ export function TestimonialsSection() {
 
       <div className="container relative z-10 mx-auto px-4">
         {/* Section header */}
-        <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-8 flex flex-col gap-6 md:mb-12 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-xl text-center lg:text-start">
             <FadeUp>
               <div className="premium-section-kicker mx-auto mb-5 lg:mx-0">
@@ -192,7 +192,7 @@ export function TestimonialsSection() {
               </div>
             </FadeUp>
             <FadeUp>
-              <h2 className="premium-heading-shimmer font-serif text-4xl font-bold leading-[1.16] text-[#F5E6D8] md:text-5xl">
+              <h2 className="premium-heading-shimmer font-serif text-3xl font-bold leading-[1.16] text-[#F5E6D8] sm:text-4xl md:text-5xl">
                 {heading}
               </h2>
             </FadeUp>
@@ -227,7 +227,7 @@ export function TestimonialsSection() {
             return (
               <article
                 key={testimonial.id}
-                className="group relative h-[380px] overflow-hidden rounded-2xl border border-[#B6885E]/14 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-all duration-500 hover:border-[#D6A373]/30 hover:shadow-[0_32px_80px_rgba(0,0,0,0.55)] sm:h-[440px]"
+                className="group relative h-[260px] overflow-hidden rounded-2xl border border-[#B6885E]/14 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-all duration-500 hover:border-[#D6A373]/30 hover:shadow-[0_32px_80px_rgba(0,0,0,0.55)] sm:h-[360px] md:h-[440px]"
               >
                 {/* Portrait photo from testimonials.customer_avatar, or initials fallback */}
                 {testimonial.customer_avatar ? (

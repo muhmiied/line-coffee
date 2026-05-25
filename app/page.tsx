@@ -7,6 +7,13 @@ import { BlogSection } from '@/components/home/blog-section'
 import { TestimonialsSection } from '@/components/home/testimonials-section'
 import { InstagramSection } from '@/components/home/instagram-section'
 import { ContactSection } from '@/components/home/contact-section'
+import { createPageMetadata } from '@/lib/seo'
+
+export const metadata = createPageMetadata({
+  title: 'Line Coffee | Premium Egyptian Coffee | قهوتك بطعم مختلف',
+  description: 'Shop premium Turkish coffee, espresso blends, flavored coffee, cappuccino, and hot chocolate from Line Coffee in Egypt.',
+  path: '/',
+})
 
 export default function HomePage() {
   return (

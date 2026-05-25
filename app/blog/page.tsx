@@ -34,13 +34,13 @@ export default function BlogListPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#0B0806] py-20 md:py-24">
+    <div className="min-h-screen bg-[#0B0806] py-14 md:py-24">
       <div className="container mx-auto max-w-5xl px-4">
-        <div className="mb-12 text-center">
+        <div className="mb-8 text-center md:mb-12">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]">
             {t('Coffee Journal', 'مجلة القهوة')}
           </p>
-          <h1 className="mb-3 font-serif text-4xl font-bold leading-[1.18] text-[#F5E6D8] md:text-5xl">
+          <h1 className="mb-3 font-serif text-3xl font-bold leading-[1.18] text-[#F5E6D8] md:text-5xl">
             {t('Blog', 'المدونة')}
           </h1>
           <p className="text-lg text-[#D6B79A]/72">
@@ -81,7 +81,7 @@ export default function BlogListPage() {
                   href={`/blog/${post.slug}`}
                   className="group overflow-hidden rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/72 transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35"
                 >
-                  <div className="relative h-48 overflow-hidden bg-[#1A120D]">
+                  <div className="relative h-40 overflow-hidden bg-[#1A120D] sm:h-48">
                     {post.cover_image ? (
                       <Image src={post.cover_image} alt={title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
                     ) : (
@@ -92,7 +92,7 @@ export default function BlogListPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/70 to-transparent" />
                   </div>
 
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="mb-3 flex items-center gap-1.5 text-xs text-[#D6B79A]/58">
                       <Calendar className="h-3.5 w-3.5" />
                       {new Date(date).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
