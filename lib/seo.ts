@@ -8,14 +8,18 @@ function normalizeSiteUrl(value: string) {
   }
 }
 
-export const SITE_URL = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || 'https://linecoffee.com')
+export function getSiteUrl() {
+  return normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || 'https://linecoffee.com')
+}
+
+export const SITE_URL = getSiteUrl()
 
 export const DEFAULT_OG_IMAGE =
   'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&h=630&fit=crop&q=80'
 
 export function absoluteUrl(pathOrUrl: string) {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl
-  return new URL(pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`, SITE_URL).toString()
+  return new URL(pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`, getSiteUrl()).toString()
 }
 
 export function createPageMetadata({
