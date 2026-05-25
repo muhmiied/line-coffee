@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [{ data: products }, { data: posts }] = await Promise.all([
     admin.from('products').select('slug, created_at').eq('is_visible', true),
     admin.from('blog_posts').select('slug, published_at, created_at').eq('is_published', true),
-  ])
+  ]).catch(() => [{ data: [] }, { data: [] }])
 
   const productRoutes = (products || [])
     .filter((product) => product.slug)
