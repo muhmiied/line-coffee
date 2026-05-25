@@ -88,7 +88,7 @@ const fallbackSlides: HeroSlide[] = [
 export function HeroSection() {
   const { t, dir } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [slides, setSlides] = useState<HeroSlide[]>(fallbackSlides)
+  const [slides, setSlides] = useState<HeroSlide[] | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -99,7 +99,7 @@ export function HeroSection() {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
   useEffect(() => {
-    if (slides.length <= 1) return
+    if (!slides || slides.length <= 1) return
     const duration = slides[currentSlide]?.animationDuration ?? 6000
     const timer = setTimeout(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
@@ -113,7 +113,11 @@ export function HeroSection() {
     fetch('/api/media?usage_area=hero', { cache: 'no-store' })
       .then((res) => res.json())
       .then((json) => {
-        if (!mounted || !Array.isArray(json?.data) || json.data.length === 0) return
+        if (!mounted) return
+        if (!Array.isArray(json?.data) || json.data.length === 0) {
+          setSlides(fallbackSlides)
+          return
+        }
 
         const mediaSlides = (json.data as SiteMediaItem[])
           .filter((item) => item.image_url)
@@ -139,43 +143,57 @@ export function HeroSection() {
             }
           })
 
-        if (mediaSlides.length > 0) {
-          setSlides(mediaSlides)
-          setCurrentSlide(0)
-        }
+        setSlides(mediaSlides.length > 0 ? mediaSlides : fallbackSlides)
+        setCurrentSlide(0)
       })
-      .catch(() => {})
+      .catch(() => {
+        if (mounted) setSlides(fallbackSlides)
+      })
 
     return () => {
       mounted = false
     }
   }, [])
 
+  const currentHeroSlide = slides?.[currentSlide]
   const goToSlide = (index: number) => setCurrentSlide(index)
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length)
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+  const nextSlide = () => setCurrentSlide((prev) => slides ? (prev + 1) % slides.length : 0)
+  const prevSlide = () => setCurrentSlide((prev) => slides ? (prev - 1 + slides.length) % slides.length : 0)
 
-  const headingText = t(slides[currentSlide].headingEn, slides[currentSlide].headingAr)
-  const subheadingText = t(slides[currentSlide].subheadingEn, slides[currentSlide].subheadingAr)
-  const imageAlt = t(slides[currentSlide].altEn || 'Coffee background', slides[currentSlide].altAr || slides[currentSlide].altEn || 'Coffee background')
-  const primaryButtonText = t(slides[currentSlide].buttonTextEn || 'Shop Now', slides[currentSlide].buttonTextAr || slides[currentSlide].buttonTextEn || 'تسوق الآن')
-  const primaryButtonHref = slides[currentSlide].buttonLink || '/products'
-  const currentLayout = slides[currentSlide].layout
-  const heroStats = slides[currentSlide].stats && slides[currentSlide].stats.length > 0
-    ? slides[currentSlide].stats.filter((stat) => stat.is_active !== false)
+  const headingText = currentHeroSlide ? t(currentHeroSlide.headingEn, currentHeroSlide.headingAr) : ''
+  const subheadingText = currentHeroSlide ? t(currentHeroSlide.subheadingEn, currentHeroSlide.subheadingAr) : ''
+  const imageAlt = currentHeroSlide ? t(currentHeroSlide.altEn || 'Coffee background', currentHeroSlide.altAr || currentHeroSlide.altEn || 'Coffee background') : 'Coffee background'
+  const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Now', currentHeroSlide.buttonTextAr || currentHeroSlide.buttonTextEn || 'تسوق الآن') : ''
+  const primaryButtonHref = currentHeroSlide?.buttonLink || '/products'
+  const currentLayout = currentHeroSlide?.layout
+  const heroStats = currentHeroSlide?.stats && currentHeroSlide.stats.length > 0
+    ? currentHeroSlide.stats.filter((stat) => stat.is_active !== false)
     : [
         { id: 'countries', value: '15+', label_en: 'Countries Sourced', label_ar: 'دولة مصدر' },
         { id: 'customers', value: '50K+', label_en: 'Happy Customers', label_ar: 'عميل سعيد' },
         { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
       ]
 
-  const currentFx = slides[currentSlide].visualEffects || {}
+  const currentFx = currentHeroSlide?.visualEffects || {}
   const hasFx = Object.keys(currentFx).length > 0
   const imgFilter = buildEffectsFilter(currentFx)
-  const overlayGrad = buildOverlayGradient(currentFx.gradient_type, currentFx.overlay_color, slides[currentSlide].overlayOpacity ?? 0.6)
+  const overlayGrad = buildOverlayGradient(currentFx.gradient_type, currentFx.overlay_color, currentHeroSlide?.overlayOpacity ?? 0.6)
   const fxVignette = Number(currentFx.vignette ?? 0)
   const fxGlow = Number(currentFx.glow ?? 0)
   const fxGrain = Number(currentFx.grain ?? 0)
+
+  if (!currentHeroSlide || !slides) {
+    return (
+      <section
+        ref={ref}
+        className="relative flex min-h-[92svh] items-center overflow-hidden -mt-16 pt-32 pb-24 sm:-mt-[4.5rem] sm:pt-40 sm:pb-28 md:-mt-24 md:min-h-[110vh] md:pt-52 md:pb-44"
+        style={{ background: '#0B0806' }}
+      >
+        <div className="absolute inset-0 bg-[#0B0806]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.10)_0%,_transparent_70%)]" />
+      </section>
+    )
+  }
 
   return (
     <section
@@ -202,12 +220,12 @@ export function HeroSection() {
           className="absolute inset-0 z-0"
         >
           <Image
-            src={slides[currentSlide].image}
+            src={currentHeroSlide.image}
             alt={imageAlt}
             fill
             className="object-cover"
             sizes="100vw"
-            style={{ objectPosition: slides[currentSlide].objectPosition || 'center center', ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
+            style={{ objectPosition: currentHeroSlide.objectPosition || 'center center', ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
             priority
           />
 
@@ -215,7 +233,7 @@ export function HeroSection() {
           {/* 1. Dark base overlay — dynamic gradient when effects configured, solid black otherwise */}
           {hasFx
             ? <div className="absolute inset-0" style={{ background: overlayGrad }} />
-            : <div className="absolute inset-0 bg-black" style={{ opacity: slides[currentSlide].overlayOpacity ?? 0.6 }} />
+            : <div className="absolute inset-0 bg-black" style={{ opacity: currentHeroSlide.overlayOpacity ?? 0.6 }} />
           }
           {/* 2. Warm brown tone cast — luxury cinema feel */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
@@ -286,19 +304,15 @@ export function HeroSection() {
           </AnimatePresence>
 
           {/* Subheadline */}
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={`subheading-${currentSlide}`}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5, delay: 0.55 }}
-              className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty md:mb-10 md:text-xl"
-              style={{ color: 'rgba(214,183,154,0.85)' }}
-            >
-              {subheadingText}
-            </motion.p>
-          </AnimatePresence>
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.35 }}
+            className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty md:mb-10 md:text-xl"
+            style={{ color: 'rgba(214,183,154,0.85)' }}
+          >
+            {subheadingText}
+          </motion.p>
 
           {/* CTAs */}
           <motion.div
