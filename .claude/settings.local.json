@@ -67,7 +67,10 @@
       "Bash(Get-ChildItem app *)",
       "Bash(Select-Object FullName)",
       "Bash(dir /s /b \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\app\\\\*.tsx\")",
-      "Bash(findstr \"page.tsx\")"
+      "Bash(findstr \"page.tsx\")",
+      "Bash(npx eslint *)",
+      "Bash(node_modules/.bin/next lint *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('eslintConfig','none'\\), indent=2\\)\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mohamed Sayed\\AppData\\Local\\Microsoft\\Windows\\Fonts"

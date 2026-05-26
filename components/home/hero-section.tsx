@@ -57,6 +57,7 @@ type HeroSlide = {
   animationDuration?: number
   titleScale?: number
   subtitleScale?: number
+  hiddenElements?: string[]
 }
 
 function elementTransform(layout: SectionBuilderLayout | undefined, elementId: string) {
@@ -211,6 +212,7 @@ export function HeroSection() {
               buttonLink: content.button_link || item.button_link || item.link_url,
               stats: content.stats,
               layout: getSectionBuilderLayout(heroSectionConfig, item),
+              hiddenElements: content.hidden_elements || [],
               visualEffects: getVisualEffects(item),
               animationDuration: typeof item.animation_duration === 'number' && item.animation_duration > 0 ? item.animation_duration : 6000,
               titleScale: typeof content.title_scale === 'number' ? Math.min(1.25, Math.max(0.75, content.title_scale)) : undefined,
@@ -239,6 +241,17 @@ export function HeroSection() {
   const subheadingText = currentHeroSlide ? t(currentHeroSlide.subheadingEn, currentHeroSlide.subheadingAr) : ''
   const eyebrowText = currentHeroSlide ? t(currentHeroSlide.eyebrowEn || '', currentHeroSlide.eyebrowAr || currentHeroSlide.eyebrowEn || '') : ''
   const headingDir = hasArabic(headingText) ? 'rtl' : 'ltr'
+  const hiddenElements = currentHeroSlide?.hiddenElements || []
+  const showEyebrow = !!eyebrowText
+    && !['line coffee', 'لاين كوفي'].includes(eyebrowText.trim().toLowerCase())
+    && !hiddenElements.includes('eyebrow')
+  const showSubtitle = !hiddenElements.includes('subtitle')
+  const showButtons = !hiddenElements.includes('buttons')
+  const showStats = !hiddenElements.includes('stats')
+  const elStyle = (id: string) => {
+    const pos = currentLayout?.elements?.[id]
+    return pos?.x || pos?.y ? { transform: `translate(${Number(pos.x || 0)}px, ${Number(pos.y || 0)}px)` } : undefined
+  }
   const imageAlt = currentHeroSlide ? t(currentHeroSlide.altEn || 'Coffee background', currentHeroSlide.altAr || currentHeroSlide.altEn || 'Coffee background') : 'Coffee background'
   const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Coffee', realArabic(currentHeroSlide.buttonTextAr) || 'تسوق القهوة') : ''
   const primaryButtonHref = currentHeroSlide?.buttonLink || '/products'
@@ -315,14 +328,14 @@ export function HeroSection() {
         >
           <div className={cn('max-w-[35rem] md:max-w-[38rem]', dir === 'rtl' ? 'ml-auto' : 'mr-auto')}>
 
-          {eyebrowText && (
+          {showEyebrow && (
             <motion.p
               key={`eyebrow-${currentSlide}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
               className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] md:text-sm"
-              style={{ color: '#D6A373' }}
+              style={{ color: '#D6A373', ...elStyle('eyebrow') }}
             >
               {eyebrowText}
             </motion.p>
@@ -343,6 +356,7 @@ export function HeroSection() {
                 color: '#F5E6D8',
                 textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
                 ...(titleScale !== 1 && { transform: `scale(${titleScale})`, transformOrigin: headingDir === 'rtl' ? 'top right' : 'top left' }),
+                ...elStyle('title'),
               }}
             >
               <WordByWord text={headingText} />
@@ -350,27 +364,32 @@ export function HeroSection() {
           </AnimatePresence>
 
           {/* Subheadline */}
+          {showSubtitle && (
           <motion.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.35 }}
             className="mb-8 line-clamp-2 max-w-xl text-base leading-relaxed text-pretty md:mb-10 md:text-lg"
-            style={{ color: 'rgba(214,183,154,0.85)', ...(subtitleScale !== 1 && { transform: `scale(${subtitleScale})`, transformOrigin: dir === 'rtl' ? 'top right' : 'top left' }) }}
+            style={{ color: 'rgba(214,183,154,0.85)', ...(subtitleScale !== 1 && { transform: `scale(${subtitleScale})`, transformOrigin: dir === 'rtl' ? 'top right' : 'top left' }), ...elStyle('subtitle') }}
           >
             {subheadingText}
           </motion.p>
+          )}
 
           {/* CTAs */}
+          {showButtons && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.55 }}
+            dir={dir}
             className="flex flex-col gap-4 sm:flex-row"
+            style={elStyle('buttons')}
           >
             {/* Primary — gold gradient */}
             <Link
               href={primaryButtonHref}
-              className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 min-w-[9.5rem]"
               style={{
                 background: 'linear-gradient(135deg, #B6885E 0%, #D6A373 100%)',
                 color: '#0B0806',
@@ -397,7 +416,7 @@ export function HeroSection() {
             {/* Secondary — ghost with gold border */}
             <Link
               href="/about"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 min-w-[9.5rem]"
               style={{
                 background: 'rgba(182,136,94,0.08)',
                 color: '#D6A373',
@@ -418,8 +437,10 @@ export function HeroSection() {
               {t('Our Story', 'قصتنا')}
             </Link>
           </motion.div>
+          )}
 
           {/* Stats row */}
+          {showStats && (
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -428,6 +449,7 @@ export function HeroSection() {
               'mt-12 grid max-w-xl grid-cols-1 gap-4 border-t border-[#B6885E]/22 pt-7 min-[420px]:grid-cols-3 sm:gap-7 md:mt-14 md:pt-8',
               dir === 'rtl' ? 'ml-auto text-right' : 'mr-auto text-left'
             )}
+            style={elStyle('stats')}
           >
             {heroStats.map((stat) => {
               const numericValue = Number(String(stat.value).replace(/\D/g, ''))
@@ -450,6 +472,7 @@ export function HeroSection() {
               )
             })}
           </motion.div>
+          )}
 
           </div>
         </div>
