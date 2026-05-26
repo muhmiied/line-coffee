@@ -87,10 +87,10 @@ function StatCard({ label, value, change, icon: Icon, t }: {
 }) {
   const positive = (change ?? 0) >= 0
   return (
-    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 hover:shadow-[0_8px_32px_rgba(200,148,26,0.07)] transition-all duration-300">
+    <div className="rounded-2xl border border-[#D6A373]/12 bg-[#120D09]/82 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-[#D6A373]/28 hover:shadow-[0_22px_70px_rgba(214,163,115,0.08)]">
       <div className="flex items-center justify-between mb-4">
-        <div className="h-10 w-10 rounded-xl bg-[#c8941a]/10 border border-[#c8941a]/15 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-[#c8941a]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D6A373]/18 bg-[#D6A373]/10 shadow-inner">
+          <Icon className="h-5 w-5 text-[#D6A373]" />
         </div>
         {change !== undefined && (
           <div className={`flex items-center gap-1 text-xs font-semibold ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -113,7 +113,7 @@ function ActiveOrdersCard({ data, t }: {
   t: (en: string, ar: string) => string
 }) {
   return (
-    <div className="bg-[#180d04] border border-[#c8941a]/10 rounded-2xl p-5 hover:border-[#c8941a]/25 hover:shadow-[0_8px_32px_rgba(200,148,26,0.07)] transition-all duration-300">
+    <div className="rounded-2xl border border-[#D6A373]/12 bg-[#120D09]/82 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-[#D6A373]/28 hover:shadow-[0_22px_70px_rgba(214,163,115,0.08)]">
       <div className="flex items-center justify-between mb-3">
         <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
           <Package className="h-5 w-5 text-blue-400" />
@@ -198,12 +198,13 @@ export default function AdminOverviewPage() {
   })
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 space-y-5 bg-[#0f0900]" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen space-y-5 bg-transparent p-4 sm:p-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
 
       {/* ── Welcome banner (logo card) ── */}
-      <div className="relative rounded-2xl overflow-hidden border border-[#c8941a]/15">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1a0900] via-[#120600] to-[#0a0300]" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c8941a]/30 to-transparent" />
+      <div className="relative overflow-hidden rounded-2xl border border-[#D6A373]/16 shadow-[0_24px_90px_rgba(0,0,0,0.30)]">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1A0F08] via-[#120D09] to-[#080503]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_70%_at_12%_0%,_rgba(214,163,115,0.16),_transparent_58%)]" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#D6A373]/35 to-transparent" />
 
         <div className="relative flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
           <div>

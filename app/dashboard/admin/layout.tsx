@@ -116,11 +116,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     : t('Dashboard', 'لوحة التحكم')
 
   return (
-    <div className="flex -mt-20 min-h-[100dvh] bg-background md:-mt-24">
+    <div className="relative flex -mt-20 min-h-[100dvh] overflow-hidden bg-[#0B0806] md:-mt-24">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_70%_45%_at_22%_0%,_rgba(214,163,115,0.10),_transparent_62%),linear-gradient(180deg,_rgba(82,37,0,0.14),_transparent_34%)]" />
 
       {/* ── Sidebar ── */}
-      <aside className="fixed left-0 top-0 z-50 hidden h-[100dvh] w-[215px] select-none flex-col bg-[#0a0500] md:flex">
-        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#c8941a]/10 to-transparent" />
+      <aside className="fixed left-0 top-0 z-50 hidden h-[100dvh] w-[215px] select-none flex-col border-r border-[#D6A373]/12 bg-[#080503]/96 shadow-[18px_0_80px_rgba(0,0,0,0.35)] backdrop-blur md:flex">
+        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#D6A373]/22 to-transparent" />
 
         {/* Logo */}
         <div className="px-5 pt-6 pb-5">
@@ -139,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </p>
         </div>
 
-        <div className="mx-5 h-px bg-[#c8941a]/10" />
+        <div className="mx-5 h-px bg-[#D6A373]/12" />
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-0.5">
@@ -155,14 +156,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className={cn(
                   'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150',
                   active
-                    ? 'bg-[#c8941a]/15 text-[#c8941a] border border-[#c8941a]/20'
-                    : 'text-white/35 hover:text-white/70 hover:bg-white/[0.04]'
+                    ? 'border border-[#D6A373]/28 bg-gradient-to-r from-[#D6A373]/18 to-[#522500]/18 text-[#D6A373] shadow-[0_10px_30px_rgba(214,163,115,0.08)]'
+                    : 'text-white/38 hover:bg-white/[0.045] hover:text-[#F5E6D8]'
                 )}
               >
                 <item.icon
                   className={cn(
                     'h-4 w-4 shrink-0',
-                    active ? 'text-[#c8941a]' : 'text-white/25 group-hover:text-white/55'
+                    active ? 'text-[#D6A373]' : 'text-white/25 group-hover:text-[#D6A373]/70'
                   )}
                 />
                 <span className="flex-1">{t(item.labelEn, item.labelAr)}</span>
@@ -179,10 +180,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Content ── */}
-      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col md:ml-[215px]">
+      <div className="relative z-10 flex min-h-[100dvh] min-w-0 flex-1 flex-col md:ml-[215px]">
 
         {/* Top bar */}
-        <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-[#c8941a]/12 bg-[#0a0500]/95 px-3 backdrop-blur-sm sm:px-4 md:left-[215px] md:px-6">
+        <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-[#D6A373]/14 bg-[#080503]/88 px-3 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-4 md:left-[215px] md:px-6">
           {pathname === '/dashboard/admin' ? (
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold leading-none text-white sm:text-base">
@@ -352,7 +353,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="flex-1 bg-[#0f0900] pt-16">
+        <main className="flex-1 bg-[linear-gradient(180deg,#120D09_0%,#0B0806_36%,#0f0900_100%)] pt-16">
           <nav className="sticky top-16 z-30 flex gap-2 overflow-x-auto border-b border-[#c8941a]/10 bg-[#0a0500]/96 px-3 py-2 md:hidden">
             {nav.map((item) => {
               const active = item.exact

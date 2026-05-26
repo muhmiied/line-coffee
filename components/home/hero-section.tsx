@@ -26,10 +26,14 @@ import { HeroBackground } from '@/components/home/hero-background'
 
 const heroSectionConfig = getWebsiteSection('hero')
 
+function hasArabic(s: string | null | undefined): boolean {
+  return !!s && /\p{Script=Arabic}/u.test(s)
+}
+
 // Only trust a string as Arabic if it actually contains Arabic characters.
 // Prevents English text saved-as-Arabic (editor bug) from overriding proper fallbacks.
 function realArabic(s: string | null | undefined): string {
-  return s && /[؀-ۿ]/.test(s) ? s : ''
+  return hasArabic(s) ? s! : ''
 }
 
 type HeroSlide = {
@@ -57,36 +61,103 @@ type HeroSlide = {
 
 function elementTransform(layout: SectionBuilderLayout | undefined, elementId: string) {
   const position = layout?.elements?.[elementId]
-  const x = Number(position?.x || 0)
+  const x = elementId === 'main-copy' ? 0 : Number(position?.x || 0)
   const y = Number(position?.y || 0)
   return x || y ? { transform: `translate(${x}px, ${y}px)` } : undefined
+}
+
+const statLabelFallbacks: Record<string, string> = {
+  'countries sourced': 'مصادر مختارة',
+  'happy customers': 'عملاء سعداء',
+  'arabica beans': 'حبوب أرابيكا',
+  'origins curated': 'مصادر مختارة',
+  'fresh roast window': 'نافذة تحميص طازج',
+  'arabica focus': 'تركيز أرابيكا',
+  'taste profiles': 'مسارات نكهة',
+  'roast levels': 'درجات تحميص',
+  'cups served': 'فنجان مُحضّر',
+  'cairo dispatch': 'شحن داخل القاهرة',
+  'peak freshness': 'ذروة النضارة',
+  languages: 'لغتا خدمة',
+  'blend paths': 'مسارات توليف',
+  'flavor notes': 'لمسات نكهة',
+  'your taste': 'على ذوقك',
+}
+
+function statLabel(stat: SectionStatBlock, language: string) {
+  if (language !== 'ar') return stat.label_en
+  if (realArabic(stat.label_ar)) return stat.label_ar
+  return statLabelFallbacks[stat.label_en.toLowerCase()] || stat.label_en
 }
 
 const fallbackSlides: HeroSlide[] = [
   {
     image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
-    headingEn: 'Every Cup, a Story Worth Savoring',
-    headingAr: 'كل فنجان قصةٌ تستحق التأمل',
-    subheadingEn: 'Hand-selected beans, precision-roasted to unlock depth, warmth, and character in every sip.',
-    subheadingAr: 'حبوب منتقاة بعناية، محمصة بدقة لتكشف العمق والدفء في كل رشفة.',
+    eyebrowEn: 'Signature Roasts',
+    eyebrowAr: 'تحميصات مميزة',
+    headingEn: 'Coffee Crafted for Quiet Luxury',
+    headingAr: 'قهوة مصممة لرفاهية هادئة',
+    subheadingEn: 'Selected beans, slow-roasted for depth, warmth, and a finish that lingers beautifully.',
+    subheadingAr: 'حبوب منتقاة بعناية، نحمصها بهدوء لتمنحك عمقًا ودفئًا ونهاية لا تُنسى.',
+    buttonTextEn: 'Shop Coffee',
+    buttonTextAr: 'تسوق القهوة',
+    stats: [
+      { id: 'origin', value: '15+', label_en: 'Origins Curated', label_ar: 'مصادر مختارة', is_active: true },
+      { id: 'roast', value: '72h', label_en: 'Fresh Roast Window', label_ar: 'نافذة تحميص طازج', is_active: true },
+      { id: 'arabica', value: '100%', label_en: 'Arabica Focus', label_ar: 'تركيز أرابيكا', is_active: true },
+    ],
   },
   {
     image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80',
-    headingEn: 'The Art of the Perfect Blend',
-    headingAr: 'فن التوليفة المثالية',
-    subheadingEn: 'Rich, complex, and unmistakably Line Coffee — crafted for those who settle for nothing less.',
-    subheadingAr: 'غنية ومعقدة لا تُنسى — صُنعت لمن لا يرضى إلا بالأفضل.',
+    eyebrowEn: 'House Blends',
+    eyebrowAr: 'توليفات البيت',
+    headingEn: 'A Blend With a Softer Signature',
+    headingAr: 'توليفة بنعومة تترك أثرها',
+    subheadingEn: 'Balanced profiles for espresso, filter, and slow mornings at home.',
+    subheadingAr: 'نكهات متوازنة للإسبريسو والفلتر وصباحات المنزل الهادئة.',
+    buttonTextEn: 'Explore Blends',
+    buttonTextAr: 'استكشف التوليفات',
+    stats: [
+      { id: 'profiles', value: '8', label_en: 'Taste Profiles', label_ar: 'مسارات نكهة', is_active: true },
+      { id: 'craft', value: '3', label_en: 'Roast Levels', label_ar: 'درجات تحميص', is_active: true },
+      { id: 'cups', value: '24K+', label_en: 'Cups Served', label_ar: 'فنجان مُحضّر', is_active: true },
+    ],
   },
   {
     image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80',
-    headingEn: 'Freshly Roasted, Delivered to Your Door',
-    headingAr: 'تحميص طازج يصل إلى بابك',
-    subheadingEn: 'Premium freshness delivered across Egypt — from our roaster straight to your kitchen.',
-    subheadingAr: 'نضارة فاخرة توصّل في كل أنحاء مصر — من محمصتنا إلى مطبخك مباشرةً.',
+    eyebrowEn: 'Fresh Delivery',
+    eyebrowAr: 'توصيل طازج',
+    headingEn: 'Roasted Fresh, Arriving With Care',
+    headingAr: 'تحميص طازج يصل إليك بعناية',
+    subheadingEn: 'From our roaster to your door across Egypt, packed to preserve aroma and comfort.',
+    subheadingAr: 'من محمصتنا إلى بابك داخل مصر، بتغليف يحافظ على الرائحة ودفء التجربة.',
+    buttonTextEn: 'Order Now',
+    buttonTextAr: 'اطلب الآن',
+    stats: [
+      { id: 'delivery', value: '24h', label_en: 'Cairo Dispatch', label_ar: 'شحن داخل القاهرة', is_active: true },
+      { id: 'freshness', value: '7d', label_en: 'Peak Freshness', label_ar: 'ذروة النضارة', is_active: true },
+      { id: 'support', value: '2', label_en: 'Languages', label_ar: 'لغتا خدمة', is_active: true },
+    ],
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1920&q=80',
+    eyebrowEn: 'Custom Experience',
+    eyebrowAr: 'تجربة مصممة لك',
+    headingEn: 'Build Your Ritual, Bean by Bean',
+    headingAr: 'اصنع طقسك الخاص حبةً بحبة',
+    subheadingEn: 'Create an espresso blend or flavored coffee profile that feels unmistakably yours.',
+    subheadingAr: 'كوّن توليفة إسبريسو أو نكهة قهوة تشبه ذوقك وتفاصيل يومك.',
+    buttonTextEn: 'Create Your Blend',
+    buttonTextAr: 'اصنع توليفتك',
+    stats: [
+      { id: 'custom', value: '4', label_en: 'Blend Paths', label_ar: 'مسارات توليف', is_active: true },
+      { id: 'flavors', value: '12+', label_en: 'Flavor Notes', label_ar: 'لمسات نكهة', is_active: true },
+      { id: 'control', value: '100%', label_en: 'Your Taste', label_ar: 'على ذوقك', is_active: true },
+    ],
   },
 ]
 export function HeroSection() {
-  const { t, dir } = useLanguage()
+  const { t, dir, language } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<HeroSlide[] | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -125,6 +196,8 @@ export function HeroSection() {
             const content = getSectionBuilderContent(heroSectionConfig, item)
             return {
               image: item.image_url,
+              eyebrowEn: content.eyebrow_en || fallbackSlides[index % fallbackSlides.length].eyebrowEn,
+              eyebrowAr: realArabic(content.eyebrow_ar) || fallbackSlides[index % fallbackSlides.length].eyebrowAr,
               headingEn: content.title_en || item.title_en || fallbackSlides[index % fallbackSlides.length].headingEn,
               headingAr: realArabic(content.title_ar) || realArabic(item.title_ar) || fallbackSlides[index % fallbackSlides.length].headingAr,
               subheadingEn: content.subtitle_en || item.subtitle_en || fallbackSlides[index % fallbackSlides.length].subheadingEn,
@@ -140,8 +213,8 @@ export function HeroSection() {
               layout: getSectionBuilderLayout(heroSectionConfig, item),
               visualEffects: getVisualEffects(item),
               animationDuration: typeof item.animation_duration === 'number' && item.animation_duration > 0 ? item.animation_duration : 6000,
-              titleScale: typeof content.title_scale === 'number' ? Math.min(1.6, Math.max(0.6, content.title_scale)) : undefined,
-              subtitleScale: typeof content.subtitle_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.subtitle_scale)) : undefined,
+              titleScale: typeof content.title_scale === 'number' ? Math.min(1.25, Math.max(0.75, content.title_scale)) : undefined,
+              subtitleScale: typeof content.subtitle_scale === 'number' ? Math.min(1.15, Math.max(0.75, content.subtitle_scale)) : undefined,
             }
           })
 
@@ -164,9 +237,10 @@ export function HeroSection() {
 
   const headingText = currentHeroSlide ? t(currentHeroSlide.headingEn, currentHeroSlide.headingAr) : ''
   const subheadingText = currentHeroSlide ? t(currentHeroSlide.subheadingEn, currentHeroSlide.subheadingAr) : ''
-  const headingDir = /[؀-ۿ]/.test(headingText) ? 'rtl' : 'ltr'
+  const eyebrowText = currentHeroSlide ? t(currentHeroSlide.eyebrowEn || '', currentHeroSlide.eyebrowAr || currentHeroSlide.eyebrowEn || '') : ''
+  const headingDir = hasArabic(headingText) ? 'rtl' : 'ltr'
   const imageAlt = currentHeroSlide ? t(currentHeroSlide.altEn || 'Coffee background', currentHeroSlide.altAr || currentHeroSlide.altEn || 'Coffee background') : 'Coffee background'
-  const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Now', realArabic(currentHeroSlide.buttonTextAr) || 'تسوق الآن') : ''
+  const primaryButtonText = currentHeroSlide ? t(currentHeroSlide.buttonTextEn || 'Shop Coffee', realArabic(currentHeroSlide.buttonTextAr) || 'تسوق القهوة') : ''
   const primaryButtonHref = currentHeroSlide?.buttonLink || '/products'
   const currentLayout = currentHeroSlide?.layout
   const titleScale = currentHeroSlide?.titleScale ?? 1
@@ -174,9 +248,9 @@ export function HeroSection() {
   const heroStats = currentHeroSlide?.stats && currentHeroSlide.stats.length > 0
     ? currentHeroSlide.stats.filter((stat) => stat.is_active !== false)
     : [
-        { id: 'countries', value: '15+', label_en: 'Countries Sourced', label_ar: 'دولة مصدر' },
-        { id: 'customers', value: '50K+', label_en: 'Happy Customers', label_ar: 'عميل سعيد' },
-        { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
+        { id: 'origin', value: '15+', label_en: 'Origins Curated', label_ar: 'مصادر مختارة' },
+        { id: 'freshness', value: '72h', label_en: 'Fresh Roast Window', label_ar: 'نافذة تحميص طازج' },
+        { id: 'arabica', value: '100%', label_en: 'Arabica Focus', label_ar: 'تركيز أرابيكا' },
       ]
 
 
@@ -231,15 +305,28 @@ export function HeroSection() {
       </AnimatePresence>
 
       {/* ── Hero content ── */}
-      <motion.div style={{ opacity }} className="container mx-auto px-4 relative z-20">
+      <motion.div style={{ opacity }} className="relative z-20 w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
         <div
           className={cn(
-            'mx-auto flex max-w-7xl pt-2 md:pt-6',
-            dir === 'rtl' ? 'justify-start text-right' : 'justify-start text-left'
+            'flex w-full pt-2 md:pt-6',
+            dir === 'rtl' ? 'justify-end text-right' : 'justify-start text-left'
           )}
           style={elementTransform(currentLayout, 'main-copy')}
         >
-          <div className="max-w-[35rem] md:max-w-[38rem]">
+          <div className={cn('max-w-[35rem] md:max-w-[38rem]', dir === 'rtl' ? 'ml-auto' : 'mr-auto')}>
+
+          {eyebrowText && (
+            <motion.p
+              key={`eyebrow-${currentSlide}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] md:text-sm"
+              style={{ color: '#D6A373' }}
+            >
+              {eyebrowText}
+            </motion.p>
+          )}
 
           {/* Headline */}
           <AnimatePresence mode="wait">
@@ -250,7 +337,7 @@ export function HeroSection() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              className="relative mb-5 line-clamp-3 max-w-3xl font-serif text-4xl font-extrabold leading-[1.05] text-balance min-[380px]:text-5xl md:mb-6 md:text-6xl lg:text-7xl"
+              className="relative mb-5 line-clamp-3 max-w-3xl font-serif text-4xl font-extrabold leading-[1.05] text-balance min-[380px]:text-5xl md:mb-6 md:text-6xl xl:text-7xl"
               style={{
                 color: '#F5E6D8',
                 textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
@@ -336,18 +423,27 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.05, duration: 0.5 }}
-            className="mt-12 grid max-w-xl grid-cols-1 gap-4 border-t border-[#B6885E]/22 pt-7 min-[420px]:grid-cols-3 sm:gap-7 md:mt-14 md:pt-8"
+            className={cn(
+              'mt-12 grid max-w-xl grid-cols-1 gap-4 border-t border-[#B6885E]/22 pt-7 min-[420px]:grid-cols-3 sm:gap-7 md:mt-14 md:pt-8',
+              dir === 'rtl' ? 'ml-auto text-right' : 'mr-auto text-left'
+            )}
           >
             {heroStats.map((stat) => {
               const numericValue = Number(String(stat.value).replace(/\D/g, ''))
               const suffix = String(stat.value).replace(/[0-9]/g, '')
               return (
                 <div key={stat.id}>
-                  <p className="font-serif text-2xl font-bold md:text-3xl" style={{ color: '#D6A373' }}>
+                  <p dir="ltr" className="font-serif text-2xl font-bold md:text-3xl" style={{ color: '#D6A373' }}>
                     {Number.isFinite(numericValue) ? <AnimatedCounter value={numericValue} suffix={suffix} /> : stat.value}
                   </p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] md:text-xs" style={{ color: 'rgba(245,230,216,0.55)' }}>
-                    {t(stat.label_en, stat.label_ar || stat.label_en)}
+                  <p
+                    className={cn(
+                      'mt-1 text-[11px] md:text-xs',
+                      language === 'ar' ? 'tracking-normal' : 'uppercase tracking-[0.18em]'
+                    )}
+                    style={{ color: 'rgba(245,230,216,0.55)' }}
+                  >
+                    {statLabel(stat, language)}
                   </p>
                 </div>
               )

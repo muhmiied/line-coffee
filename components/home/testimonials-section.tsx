@@ -41,31 +41,47 @@ type Testimonial = {
   content_en: string | null
   content_ar: string | null
   rating: number
+  customer_type_en?: string | null
+  customer_type_ar?: string | null
+  customer_city_en?: string | null
+  customer_city_ar?: string | null
 }
 
 const fallbackTestimonials: Testimonial[] = [
   {
     id: 'fallback-1',
-    customer_name: 'Line Coffee Customer',
+    customer_name: 'Mariam Hassan',
     customer_avatar: null,
-    content_en: 'Fresh, balanced, and beautifully packed. It feels like a café cup at home.',
-    content_ar: 'طازجة ومتوازنة ومغلفة بعناية. تشعر وكأنها قهوة مقهى في البيت.',
+    customer_type_en: 'Home brewer',
+    customer_type_ar: 'تحضير منزلي',
+    customer_city_en: 'Cairo',
+    customer_city_ar: 'القاهرة',
+    content_en: 'The roast arrives fresh and beautifully balanced. It turned my morning coffee into a quiet little ritual.',
+    content_ar: 'وصلت القهوة طازجة ومتوازنة جدًا. أصبحت قهوتي الصباحية طقسًا هادئًا أنتظره كل يوم.',
     rating: 5,
   },
   {
     id: 'fallback-2',
-    customer_name: 'Premium Blend Lover',
+    customer_name: 'Omar Nabil',
     customer_avatar: null,
-    content_en: 'The aroma is rich and the flavor stays consistent every time.',
-    content_ar: 'الرائحة غنية والطعم ثابت ومميز في كل مرة.',
+    customer_type_en: 'Espresso lover',
+    customer_type_ar: 'محب للإسبريسو',
+    customer_city_en: 'Alexandria',
+    customer_city_ar: 'الإسكندرية',
+    content_en: 'Smooth crema, warm aroma, and a finish that feels premium without being heavy.',
+    content_ar: 'كريما ناعمة ورائحة دافئة ونهاية فاخرة من غير ثقل. تجربة ممتازة للإسبريسو.',
     rating: 5,
   },
   {
     id: 'fallback-3',
-    customer_name: 'Daily Coffee Ritual',
+    customer_name: 'Nour El-Din',
     customer_avatar: null,
-    content_en: 'Elegant coffee with a smooth finish and fast delivery.',
-    content_ar: 'قهوة أنيقة بنهاية ناعمة وتوصيل سريع.',
+    customer_type_en: 'Filter coffee fan',
+    customer_type_ar: 'محب للقهوة المقطرة',
+    customer_city_en: 'Giza',
+    customer_city_ar: 'الجيزة',
+    content_en: 'Elegant packaging, clear flavor notes, and delivery that kept the beans fragrant.',
+    content_ar: 'تغليف أنيق، نكهات واضحة، والتوصيل حافظ على رائحة البن ونضارته.',
     rating: 5,
   },
 ]
@@ -79,6 +95,14 @@ function initials(name: string) {
       .map((part) => part[0]?.toUpperCase())
       .join('') || 'LC'
   )
+}
+
+function hasArabic(s: string | null | undefined): boolean {
+  return !!s && /\p{Script=Arabic}/u.test(s)
+}
+
+function localizedText(language: string, en: string | null | undefined, ar: string | null | undefined) {
+  return language === 'ar' ? (hasArabic(ar) ? ar! : en || '') : (en || ar || '')
 }
 
 export function TestimonialsSection() {
@@ -124,12 +148,12 @@ export function TestimonialsSection() {
   // Allow admin to override section title / eyebrow via Media Builder content field
   const sectionContent = getSectionBuilderContent(sectionConfig, sectionMedia)
   const eyebrow = t(
-    sectionContent.eyebrow_en || 'Testimonials',
-    sectionContent.eyebrow_ar || sectionContent.eyebrow_en || 'آراء العملاء',
+    sectionContent.eyebrow_en || 'Customer Notes',
+    hasArabic(sectionContent.eyebrow_ar) ? sectionContent.eyebrow_ar! : 'آراء العملاء',
   )
   const heading = t(
-    sectionContent.title_en || 'What Our Customers Say',
-    sectionContent.title_ar || sectionContent.title_en || 'ماذا يقول عملاؤنا',
+    sectionContent.title_en || 'Loved in Everyday Rituals',
+    hasArabic(sectionContent.title_ar) ? sectionContent.title_ar! : 'قهوة أحبها عملاؤنا في طقوسهم اليومية',
   )
 
   // Background image and overlay values
@@ -200,18 +224,26 @@ export function TestimonialsSection() {
           </div>
 
           <FadeUp>
-            <Link
-              href="/products"
-              className="premium-button group inline-flex items-center gap-2 self-start rounded-full px-7 py-3 text-sm font-semibold tracking-wide lg:self-auto"
-            >
-              {t('BROWSE OUR MENU', 'تصفح قائمتنا')}
-              <ArrowRight
-                className={cn(
-                  'h-4 w-4 transition-transform group-hover:translate-x-1',
-                  dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1',
-                )}
-              />
-            </Link>
+            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+              <Link
+                href="/products"
+                className="premium-button group inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-sm font-semibold tracking-wide"
+              >
+                {t('Browse Menu', 'تصفح القائمة')}
+                <ArrowRight
+                  className={cn(
+                    'h-4 w-4 transition-transform group-hover:translate-x-1',
+                    dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1',
+                  )}
+                />
+              </Link>
+              <Link
+                href="/reviews"
+                className="inline-flex items-center justify-center rounded-full border border-[#B6885E]/25 bg-[#F5E6D8]/5 px-7 py-3 text-sm font-semibold text-[#F5E6D8] transition-all duration-300 hover:border-[#D6A373]/45 hover:bg-[#D6A373]/10"
+              >
+                {t('Leave a Review', 'اترك تقييمك')}
+              </Link>
+            </div>
           </FadeUp>
         </div>
 
@@ -223,64 +255,69 @@ export function TestimonialsSection() {
           className="grid gap-4 md:grid-cols-3"
         >
           {testimonials.map((testimonial) => {
-            const quote = language === 'ar' ? testimonial.content_ar : testimonial.content_en
+            const quote = localizedText(language, testimonial.content_en, testimonial.content_ar)
+            const customerType = localizedText(language, testimonial.customer_type_en, testimonial.customer_type_ar)
+            const customerCity = localizedText(language, testimonial.customer_city_en, testimonial.customer_city_ar)
+            const meta = [customerType, customerCity].filter(Boolean).join(language === 'ar' ? '، ' : ', ')
+            const rating = Math.max(0, Math.min(5, Math.round(testimonial.rating || 5)))
 
             return (
               <article
                 key={testimonial.id}
-                className="group relative h-[260px] overflow-hidden rounded-2xl border border-[#B6885E]/14 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-all duration-500 hover:-translate-y-1 hover:border-[#D6A373]/30 hover:shadow-[0_32px_80px_rgba(0,0,0,0.55),0_0_28px_rgba(182,136,94,0.08)] sm:h-[360px] md:h-[440px]"
+                className="group relative flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[#B6885E]/16 bg-[#120D09]/78 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.42)] backdrop-blur-md transition-all duration-500 hover:-translate-y-1 hover:border-[#D6A373]/35 hover:bg-[#160F0A]/86 hover:shadow-[0_32px_80px_rgba(0,0,0,0.55),0_0_28px_rgba(182,136,94,0.10)] md:min-h-[340px]"
               >
-                {/* Portrait photo from testimonials.customer_avatar, or initials fallback */}
-                {testimonial.customer_avatar ? (
-                  <Image
-                    src={testimonial.customer_avatar}
-                    alt={testimonial.customer_name}
-                    fill
-                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#2a1505] via-[#180c03] to-[#0B0806] flex items-center justify-center">
-                    <span className="font-serif text-7xl font-bold text-[#B6885E]/20 select-none">
-                      {initials(testimonial.customer_name)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Top fade + quote icon */}
-                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0B0806]/60 to-transparent" />
-                <Quote className="absolute right-5 top-5 h-6 w-6 text-[#D6A373]/60" />
-
-                {/* Bottom gradient overlay */}
-                <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#0B0806] via-[#0B0806]/80 to-transparent" />
-
-                {/* Card text */}
-                <div className="absolute inset-x-0 bottom-0 p-6">
-                  <div className="mb-2 flex items-center gap-0.5">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#D6A373]/10 blur-3xl transition-opacity duration-500 group-hover:opacity-80" />
+                <div className="mb-6 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-1">
                     {Array.from({ length: 5 }).map((_, index) => (
                       <Star
                         key={index}
                         className={cn(
-                          'h-3.5 w-3.5',
-                          index < testimonial.rating
-                            ? 'fill-[#D6A373] text-[#D6A373]'
-                            : 'text-[#B6885E]/25',
+                          'h-4 w-4',
+                          index < rating ? 'fill-[#D6A373] text-[#D6A373]' : 'text-[#B6885E]/25',
                         )}
                       />
                     ))}
                   </div>
-                  <p className="font-serif text-lg font-bold text-[#F5E6D8] leading-snug mb-2">
-                    {testimonial.customer_name}
-                  </p>
-                  <p
-                    className={cn(
-                      'line-clamp-3 text-sm leading-relaxed text-[#F5E6D8]/65',
-                      language === 'ar' && 'text-right',
+                  <Quote className="h-7 w-7 shrink-0 text-[#D6A373]/35" />
+                </div>
+
+                <p
+                  className={cn(
+                    'line-clamp-5 flex-1 text-base leading-8 text-[#F5E6D8]/78 md:text-[1.02rem]',
+                    language === 'ar' && 'text-right',
+                  )}
+                >
+                  {quote}
+                </p>
+
+                <div className={cn('mt-7 flex items-center gap-4 border-t border-[#B6885E]/14 pt-5', dir === 'rtl' && 'flex-row-reverse')}>
+                  {testimonial.customer_avatar ? (
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-[#D6A373]/30 bg-[#1A100A]">
+                      <Image
+                        src={testimonial.customer_avatar}
+                        alt={testimonial.customer_name}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#D6A373]/28 bg-[radial-gradient(circle_at_30%_20%,_rgba(214,163,115,0.28),_rgba(82,37,0,0.30)_55%,_rgba(11,8,6,0.8))] text-sm font-bold text-[#F5E6D8] shadow-inner">
+                      {initials(testimonial.customer_name)}
+                    </div>
+                  )}
+                  <div className={cn('min-w-0', language === 'ar' && 'text-right')}>
+                    <p className="truncate font-serif text-lg font-bold leading-snug text-[#F5E6D8]">
+                      {testimonial.customer_name}
+                    </p>
+                    {meta && (
+                      <p className={cn('mt-1 truncate text-xs font-medium text-[#D6A373]/72', language === 'ar' ? 'tracking-normal' : 'uppercase tracking-[0.14em]')}>
+                        {meta}
+                      </p>
                     )}
-                  >
-                    {quote || testimonial.content_en || testimonial.content_ar}
-                  </p>
+                  </div>
                 </div>
               </article>
             )

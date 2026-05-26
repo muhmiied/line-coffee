@@ -77,7 +77,11 @@ type PreviewLanguage = 'en' | 'ar'
 const EMPTY_IMAGE = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80'
 
 function localText(language: PreviewLanguage, en?: string | null, ar?: string | null) {
-  return language === 'ar' ? ar || en || '' : en || ar || ''
+  return language === 'ar' ? (hasArabic(ar) ? ar! : en || '') : en || ar || ''
+}
+
+function hasArabic(value?: string | null) {
+  return !!value && /\p{Script=Arabic}/u.test(value)
 }
 
 function createLocalId() {
@@ -105,30 +109,78 @@ const HERO_FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1459755486867-b55449bb39ff?w=1920&q=80',
 ]
 
-const HERO_FALLBACK_CONTENT: Array<{ en: string; ar: string; subEn: string; subAr: string }> = [
+type HeroFallbackCopy = {
+  eyebrowEn: string
+  eyebrowAr: string
+  en: string
+  ar: string
+  subEn: string
+  subAr: string
+  ctaEn: string
+  ctaAr: string
+  stats: SectionBuilderContent['stats']
+}
+
+const HERO_FALLBACK_CONTENT: HeroFallbackCopy[] = [
   {
-    en: 'Experience Coffee Like Never Before',
-    ar: 'اختبر القهوة كما لم تفعل من قبل',
-    subEn: 'Discover our carefully sourced single-origin beans and signature blends, roasted to perfection for the ultimate coffee experience.',
-    subAr: 'اكتشف حبوبنا من الأصل الواحد المختارة بعناية وخلطاتنا المميزة، المحمصة بإتقان لتجربة القهوة المثالية.',
+    eyebrowEn: 'Signature Roasts',
+    eyebrowAr: 'تحميصات مميزة',
+    en: 'Coffee Crafted for Quiet Luxury',
+    ar: 'قهوة مصممة لرفاهية هادئة',
+    subEn: 'Selected beans, slow-roasted for depth, warmth, and a finish that lingers beautifully.',
+    subAr: 'حبوب منتقاة بعناية، نحمصها بهدوء لتمنحك عمقًا ودفئًا ونهاية لا تُنسى.',
+    ctaEn: 'Shop Coffee',
+    ctaAr: 'تسوق القهوة',
+    stats: [
+      { id: 'origin', value: '15+', label_en: 'Origins Curated', label_ar: 'مصادر مختارة', is_active: true },
+      { id: 'roast', value: '72h', label_en: 'Fresh Roast Window', label_ar: 'نافذة تحميص طازج', is_active: true },
+      { id: 'arabica', value: '100%', label_en: 'Arabica Focus', label_ar: 'تركيز أرابيكا', is_active: true },
+    ],
   },
   {
-    en: 'Crafted With Passion & Precision',
-    ar: 'مصنوعة بشغف وإتقان',
-    subEn: 'From the finest farms to your cup, we bring you exceptional quality with every sip.',
-    subAr: 'من أفضل المزارع إلى كوبك، نقدم لك جودة استثنائية مع كل رشفة.',
+    eyebrowEn: 'House Blends',
+    eyebrowAr: 'توليفات البيت',
+    en: 'A Blend With a Softer Signature',
+    ar: 'توليفة بنعومة تترك أثرها',
+    subEn: 'Balanced profiles for espresso, filter, and slow mornings at home.',
+    subAr: 'نكهات متوازنة للإسبريسو والفلتر وصباحات المنزل الهادئة.',
+    ctaEn: 'Explore Blends',
+    ctaAr: 'استكشف التوليفات',
+    stats: [
+      { id: 'profiles', value: '8', label_en: 'Taste Profiles', label_ar: 'مسارات نكهة', is_active: true },
+      { id: 'craft', value: '3', label_en: 'Roast Levels', label_ar: 'درجات تحميص', is_active: true },
+      { id: 'cups', value: '24K+', label_en: 'Cups Served', label_ar: 'فنجان مُحضّر', is_active: true },
+    ],
   },
   {
-    en: 'Your Daily Ritual, Elevated',
-    ar: 'طقوسك اليومية، بمستوى أعلى',
-    subEn: 'Transform your morning routine with our premium Turkish coffee and specialty blends.',
-    subAr: 'حوّل روتينك الصباحي مع قهوتنا التركية الفاخرة وخلطاتنا المميزة.',
+    eyebrowEn: 'Fresh Delivery',
+    eyebrowAr: 'توصيل طازج',
+    en: 'Roasted Fresh, Arriving With Care',
+    ar: 'تحميص طازج يصل إليك بعناية',
+    subEn: 'From our roaster to your door across Egypt, packed to preserve aroma and comfort.',
+    subAr: 'من محمصتنا إلى بابك داخل مصر، بتغليف يحافظ على الرائحة ودفء التجربة.',
+    ctaEn: 'Order Now',
+    ctaAr: 'اطلب الآن',
+    stats: [
+      { id: 'delivery', value: '24h', label_en: 'Cairo Dispatch', label_ar: 'شحن داخل القاهرة', is_active: true },
+      { id: 'freshness', value: '7d', label_en: 'Peak Freshness', label_ar: 'ذروة النضارة', is_active: true },
+      { id: 'support', value: '2', label_en: 'Languages', label_ar: 'لغتا خدمة', is_active: true },
+    ],
   },
   {
-    en: 'Bold Flavor. Smooth Finish.',
-    ar: 'نكهة قوية. نهاية ناعمة.',
-    subEn: 'Signature blends crafted for cappuccino, coffee mix, and hot chocolate lovers—classic or flavored.',
-    subAr: 'خلطات مميزة لعشاق الكابتشينو والكوفي ميكس والهوت شوكلت—كلاسيك أو نكهات.',
+    eyebrowEn: 'Custom Experience',
+    eyebrowAr: 'تجربة مصممة لك',
+    en: 'Build Your Ritual, Bean by Bean',
+    ar: 'اصنع طقسك الخاص حبةً بحبة',
+    subEn: 'Create an espresso blend or flavored coffee profile that feels unmistakably yours.',
+    subAr: 'كوّن توليفة إسبريسو أو نكهة قهوة تشبه ذوقك وتفاصيل يومك.',
+    ctaEn: 'Create Your Blend',
+    ctaAr: 'اصنع توليفتك',
+    stats: [
+      { id: 'custom', value: '4', label_en: 'Blend Paths', label_ar: 'مسارات توليف', is_active: true },
+      { id: 'flavors', value: '12+', label_en: 'Flavor Notes', label_ar: 'لمسات نكهة', is_active: true },
+      { id: 'control', value: '100%', label_en: 'Your Taste', label_ar: 'على ذوقك', is_active: true },
+    ],
   },
 ]
 
@@ -156,13 +208,25 @@ function makeHeroInitialSlides(section: WebsiteSectionConfig): EditorSlide[] {
       alt_en: copy.en,
       alt_ar: copy.ar,
       is_featured: index === 0,
-      button_text_en: 'Shop Now',
-      button_text_ar: 'تسوق الآن',
+      button_text_en: copy.ctaEn,
+      button_text_ar: copy.ctaAr,
       button_link: '/products',
       mobile_image_url: null,
       overlay_opacity: 0.6,
       object_position: 'center center',
-      content: section.defaultContent || {},
+      content: {
+        ...(section.defaultContent || {}),
+        eyebrow_en: copy.eyebrowEn,
+        eyebrow_ar: copy.eyebrowAr,
+        title_en: copy.en,
+        title_ar: copy.ar,
+        subtitle_en: copy.subEn,
+        subtitle_ar: copy.subAr,
+        button_text_en: copy.ctaEn,
+        button_text_ar: copy.ctaAr,
+        button_link: '/products',
+        stats: copy.stats,
+      },
       layout: section.defaultLayout || {},
       animation_type: 'fade',
       animation_duration: 6000,
@@ -317,7 +381,34 @@ function contentField(language: PreviewLanguage, key: 'eyebrow' | 'title' | 'sub
 function getContentText(content: SectionBuilderContent, language: PreviewLanguage, key: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text', fallback = '') {
   const primary = content[contentField(language, key)]
   const secondary = content[contentField(language === 'ar' ? 'en' : 'ar', key)]
+  if (language === 'ar' && !hasArabic(String(primary || ''))) {
+    return String(secondary || fallback)
+  }
   return String(primary || secondary || fallback)
+}
+
+const STAT_LABEL_AR: Record<string, string> = {
+  'countries sourced': 'مصادر مختارة',
+  'happy customers': 'عملاء سعداء',
+  'arabica beans': 'حبوب أرابيكا',
+  'origins curated': 'مصادر مختارة',
+  'fresh roast window': 'نافذة تحميص طازج',
+  'arabica focus': 'تركيز أرابيكا',
+  'taste profiles': 'مسارات نكهة',
+  'roast levels': 'درجات تحميص',
+  'cups served': 'فنجان مُحضّر',
+  'cairo dispatch': 'شحن داخل القاهرة',
+  'peak freshness': 'ذروة النضارة',
+  languages: 'لغتا خدمة',
+  'blend paths': 'مسارات توليف',
+  'flavor notes': 'لمسات نكهة',
+  'your taste': 'على ذوقك',
+}
+
+function getStatLabel(language: PreviewLanguage, labelEn?: string, labelAr?: string) {
+  if (language !== 'ar') return labelEn || labelAr || ''
+  if (hasArabic(labelAr)) return labelAr || ''
+  return STAT_LABEL_AR[String(labelEn || '').toLowerCase()] || labelEn || ''
 }
 
 function patchLayoutElement(layout: SectionBuilderLayout, elementId: string, patch: { x?: number; y?: number; visible?: boolean; align?: 'left' | 'center' | 'right' }) {
@@ -380,9 +471,11 @@ function DraggableElement({
     const originY = y
 
     const move = (moveEvent: PointerEvent) => {
+      const nextX = Math.max(-96, Math.min(96, Math.round(originX + moveEvent.clientX - startX)))
+      const nextY = Math.max(-80, Math.min(80, Math.round(originY + moveEvent.clientY - startY)))
       onLayoutChange(patchLayoutElement(layout, id, {
-        x: Math.round(originX + moveEvent.clientX - startX),
-        y: Math.round(originY + moveEvent.clientY - startY),
+        x: nextX,
+        y: nextY,
       }))
     }
 
@@ -405,7 +498,7 @@ function DraggableElement({
 
     const move = (moveEvent: PointerEvent) => {
       const delta = (moveEvent.clientX - startX) * xSign / 200
-      onScaleChange(Math.min(1.6, Math.max(0.6, startScale + delta)))
+      onScaleChange(Math.min(1.25, Math.max(0.75, startScale + delta)))
     }
 
     const stop = () => {
@@ -542,14 +635,14 @@ function SectionPreview({
   // ── Hero template — same cinematic rendering as hero-section.tsx ──────────
   if (section.editorTemplate === 'hero') {
     const heroStats = stats.length > 0 ? stats : [
-      { id: 'countries', value: '15+', label_en: 'Countries Sourced', label_ar: 'دولة مصدر' },
-      { id: 'customers', value: '50K+', label_en: 'Happy Customers', label_ar: 'عميل سعيد' },
-      { id: 'arabica', value: '100%', label_en: 'Arabica Beans', label_ar: 'حبوب أرابيكا' },
+      { id: 'origin', value: '15+', label_en: 'Origins Curated', label_ar: 'مصادر مختارة' },
+      { id: 'freshness', value: '72h', label_en: 'Fresh Roast Window', label_ar: 'نافذة تحميص طازج' },
+      { id: 'arabica', value: '100%', label_en: 'Arabica Focus', label_ar: 'تركيز أرابيكا' },
     ]
     const isRtl = language === 'ar'
-    const previewTitleScale = typeof content.title_scale === 'number' ? Math.min(1.6, Math.max(0.6, content.title_scale)) : 1
-    const previewSubtitleScale = typeof content.subtitle_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.subtitle_scale)) : 1
-    const previewStatsScale = typeof content.stats_scale === 'number' ? Math.min(1.4, Math.max(0.6, content.stats_scale)) : 1
+    const previewTitleScale = typeof content.title_scale === 'number' ? Math.min(1.25, Math.max(0.75, content.title_scale)) : 1
+    const previewSubtitleScale = typeof content.subtitle_scale === 'number' ? Math.min(1.15, Math.max(0.75, content.subtitle_scale)) : 1
+    const previewStatsScale = typeof content.stats_scale === 'number' ? Math.min(1.15, Math.max(0.75, content.stats_scale)) : 1
     return (
       <div
         className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/18 shadow-2xl transition-all', deviceClass(device))}
@@ -582,9 +675,9 @@ function SectionPreview({
             <div className="h-1.5 w-1.5 rounded-full bg-white/30" />
           </div>
 
-          {/* ── Hero content — mirrors live hero's container › max-w-7xl › max-w-[35rem] ── */}
-          <div className="relative z-10 w-full px-4">
-            <div dir={isRtl ? 'rtl' : 'ltr'} className={cn('mx-auto flex max-w-7xl', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
+          {/* Hero content mirrors live side alignment. */}
+          <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
+            <div dir={isRtl ? 'rtl' : 'ltr'} className={cn('flex w-full', isRtl ? 'justify-end text-right' : 'justify-start text-left')}>
           <DraggableElement
             id="main-copy"
             layout={layout}
@@ -594,8 +687,16 @@ function SectionPreview({
             onLayoutChange={onPatchLayout}
             onScaleChange={(s) => onPatchContent({ title_scale: s })}
             currentScale={previewTitleScale}
-            className="w-full max-w-[35rem]"
+            className={cn('w-full max-w-[35rem] md:max-w-[38rem]', isRtl ? 'ml-auto' : 'mr-auto')}
           >
+            <EditableText
+              fieldKey={`${slide.local_id}-${language}-hero-eyebrow`}
+              value={eyebrow}
+              placeholder={section.labelEn}
+              onCommit={(value) => commitText('eyebrow', value)}
+              className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#D6A373] md:text-sm"
+            />
+
             {/* Headline */}
             <EditableText
               fieldKey={`${slide.local_id}-${language}-hero-title`}
@@ -604,7 +705,7 @@ function SectionPreview({
               onCommit={(value) => commitText('title', value)}
               className={cn(
                 'font-serif font-extrabold leading-[1.05] text-balance text-[#F5E6D8]',
-                device === 'mobile' ? 'text-4xl' : 'text-5xl md:text-6xl',
+                device === 'mobile' ? 'text-4xl' : 'text-5xl md:text-6xl xl:text-7xl',
               )}
               style={{
                 textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
@@ -663,10 +764,10 @@ function SectionPreview({
                     />
                     <EditableText
                       fieldKey={`${slide.local_id}-${language}-${stat.id}-label`}
-                      value={language === 'ar' ? stat.label_ar || stat.label_en : stat.label_en || stat.label_ar}
+                      value={getStatLabel(language, stat.label_en, stat.label_ar)}
                       placeholder="Label"
                       onCommit={(value) => commitStat(stat.id, 'label', value)}
-                      className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-[#F5E6D8]/55"
+                      className={cn('mt-0.5 text-[10px] text-[#F5E6D8]/55', language === 'ar' ? 'tracking-normal' : 'uppercase tracking-[0.18em]')}
                     />
                   </div>
                 ))}
@@ -1441,6 +1542,19 @@ export default function BannersPage() {
   const selectedLayout = activeSection && selectedSlide ? getSectionBuilderLayout(activeSection, selectedSlide) : {}
   const selectedElementPosition = selectedElementId ? selectedLayout.elements?.[selectedElementId] || {} : {}
   const selectedContent = activeSection && selectedSlide ? getSectionBuilderContent(activeSection, selectedSlide) : {} as SectionBuilderContent
+  const selectedTitleScale = Math.min(1.25, Math.max(0.75, Number(selectedContent.title_scale ?? 1)))
+  const selectedSubtitleScale = Math.min(1.15, Math.max(0.75, Number(selectedContent.subtitle_scale ?? 1)))
+  const selectedStatsScale = Math.min(1.15, Math.max(0.75, Number(selectedContent.stats_scale ?? 1)))
+  const editorStateChips = selectedSlide
+    ? [
+        selectedSlide.isNew
+          ? { en: 'Fallback', ar: 'احتياطي' }
+          : selectedSlide.image_url
+            ? { en: 'Live', ar: 'مباشر' }
+            : { en: 'Missing media', ar: 'صورة ناقصة' },
+        !selectedSlide.isNew && (selectedSlide.content || selectedSlide.layout) ? { en: 'Edited', ar: 'معدل' } : null,
+      ].filter(Boolean) as Array<{ en: string; ar: string }>
+    : []
 
   if (activeSection) {
     return (
@@ -1456,8 +1570,17 @@ export default function BannersPage() {
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-[#D6A373]/80">{t('Website Section Editor', 'Website Section Editor')}</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-[#D6A373]/80">{t('Website Section Editor', 'محرر أقسام الموقع')}</p>
               <h2 className="font-serif text-2xl font-bold text-[#F5E6D8]">{localText(previewLanguage, activeSection.labelEn, activeSection.labelAr)}</h2>
+              {editorStateChips.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {editorStateChips.map((chip) => (
+                    <span key={chip.en} className="rounded-full border border-[#D6A373]/18 bg-[#D6A373]/8 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/80">
+                      {localText(previewLanguage, chip.en, chip.ar)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1503,7 +1626,7 @@ export default function BannersPage() {
               className="flex h-10 items-center gap-2 rounded-xl bg-[#D6A373] px-4 text-sm font-bold text-black transition hover:bg-[#c8941a] disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? t('Saving...', 'Saving...') : t('Save Section', 'Save Section')}
+              {saving ? t('Saving...', 'جار الحفظ...') : t('Save Section', 'حفظ القسم')}
             </button>
           </div>
         </div>
@@ -1512,8 +1635,8 @@ export default function BannersPage() {
           <aside className="rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/85 p-4">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-[#F5E6D8]">{t('Slides', 'Slides')}</p>
-                <p className="text-xs text-[#D6B79A]/45">{slides.length} {t('items', 'items')}</p>
+                <p className="text-sm font-bold text-[#F5E6D8]">{t('Slides', 'الشرائح')}</p>
+                <p className="text-xs text-[#D6B79A]/45">{slides.length} {t('items', 'عنصر')}</p>
               </div>
               <button type="button" onClick={addSlide} title="Add slide" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black">
                 <Plus className="h-4 w-4" />
@@ -1535,7 +1658,7 @@ export default function BannersPage() {
                       {!slide.is_active && <div className="absolute inset-0 bg-black/65" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-[#F5E6D8]">{localText(previewLanguage, slide.title_en, slide.title_ar) || `${t('Slide', 'Slide')} ${index + 1}`}</p>
+                      <p className="truncate text-xs font-bold text-[#F5E6D8]">{localText(previewLanguage, slide.title_en, slide.title_ar) || `${t('Slide', 'شريحة')} ${index + 1}`}</p>
                       <p className="text-[10px] text-[#D6B79A]/45">#{index + 1}</p>
                     </div>
                   </div>
@@ -1587,33 +1710,33 @@ export default function BannersPage() {
             {selectedSlide && (
               <>
                 <div>
-                  <p className="mb-3 text-sm font-bold text-[#F5E6D8]">{t('Slide Controls', 'Slide Controls')}</p>
+                  <p className="mb-3 text-sm font-bold text-[#F5E6D8]">{t('Slide Controls', 'تحكم الشريحة')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => patchSelected({ is_active: !selectedSlide.is_active })}
                       className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
                       {selectedSlide.is_active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      {selectedSlide.is_active ? t('Hide', 'Hide') : t('Show', 'Show')}
+                      {selectedSlide.is_active ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
                     </button>
                     <button type="button" onClick={duplicateSlide}
                       className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
                       <Copy className="h-3.5 w-3.5" />
-                      {t('Duplicate', 'Duplicate')}
+                      {t('Duplicate', 'نسخ')}
                     </button>
                     <button type="button" onClick={() => moveSlide(selectedSlide.local_id, -1)}
                       className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
                       <ArrowUp className="h-3.5 w-3.5" />
-                      {t('Up', 'Up')}
+                      {t('Up', 'أعلى')}
                     </button>
                     <button type="button" onClick={() => moveSlide(selectedSlide.local_id, 1)}
                       className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
                       <ArrowDown className="h-3.5 w-3.5" />
-                      {t('Down', 'Down')}
+                      {t('Down', 'أسفل')}
                     </button>
                   </div>
                 </div>
 
                 <details className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Slide Animation', 'Slide Animation')}</summary>
+                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Slide Animation', 'حركة الشريحة')}</summary>
                   <div className="mt-3">
                   <select
                     value={selectedSlide.animation_type || 'fade'}
@@ -1626,7 +1749,7 @@ export default function BannersPage() {
                     <option value="none">None</option>
                   </select>
                   <label className="mb-2 mt-3 block text-[11px] text-white/45">
-                    {t('Duration', 'Duration')}: {Number(selectedSlide.animation_duration || 6000)}ms
+                    {t('Duration', 'المدة')}: {Number(selectedSlide.animation_duration || 6000)}ms
                   </label>
                   <input
                     type="range"
@@ -1642,7 +1765,7 @@ export default function BannersPage() {
                 </details>
 
                 <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Replace Image', 'Replace Image')}</p>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Replace Image', 'استبدال الصورة')}</p>
                   <label
                     className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#D6A373]/24 bg-[#0B0806]/65 p-5 text-center transition hover:border-[#D6A373]/55"
                     onDragOver={(event) => event.preventDefault()}
@@ -1653,7 +1776,7 @@ export default function BannersPage() {
                     }}
                   >
                     {uploading ? <Loader2 className="mb-2 h-5 w-5 animate-spin text-[#D6A373]" /> : <Upload className="mb-2 h-5 w-5 text-[#D6A373]" />}
-                    <span className="text-xs text-[#F5E6D8]/80">{t('Drag image here or choose file', 'Drag image here or choose file')}</span>
+                    <span className="text-xs text-[#F5E6D8]/80">{t('Drag image here or choose file', 'اسحب الصورة هنا أو اختر ملفًا')}</span>
                     <span className="mt-1 text-[10px] text-[#D6B79A]/38">JPG, PNG, WebP · 8MB</span>
                     <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const file = event.target.files?.[0]
@@ -1682,7 +1805,7 @@ export default function BannersPage() {
                 )}
 
                 <details className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Image Position', 'Image Position')}</summary>
+                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Image Position', 'موضع الصورة')}</summary>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {OBJECT_POSITION_OPTIONS.map((option) => (
                       <button
@@ -1707,18 +1830,18 @@ export default function BannersPage() {
                 {selectedElementId && (
                   <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
                     <div className="mb-3 flex items-center justify-between gap-2">
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Position & Scale', 'Position & Scale')}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Position & Scale', 'الموضع والحجم')}</p>
                       <span className="rounded-full bg-[#D6A373]/10 px-2 py-1 text-[10px] text-[#D6A373]">{selectedElementId}</span>
                     </div>
 
                     <label className="mb-2 block text-[11px] text-white/45">X: {Number(selectedElementPosition.x || 0)}px</label>
-                    <input type="range" min={-180} max={180} step={2}
+                    <input type="range" min={-96} max={96} step={2}
                       value={Number(selectedElementPosition.x || 0)}
                       onChange={(event) => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { x: Number(event.target.value) }))}
                       className="w-full accent-[#D6A373]" title="X position"
                     />
                     <label className="mb-2 mt-3 block text-[11px] text-white/45">Y: {Number(selectedElementPosition.y || 0)}px</label>
-                    <input type="range" min={-180} max={180} step={2}
+                    <input type="range" min={-80} max={80} step={2}
                       value={Number(selectedElementPosition.y || 0)}
                       onChange={(event) => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { y: Number(event.target.value) }))}
                       className="w-full accent-[#D6A373]" title="Y position"
@@ -1727,21 +1850,21 @@ export default function BannersPage() {
                     {activeSection.editorTemplate === 'hero' && selectedElementId === 'main-copy' && (
                       <>
                         <div className="my-3 h-px bg-white/8" />
-                        <label className="mb-2 block text-[11px] text-white/45">{t('Title Scale', 'Title Scale')}: {(selectedContent.title_scale ?? 1).toFixed(2)}×</label>
-                        <input type="range" min={0.6} max={1.6} step={0.05}
-                          value={selectedContent.title_scale ?? 1}
+                        <label className="mb-2 block text-[11px] text-white/45">{t('Title Scale', 'حجم العنوان')}: {selectedTitleScale.toFixed(2)}×</label>
+                        <input type="range" min={0.75} max={1.25} step={0.05}
+                          value={selectedTitleScale}
                           onChange={(e) => patchSelectedContent({ title_scale: Number(e.target.value) })}
                           className="w-full accent-[#D6A373]" title="Title scale"
                         />
-                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Subtitle Scale', 'Subtitle Scale')}: {(selectedContent.subtitle_scale ?? 1).toFixed(2)}×</label>
-                        <input type="range" min={0.6} max={1.4} step={0.05}
-                          value={selectedContent.subtitle_scale ?? 1}
+                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Subtitle Scale', 'حجم الوصف')}: {selectedSubtitleScale.toFixed(2)}×</label>
+                        <input type="range" min={0.75} max={1.15} step={0.05}
+                          value={selectedSubtitleScale}
                           onChange={(e) => patchSelectedContent({ subtitle_scale: Number(e.target.value) })}
                           className="w-full accent-[#D6A373]" title="Subtitle scale"
                         />
-                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Stats Scale', 'Stats Scale')}: {(selectedContent.stats_scale ?? 1).toFixed(2)}×</label>
-                        <input type="range" min={0.6} max={1.4} step={0.05}
-                          value={selectedContent.stats_scale ?? 1}
+                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Stats Scale', 'حجم الإحصائيات')}: {selectedStatsScale.toFixed(2)}×</label>
+                        <input type="range" min={0.75} max={1.15} step={0.05}
+                          value={selectedStatsScale}
                           onChange={(e) => patchSelectedContent({ stats_scale: Number(e.target.value) })}
                           className="w-full accent-[#D6A373]" title="Stats scale"
                         />
@@ -1757,14 +1880,14 @@ export default function BannersPage() {
                       }}
                       className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/55 transition hover:text-white"
                     >
-                      {t('Reset', 'Reset')}
+                      {t('Reset', 'إعادة ضبط')}
                     </button>
                   </div>
                 )}
 
                 <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group">
                   <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">
-                    {t('Visual Effects', 'Visual Effects')}
+                    {t('Visual Effects', 'المؤثرات البصرية')}
                   </summary>
                   <div className="mt-3">
                   <VisualEffectsPanel
