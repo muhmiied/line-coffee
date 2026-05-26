@@ -1,29 +1,22 @@
 'use client'
 
-import { ChangeEvent, DragEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import {
-  AlertCircle,
   ArrowDown,
   ArrowLeft,
   ArrowUp,
-  Award,
-  Coffee,
+  CheckCircle2,
   Copy,
   Eye,
   EyeOff,
-  GripVertical,
-  Heart,
-  Leaf,
+  Image as ImageIcon,
+  Layers,
   Loader2,
-  Monitor,
-  Move,
-  Pencil,
-  Phone,
   Plus,
   RefreshCw,
   Save,
+  Settings2,
   Sparkles,
-  Tablet,
   Trash2,
   Upload,
 } from 'lucide-react'
@@ -32,7 +25,6 @@ import { useLanguage } from '@/lib/context/language'
 import {
   buildEffectsFilter,
   buildOverlayGradient,
-  getMediaImageMeta,
   getMediaObjectPosition,
   getMediaOverlayOpacity,
   getMediaSectionKey,
@@ -41,1252 +33,224 @@ import {
   getVisualEffects,
   getWebsitePages,
   GRAIN_SVG,
-  isUploadedImageSmall,
-  MEDIA_ALLOWED_MIME_TYPES,
-  MEDIA_MAX_UPLOAD_SIZE,
-  MEDIA_USAGE_OPTIONS,
   OBJECT_POSITION_OPTIONS,
-  VISUAL_PRESETS,
   WEBSITE_SECTIONS,
   type SectionBuilderContent,
   type SectionBuilderLayout,
+  type SectionStatBlock,
+  type SectionTextBlock,
   type SiteMediaItem,
   type VisualEffects,
-  type VisualPreset,
   type WebsiteSectionConfig,
 } from '@/lib/media'
-import { HeroBackground } from '@/components/home/hero-background'
 import { cn } from '@/lib/utils'
 
-type EditorSlide = SiteMediaItem & {
+type StudioSlide = Partial<SiteMediaItem> & {
   local_id: string
   isNew?: boolean
 }
 
-type PendingUpload = {
-  file: File
-  width: number
-  height: number
-  previewUrl: string
-  warnings: string[]
-}
-
-type PreviewDevice = 'desktop' | 'tablet' | 'mobile'
-type PreviewLanguage = 'en' | 'ar'
+type EditorTab = 'content' | 'image' | 'layout' | 'effects' | 'advanced'
 
 const EMPTY_IMAGE = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80'
 
-function localText(language: PreviewLanguage, en?: string | null, ar?: string | null) {
-  return language === 'ar' ? (hasArabic(ar) ? ar! : en || '') : en || ar || ''
-}
-
-function hasArabic(value?: string | null) {
-  return !!value && /\p{Script=Arabic}/u.test(value)
+function localText(language: 'en' | 'ar', en?: string | null, ar?: string | null) {
+  return language === 'ar' ? ar || en || '' : en || ar || ''
 }
 
 function createLocalId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return `local-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  return `studio-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 function isCategorySection(section: WebsiteSectionConfig) {
   return section.key === 'categories'
 }
 
-function slideBelongsToSection(slide: SiteMediaItem, section: WebsiteSectionConfig) {
+function slideBelongsToSection(slide: Partial<SiteMediaItem>, section: WebsiteSectionConfig) {
   if (isCategorySection(section)) {
     return slide.media_type === 'category' || String(slide.usage_area || '').startsWith('category:')
   }
 
-  const key = getMediaSectionKey(slide)
+  const key = getMediaSectionKey({
+    section_key: slide.section_key,
+    usage_area: slide.usage_area,
+  })
   return key === section.key || slide.usage_area === section.usageArea
 }
 
-const HERO_FALLBACK_IMAGES = [
-  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
-  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=80',
-  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1920&q=80',
-  'https://images.unsplash.com/photo-1459755486867-b55449bb39ff?w=1920&q=80',
-]
-
-type HeroFallbackCopy = {
-  eyebrowEn: string
-  eyebrowAr: string
-  en: string
-  ar: string
-  subEn: string
-  subAr: string
-  ctaEn: string
-  ctaAr: string
-  stats: SectionBuilderContent['stats']
+function normalizeSlide(item: SiteMediaItem): StudioSlide {
+  return {
+    ...item,
+    local_id: item.id || createLocalId(),
+    isNew: false,
+  }
 }
 
-const HERO_FALLBACK_CONTENT: HeroFallbackCopy[] = [
-  {
-    eyebrowEn: 'Signature Roasts',
-    eyebrowAr: 'تحميصات مميزة',
-    en: 'Coffee Crafted for Quiet Luxury',
-    ar: 'قهوة مصممة لرفاهية هادئة',
-    subEn: 'Selected beans, slow-roasted for depth, warmth, and a finish that lingers beautifully.',
-    subAr: 'حبوب منتقاة بعناية، نحمصها بهدوء لتمنحك عمقًا ودفئًا ونهاية لا تُنسى.',
-    ctaEn: 'Shop Coffee',
-    ctaAr: 'تسوق القهوة',
-    stats: [
-      { id: 'origin', value: '15+', label_en: 'Origins Curated', label_ar: 'مصادر مختارة', is_active: true },
-      { id: 'roast', value: '72h', label_en: 'Fresh Roast Window', label_ar: 'نافذة تحميص طازج', is_active: true },
-      { id: 'arabica', value: '100%', label_en: 'Arabica Focus', label_ar: 'تركيز أرابيكا', is_active: true },
-    ],
-  },
-  {
-    eyebrowEn: 'House Blends',
-    eyebrowAr: 'توليفات البيت',
-    en: 'A Blend With a Softer Signature',
-    ar: 'توليفة بنعومة تترك أثرها',
-    subEn: 'Balanced profiles for espresso, filter, and slow mornings at home.',
-    subAr: 'نكهات متوازنة للإسبريسو والفلتر وصباحات المنزل الهادئة.',
-    ctaEn: 'Explore Blends',
-    ctaAr: 'استكشف التوليفات',
-    stats: [
-      { id: 'profiles', value: '8', label_en: 'Taste Profiles', label_ar: 'مسارات نكهة', is_active: true },
-      { id: 'craft', value: '3', label_en: 'Roast Levels', label_ar: 'درجات تحميص', is_active: true },
-      { id: 'cups', value: '24K+', label_en: 'Cups Served', label_ar: 'فنجان مُحضّر', is_active: true },
-    ],
-  },
-  {
-    eyebrowEn: 'Fresh Delivery',
-    eyebrowAr: 'توصيل طازج',
-    en: 'Roasted Fresh, Arriving With Care',
-    ar: 'تحميص طازج يصل إليك بعناية',
-    subEn: 'From our roaster to your door across Egypt, packed to preserve aroma and comfort.',
-    subAr: 'من محمصتنا إلى بابك داخل مصر، بتغليف يحافظ على الرائحة ودفء التجربة.',
-    ctaEn: 'Order Now',
-    ctaAr: 'اطلب الآن',
-    stats: [
-      { id: 'delivery', value: '24h', label_en: 'Cairo Dispatch', label_ar: 'شحن داخل القاهرة', is_active: true },
-      { id: 'freshness', value: '7d', label_en: 'Peak Freshness', label_ar: 'ذروة النضارة', is_active: true },
-      { id: 'support', value: '2', label_en: 'Languages', label_ar: 'لغتا خدمة', is_active: true },
-    ],
-  },
-  {
-    eyebrowEn: 'Custom Experience',
-    eyebrowAr: 'تجربة مصممة لك',
-    en: 'Build Your Ritual, Bean by Bean',
-    ar: 'اصنع طقسك الخاص حبةً بحبة',
-    subEn: 'Create an espresso blend or flavored coffee profile that feels unmistakably yours.',
-    subAr: 'كوّن توليفة إسبريسو أو نكهة قهوة تشبه ذوقك وتفاصيل يومك.',
-    ctaEn: 'Create Your Blend',
-    ctaAr: 'اصنع توليفتك',
-    stats: [
-      { id: 'custom', value: '4', label_en: 'Blend Paths', label_ar: 'مسارات توليف', is_active: true },
-      { id: 'flavors', value: '12+', label_en: 'Flavor Notes', label_ar: 'لمسات نكهة', is_active: true },
-      { id: 'control', value: '100%', label_en: 'Your Taste', label_ar: 'على ذوقك', is_active: true },
-    ],
-  },
-]
-
-function makeHeroInitialSlides(section: WebsiteSectionConfig): EditorSlide[] {
-  return HERO_FALLBACK_IMAGES.map((imgUrl, index) => {
-    const localId = createLocalId()
-    const copy = HERO_FALLBACK_CONTENT[index]!
-    return {
-      id: localId,
-      local_id: localId,
-      isNew: true,
-      title_en: copy.en,
-      title_ar: copy.ar,
-      subtitle_en: copy.subEn,
-      subtitle_ar: copy.subAr,
-      image_url: imgUrl,
-      link_url: '/products',
-      sort_order: index,
-      is_active: true,
-      section_key: section.key,
-      slide_key: localId,
-      section_type: section.sectionType,
-      media_type: section.mediaType,
-      usage_area: section.usageArea,
-      alt_en: copy.en,
-      alt_ar: copy.ar,
-      is_featured: index === 0,
-      button_text_en: copy.ctaEn,
-      button_text_ar: copy.ctaAr,
-      button_link: '/products',
-      mobile_image_url: null,
-      overlay_opacity: 0.6,
-      object_position: 'center center',
-      content: {
-        ...(section.defaultContent || {}),
-        eyebrow_en: copy.eyebrowEn,
-        eyebrow_ar: copy.eyebrowAr,
-        title_en: copy.en,
-        title_ar: copy.ar,
-        subtitle_en: copy.subEn,
-        subtitle_ar: copy.subAr,
-        button_text_en: copy.ctaEn,
-        button_text_ar: copy.ctaAr,
-        button_link: '/products',
-        stats: copy.stats,
-      },
-      layout: section.defaultLayout || {},
-      animation_type: 'fade',
-      animation_duration: 6000,
-      device_visibility: { desktop: true, tablet: true, mobile: true },
-      starts_at: null,
-      ends_at: null,
-      images: [{ url: imgUrl, object_position: 'center center' }],
-    }
-  })
-}
-
-function makeSlide(section: WebsiteSectionConfig, index: number): EditorSlide {
+function makeSlide(section: WebsiteSectionConfig, index: number): StudioSlide {
   const localId = createLocalId()
-  const usageArea = isCategorySection(section) ? 'category:turkish-coffee' : section.usageArea
+  const content = section.defaultContent || {}
 
   return {
     id: localId,
     local_id: localId,
     isNew: true,
-    title_ar: section.defaultTitleAr,
-    title_en: section.defaultTitleEn,
-    subtitle_ar: section.defaultSubtitleAr,
-    subtitle_en: section.defaultSubtitleEn,
+    title_en: content.title_en || section.defaultTitleEn,
+    title_ar: content.title_ar || section.defaultTitleAr,
+    subtitle_en: content.subtitle_en || section.defaultSubtitleEn,
+    subtitle_ar: content.subtitle_ar || section.defaultSubtitleAr,
     image_url: section.fallbackImage || EMPTY_IMAGE,
     link_url: section.defaultButtonLink || null,
+    button_link: section.defaultButtonLink || null,
+    button_text_en: content.button_text_en || section.defaultButtonTextEn || null,
+    button_text_ar: content.button_text_ar || section.defaultButtonTextAr || null,
     sort_order: index,
     is_active: true,
     section_key: section.key,
     slide_key: localId,
     section_type: section.sectionType,
     media_type: section.mediaType,
-    usage_area: usageArea,
+    usage_area: isCategorySection(section) ? 'category:turkish-coffee' : section.usageArea,
     alt_en: section.defaultTitleEn,
     alt_ar: section.defaultTitleAr,
     is_featured: index === 0,
-    button_text_en: section.defaultButtonTextEn || null,
-    button_text_ar: section.defaultButtonTextAr || null,
-    button_link: section.defaultButtonLink || null,
     mobile_image_url: null,
     overlay_opacity: 0.55,
     object_position: 'center center',
-    content: section.defaultContent || {},
+    content,
     layout: section.defaultLayout || {},
     animation_type: 'fade',
     animation_duration: 6000,
     device_visibility: { desktop: true, tablet: true, mobile: true },
     starts_at: null,
     ends_at: null,
-    images: [{
-      url: section.fallbackImage || EMPTY_IMAGE,
-      object_position: 'center center',
-    }],
+    images: [{ url: section.fallbackImage || EMPTY_IMAGE, object_position: 'center center' }],
   }
 }
 
-function normalizeSlide(item: SiteMediaItem): EditorSlide {
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+}
+
+function patchContent(slide: StudioSlide, patch: Partial<SectionBuilderContent>) {
   return {
-    ...item,
-    local_id: item.id,
-  }
-}
-
-function fileIsAllowed(file: File) {
-  return MEDIA_ALLOWED_MIME_TYPES.includes(file.type as (typeof MEDIA_ALLOWED_MIME_TYPES)[number])
-}
-
-function readImageDimensions(file: File) {
-  return new Promise<{ width: number; height: number; previewUrl: string }>((resolve, reject) => {
-    const previewUrl = URL.createObjectURL(file)
-    const image = new window.Image()
-    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight, previewUrl })
-    image.onerror = () => {
-      URL.revokeObjectURL(previewUrl)
-      reject(new Error('Could not read image dimensions'))
-    }
-    image.src = previewUrl
-  })
-}
-
-function aspectWarning(section: WebsiteSectionConfig, width: number, height: number) {
-  const ratio = width / Math.max(1, height)
-  const target = section.key === 'categories'
-    ? 1000 / 700
-    : section.sectionType === 'full_hero'
-    ? 1920 / 900
-    : section.sectionType === 'split_content'
-      ? 1
-      : 1600 / 800
-
-  return Math.abs(ratio - target) > 0.45
-}
-
-function EditableText({
-  fieldKey,
-  value,
-  placeholder,
-  className,
-  multiline,
-  style,
-  onCommit,
-}: {
-  fieldKey: string
-  value: string
-  placeholder: string
-  className: string
-  multiline?: boolean
-  style?: React.CSSProperties
-  onCommit: (value: string) => void
-}) {
-  const displayValue = value || placeholder
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!multiline && event.key === 'Enter') {
-      event.preventDefault()
-      event.currentTarget.blur()
-    }
-  }
-
-  return (
-    <div
-      key={fieldKey}
-      contentEditable
-      suppressContentEditableWarning
-      spellCheck={false}
-      onKeyDown={handleKeyDown}
-      onBlur={(event) => {
-        const nextValue = event.currentTarget.textContent?.trim() || ''
-        onCommit(nextValue === placeholder && !value ? '' : nextValue)
-      }}
-      className={cn(
-        'rounded-lg outline-none transition-all focus:bg-black/25 focus:ring-1 focus:ring-[#D6A373]/45',
-        !value && 'text-[#F5E6D8]/45',
-        className,
-      )}
-      style={style}
-    >
-      {displayValue}
-    </div>
-  )
-}
-
-function deviceClass(device: PreviewDevice) {
-  if (device === 'mobile') return 'max-w-[390px]'
-  if (device === 'tablet') return 'max-w-[760px]'
-  return 'max-w-6xl'
-}
-
-function contentField(language: PreviewLanguage, key: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text') {
-  return `${key}_${language}` as keyof SectionBuilderContent
-}
-
-function getContentText(content: SectionBuilderContent, language: PreviewLanguage, key: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text', fallback = '') {
-  const primary = content[contentField(language, key)]
-  const secondary = content[contentField(language === 'ar' ? 'en' : 'ar', key)]
-  if (language === 'ar' && !hasArabic(String(primary || ''))) {
-    return String(secondary || fallback)
-  }
-  return String(primary || secondary || fallback)
-}
-
-const STAT_LABEL_AR: Record<string, string> = {
-  'countries sourced': 'مصادر مختارة',
-  'happy customers': 'عملاء سعداء',
-  'arabica beans': 'حبوب أرابيكا',
-  'origins curated': 'مصادر مختارة',
-  'fresh roast window': 'نافذة تحميص طازج',
-  'arabica focus': 'تركيز أرابيكا',
-  'taste profiles': 'مسارات نكهة',
-  'roast levels': 'درجات تحميص',
-  'cups served': 'فنجان مُحضّر',
-  'cairo dispatch': 'شحن داخل القاهرة',
-  'peak freshness': 'ذروة النضارة',
-  languages: 'لغتا خدمة',
-  'blend paths': 'مسارات توليف',
-  'flavor notes': 'لمسات نكهة',
-  'your taste': 'على ذوقك',
-}
-
-function getStatLabel(language: PreviewLanguage, labelEn?: string, labelAr?: string) {
-  if (language !== 'ar') return labelEn || labelAr || ''
-  if (hasArabic(labelAr)) return labelAr || ''
-  return STAT_LABEL_AR[String(labelEn || '').toLowerCase()] || labelEn || ''
-}
-
-function patchLayoutElement(layout: SectionBuilderLayout, elementId: string, patch: { x?: number; y?: number; visible?: boolean; align?: 'left' | 'center' | 'right' }) {
-  const current = layout.elements?.[elementId] || {}
-  return {
-    ...layout,
-    elements: {
-      ...(layout.elements || {}),
-      [elementId]: {
-        ...current,
-        ...patch,
-      },
+    ...slide,
+    content: {
+      ...asRecord(slide.content),
+      ...patch,
     },
   }
 }
 
-const builderIcons = {
-  leaf: Leaf,
-  award: Award,
-  heart: Heart,
-  coffee: Coffee,
+function patchEffects(slide: StudioSlide, patch: Partial<VisualEffects>) {
+  const content = asRecord(slide.content) as SectionBuilderContent
+  return patchContent(slide, {
+    visual_effects: {
+      ...(content.visual_effects || {}),
+      ...patch,
+    },
+  })
 }
 
-function DraggableElement({
-  id,
-  layout,
-  editable,
-  selected,
-  className,
-  children,
-  onSelect,
-  onLayoutChange,
-  onScaleChange,
-  currentScale,
-}: {
-  id: string
-  layout: SectionBuilderLayout
-  editable: boolean
-  selected: boolean
-  className?: string
-  children: ReactNode
-  onSelect: (id: string) => void
-  onLayoutChange: (layout: SectionBuilderLayout) => void
-  onScaleChange?: (scale: number) => void
-  currentScale?: number
-}) {
-  const position = layout.elements?.[id] || {}
-  const x = Number(position.x || 0)
-  const y = Number(position.y || 0)
-
-  const startDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (!editable) return
-    event.preventDefault()
-    event.stopPropagation()
-    onSelect(id)
-
-    const startX = event.clientX
-    const startY = event.clientY
-    const originX = x
-    const originY = y
-
-    const move = (moveEvent: PointerEvent) => {
-      const nextX = Math.max(-96, Math.min(96, Math.round(originX + moveEvent.clientX - startX)))
-      const nextY = Math.max(-80, Math.min(80, Math.round(originY + moveEvent.clientY - startY)))
-      onLayoutChange(patchLayoutElement(layout, id, {
-        x: nextX,
-        y: nextY,
-      }))
-    }
-
-    const stop = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', stop)
-    }
-
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', stop)
+function patchLayout(slide: StudioSlide, patch: Partial<SectionBuilderLayout>) {
+  return {
+    ...slide,
+    layout: {
+      ...asRecord(slide.layout),
+      ...patch,
+    },
   }
-
-  const startScaleDrag = (event: ReactPointerEvent<HTMLDivElement>, xSign: 1 | -1) => {
-    if (!editable || !onScaleChange) return
-    event.preventDefault()
-    event.stopPropagation()
-
-    const startX = event.clientX
-    const startScale = currentScale ?? 1
-
-    const move = (moveEvent: PointerEvent) => {
-      const delta = (moveEvent.clientX - startX) * xSign / 200
-      onScaleChange(Math.min(1.25, Math.max(0.75, startScale + delta)))
-    }
-
-    const stop = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', stop)
-    }
-
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', stop)
-  }
-
-  return (
-    <div
-      className={cn('relative transition-transform', editable && 'rounded-xl', editable && selected && 'ring-1 ring-[#D6A373]/70', className)}
-      style={{ transform: `translate(${x}px, ${y}px)` }}
-      onClick={(event) => {
-        if (!editable) return
-        event.stopPropagation()
-        onSelect(id)
-      }}
-    >
-      {editable && (
-        <button
-          type="button"
-          onPointerDown={startDrag}
-          className="absolute -right-3 -top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D6A373]/40 bg-[#0B0806] text-[#D6A373] shadow-lg"
-          title="Move"
-        >
-          <Move className="h-3.5 w-3.5" />
-        </button>
-      )}
-      {editable && selected && onScaleChange && (
-        <>
-          {/* TL: drag left=shrink, drag right=grow — avoids Move button at top-right */}
-          <div onPointerDown={(e) => startScaleDrag(e, -1)} className="absolute -left-2 -top-2 z-20 h-3 w-3 cursor-nwse-resize rounded-full border-2 border-[#D6A373] bg-[#0B0806]" title="Scale" />
-          {/* BL */}
-          <div onPointerDown={(e) => startScaleDrag(e, -1)} className="absolute -bottom-2 -left-2 z-20 h-3 w-3 cursor-nesw-resize rounded-full border-2 border-[#D6A373] bg-[#0B0806]" title="Scale" />
-          {/* BR: drag right=grow */}
-          <div onPointerDown={(e) => startScaleDrag(e, 1)}  className="absolute -bottom-2 -right-2 z-20 h-3 w-3 cursor-nwse-resize rounded-full border-2 border-[#D6A373] bg-[#0B0806]" title="Scale" />
-        </>
-      )}
-      {children}
-    </div>
-  )
 }
 
-function SectionPreview({
-  section,
-  slide,
-  language,
-  device,
-  onPatch,
-  onPatchContent,
-  onPatchLayout,
-  selectedElement,
-  onSelectElement,
-  onDropFile,
-}: {
-  section: WebsiteSectionConfig
-  slide: EditorSlide
-  language: PreviewLanguage
-  device: PreviewDevice
-  onPatch: (patch: Partial<EditorSlide>) => void
-  onPatchContent: (patch: Partial<SectionBuilderContent>) => void
-  onPatchLayout: (layout: SectionBuilderLayout) => void
-  selectedElement: string | null
-  onSelectElement: (id: string) => void
-  onDropFile: (file: File) => void
-}) {
-  const content = getSectionBuilderContent(section, slide)
-  const layout = getSectionBuilderLayout(section, slide)
-  const image = device === 'mobile' && slide.mobile_image_url ? slide.mobile_image_url : slide.image_url || section.fallbackImage
-  const title = getContentText(content, language, 'title', section.defaultTitleEn)
-  const eyebrow = getContentText(content, language, 'eyebrow', section.labelEn)
-  const subtitle = getContentText(content, language, 'subtitle', section.defaultSubtitleEn)
-  const body = getContentText(content, language, 'body', subtitle)
-  const buttonText = getContentText(content, language, 'button_text', language === 'ar' ? 'تسوق الآن' : (section.defaultButtonTextEn || 'Shop Now'))
-  const overlayOpacity = getMediaOverlayOpacity(slide, 0.55)
-  const fx = getVisualEffects(slide)
-  const hasFx = Object.keys(fx).length > 0
-  const imgFilter = buildEffectsFilter(fx)
-  const overlayGrad = buildOverlayGradient(fx.gradient_type, fx.overlay_color, overlayOpacity)
-  const fxVignette = Number(fx.vignette ?? 0)
-  const fxGlow = Number(fx.glow ?? 0)
-  const fxGrain = Number(fx.grain ?? 0)
-  const features = (content.features || []).filter((feature) => feature.is_active !== false)
-  const stats = (content.stats || []).filter((stat) => stat.is_active !== false)
-
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    const file = event.dataTransfer.files?.[0]
-    if (file) onDropFile(file)
-  }
-
-  const sharedStyle = {
-    objectPosition: getMediaObjectPosition(slide),
-  }
-
-  const commitText = (key: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text', value: string) => {
-    // Guard: never save pure-English text into an Arabic field.
-    // This prevents the editor from corrupting AR content when the EN fallback
-    // is displayed in the textarea and the user blurs without actually typing Arabic.
-    if (language === 'ar' && value && !/[؀-ۿ]/.test(value)) {
-      const enVal = content[contentField('en', key)]
-      if (enVal === value) return
-    }
-
-    onPatchContent({ [contentField(language, key)]: value } as Partial<SectionBuilderContent>)
-
-    if (key === 'title') onPatch(language === 'ar' ? { title_ar: value } : { title_en: value })
-    if (key === 'subtitle' || key === 'body') onPatch(language === 'ar' ? { subtitle_ar: value } : { subtitle_en: value })
-    if (key === 'button_text') onPatch(language === 'ar' ? { button_text_ar: value } : { button_text_en: value })
-  }
-
-  const commitFeature = (id: string, field: 'title' | 'description', value: string) => {
-    const nextFeatures = (content.features || []).map((feature) => (
-      feature.id === id
-        ? { ...feature, [`${field}_${language}`]: value }
-        : feature
-    ))
-    onPatchContent({ features: nextFeatures })
-  }
-
-  const commitStat = (id: string, field: 'value' | 'label', value: string) => {
-    const nextStats = (content.stats || []).map((stat) => {
-      if (stat.id !== id) return stat
-      return field === 'value' ? { ...stat, value } : { ...stat, [`label_${language}`]: value }
-    })
-    onPatchContent({ stats: nextStats })
-  }
-
-  const storyDirection = language === 'ar' ? 'rtl' : 'ltr'
-
-  // ── Hero template — same cinematic rendering as hero-section.tsx ──────────
-  if (section.editorTemplate === 'hero') {
-    const heroStats = stats.length > 0 ? stats : [
-      { id: 'origin', value: '15+', label_en: 'Origins Curated', label_ar: 'مصادر مختارة' },
-      { id: 'freshness', value: '72h', label_en: 'Fresh Roast Window', label_ar: 'نافذة تحميص طازج' },
-      { id: 'arabica', value: '100%', label_en: 'Arabica Focus', label_ar: 'تركيز أرابيكا' },
-    ]
-    const isRtl = language === 'ar'
-    const previewTitleScale = typeof content.title_scale === 'number' ? Math.min(1.25, Math.max(0.75, content.title_scale)) : 1
-    const previewSubtitleScale = typeof content.subtitle_scale === 'number' ? Math.min(1.15, Math.max(0.75, content.subtitle_scale)) : 1
-    const previewStatsScale = typeof content.stats_scale === 'number' ? Math.min(1.15, Math.max(0.75, content.stats_scale)) : 1
-    return (
-      <div
-        className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/18 shadow-2xl transition-all', deviceClass(device))}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={handleDrop}
-      >
-        <div
-          className={cn(
-            'relative flex items-center overflow-hidden',
-            device === 'mobile' ? 'min-h-[640px] px-4 py-16' :
-            device === 'tablet' ? 'min-h-[520px] px-6 py-12' :
-            'aspect-[16/9] min-h-[620px] px-8'
-          )}
-          style={{ background: '#0B0806' }}
-        >
-          {/* ── Shared cinematic background (same component as live hero) ── */}
-          <HeroBackground
-            image={image}
-            objectPosition={getMediaObjectPosition(slide)}
-            overlayOpacity={overlayOpacity}
-            visualEffects={fx}
-            isRtl={isRtl}
-            useImgTag
-          />
-
-          {/* Slide position indicator (right side, visual only) */}
-          <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2">
-            <div className="h-7 w-1.5 rounded-full bg-[#D6A373]" />
-            <div className="h-1.5 w-1.5 rounded-full bg-white/30" />
-            <div className="h-1.5 w-1.5 rounded-full bg-white/30" />
-          </div>
-
-          {/* Hero content mirrors live side alignment. */}
-          <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
-            <div dir={isRtl ? 'rtl' : 'ltr'} className={cn('flex w-full', isRtl ? 'justify-end text-right' : 'justify-start text-left')}>
-          <DraggableElement
-            id="main-copy"
-            layout={layout}
-            editable
-            selected={selectedElement === 'main-copy'}
-            onSelect={onSelectElement}
-            onLayoutChange={onPatchLayout}
-            onScaleChange={(s) => onPatchContent({ title_scale: s })}
-            currentScale={previewTitleScale}
-            className={cn('w-full max-w-[35rem] md:max-w-[38rem]', isRtl ? 'ml-auto' : 'mr-auto')}
-          >
-            <EditableText
-              fieldKey={`${slide.local_id}-${language}-hero-eyebrow`}
-              value={eyebrow}
-              placeholder={section.labelEn}
-              onCommit={(value) => commitText('eyebrow', value)}
-              className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#D6A373] md:text-sm"
-            />
-
-            {/* Headline */}
-            <EditableText
-              fieldKey={`${slide.local_id}-${language}-hero-title`}
-              value={title}
-              placeholder={section.defaultTitleEn}
-              onCommit={(value) => commitText('title', value)}
-              className={cn(
-                'font-serif font-extrabold leading-[1.05] text-balance text-[#F5E6D8]',
-                device === 'mobile' ? 'text-4xl' : 'text-5xl md:text-6xl xl:text-7xl',
-              )}
-              style={{
-                textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
-                ...(previewTitleScale !== 1 && { transform: `scale(${previewTitleScale})`, transformOrigin: isRtl ? 'top right' : 'top left', display: 'block' }),
-              }}
-            />
-
-            {/* Subheadline */}
-            <EditableText
-              fieldKey={`${slide.local_id}-${language}-hero-subtitle`}
-              value={subtitle}
-              placeholder={section.defaultSubtitleEn}
-              multiline
-              onCommit={(value) => commitText('subtitle', value)}
-              className="mt-5 max-w-xl text-base leading-relaxed text-[#D6B79A]/85 md:text-lg"
-              style={previewSubtitleScale !== 1 ? { transform: `scale(${previewSubtitleScale})`, transformOrigin: isRtl ? 'top right' : 'top left', display: 'block' } : undefined}
-            />
-
-            {/* CTA buttons */}
-            <div className={cn('mt-8 flex flex-col gap-3 sm:flex-row', isRtl ? 'items-end justify-end' : 'items-start justify-start')}>
-              <div
-                className="inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold tracking-wide"
-                style={{ background: 'linear-gradient(135deg,#B6885E 0%,#D6A373 100%)', color: '#0B0806', boxShadow: '0 4px 24px rgba(182,136,94,0.35)' }}
-              >
-                <EditableText
-                  fieldKey={`${slide.local_id}-${language}-hero-button`}
-                  value={buttonText}
-                  placeholder={section.defaultButtonTextEn || 'Shop Now'}
-                  onCommit={(value) => commitText('button_text', value)}
-                  className="text-[#0B0806]"
-                />
-              </div>
-              <div
-                className="inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold tracking-wide"
-                style={{ background: 'rgba(182,136,94,0.08)', color: '#D6A373', border: '1px solid rgba(182,136,94,0.35)', backdropFilter: 'blur(8px)' }}
-              >
-                {language === 'ar' ? 'قصتنا' : 'Our Story'}
-              </div>
-            </div>
-
-            {/* Stats row — bottom, matches hero-section.tsx */}
-            {heroStats.length > 0 && (
-              <div
-                dir={isRtl ? 'rtl' : 'ltr'}
-                className="mt-10 grid grid-cols-3 gap-4 border-t border-[#B6885E]/22 pt-6"
-                style={previewStatsScale !== 1 ? { transform: `scale(${previewStatsScale})`, transformOrigin: isRtl ? 'top right' : 'top left' } : undefined}
-              >
-                {heroStats.slice(0, 3).map((stat) => (
-                  <div key={stat.id}>
-                    <EditableText
-                      fieldKey={`${slide.local_id}-${language}-${stat.id}-value`}
-                      value={stat.value}
-                      placeholder="10+"
-                      onCommit={(value) => commitStat(stat.id, 'value', value)}
-                      className="font-serif text-2xl font-bold text-[#D6A373]"
-                    />
-                    <EditableText
-                      fieldKey={`${slide.local_id}-${language}-${stat.id}-label`}
-                      value={getStatLabel(language, stat.label_en, stat.label_ar)}
-                      placeholder="Label"
-                      onCommit={(value) => commitStat(stat.id, 'label', value)}
-                      className={cn('mt-0.5 text-[10px] text-[#F5E6D8]/55', language === 'ar' ? 'tracking-normal' : 'uppercase tracking-[0.18em]')}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </DraggableElement>
-          </div>
-        </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (section.editorTemplate === 'story') {
-    return (
-      <div
-        dir={storyDirection}
-        className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/14 bg-[#0F0A07] shadow-2xl transition-all', deviceClass(device))}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={handleDrop}
-      >
-        <div className={cn('relative overflow-hidden', device === 'mobile' ? 'px-4 py-10' : 'px-8 py-14 lg:px-12')}>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_20%_50%,_rgba(182,136,94,0.09)_0%,_transparent_70%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_80%_50%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/24 to-transparent" />
-          <div className={cn('relative z-10 grid items-center gap-10', device === 'mobile' ? 'grid-cols-1' : 'grid-cols-2')}>
-            <DraggableElement
-              id="story-image"
-              layout={layout}
-              editable
-              selected={selectedElement === 'story-image'}
-              onSelect={onSelectElement}
-              onLayoutChange={onPatchLayout}
-              className="mx-auto w-full max-w-md"
-            >
-              <div className="relative">
-                <div className="absolute -inset-4 rounded-2xl bg-[#FFDCC2]/10 blur-3xl" />
-                <div className="premium-image-card group relative aspect-[3/4] overflow-hidden rounded-2xl border border-[#FFDCC2]/15 bg-[#120D09] shadow-2xl">
-                  <img
-                    src={image}
-                    alt=""
-                    className={cn('absolute inset-0 h-full w-full object-cover', !hasFx && 'brightness-[0.82] contrast-[1.12] saturate-[1.08]')}
-                    style={{ ...sharedStyle, ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/78 via-[#0F0A07]/18 to-transparent" />
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_34%,_rgba(11,8,6,0.58)_100%)]" />
-                </div>
-                {stats.length > 0 && (
-                  <DraggableElement
-                    id="story-stats"
-                    layout={layout}
-                    editable
-                    selected={selectedElement === 'story-stats'}
-                    onSelect={onSelectElement}
-                    onLayoutChange={onPatchLayout}
-                    className="absolute -bottom-4 left-4 rounded-2xl border border-[#D6A373]/18 bg-[#120D09]/92 p-4 shadow-2xl backdrop-blur"
-                  >
-                    <div className="flex items-center gap-4">
-                      {stats.slice(0, 3).map((stat, index) => (
-                        <div key={stat.id} className="text-center">
-                          <EditableText
-                            fieldKey={`${slide.local_id}-${language}-${stat.id}-value`}
-                            value={stat.value}
-                            placeholder="10+"
-                            onCommit={(value) => commitStat(stat.id, 'value', value)}
-                            className="font-serif text-xl font-bold text-[#D6A373]"
-                          />
-                          <EditableText
-                            fieldKey={`${slide.local_id}-${language}-${stat.id}-label`}
-                            value={language === 'ar' ? stat.label_ar || stat.label_en : stat.label_en || stat.label_ar}
-                            placeholder="Label"
-                            onCommit={(value) => commitStat(stat.id, 'label', value)}
-                            className="mt-0.5 max-w-20 text-[10px] leading-tight text-[#D6B79A]/65"
-                          />
-                          {index < stats.length - 1 && <div className="hidden" />}
-                        </div>
-                      ))}
-                    </div>
-                  </DraggableElement>
-                )}
-              </div>
-            </DraggableElement>
-
-            <DraggableElement
-              id="story-copy"
-              layout={layout}
-              editable
-              selected={selectedElement === 'story-copy'}
-              onSelect={onSelectElement}
-              onLayoutChange={onPatchLayout}
-            >
-              <div className={cn(language === 'ar' ? 'text-right' : 'text-left')}>
-                <EditableText
-                  fieldKey={`${slide.local_id}-${language}-eyebrow`}
-                  value={eyebrow}
-                  placeholder={section.labelEn}
-                  onCommit={(value) => commitText('eyebrow', value)}
-                  className="mb-5 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]"
-                />
-                <EditableText
-                  fieldKey={`${slide.local_id}-${language}-title`}
-                  value={title}
-                  placeholder={section.defaultTitleEn}
-                  onCommit={(value) => commitText('title', value)}
-                  className="premium-heading-shimmer font-serif text-3xl font-bold leading-[1.1] text-[#F5E6D8] md:text-5xl"
-                />
-                <EditableText
-                  fieldKey={`${slide.local_id}-${language}-body`}
-                  value={body}
-                  placeholder={section.defaultSubtitleEn}
-                  multiline
-                  onCommit={(value) => commitText('body', value)}
-                  className="mt-5 text-base leading-relaxed text-[#D6B79A]/75"
-                />
-
-                <div className="mt-8 space-y-4">
-                  {features.map((feature) => {
-                    const Icon = builderIcons[(feature.icon || 'leaf') as keyof typeof builderIcons] || Leaf
-                    return (
-                      <DraggableElement
-                        key={feature.id}
-                        id={`feature-${feature.id}`}
-                        layout={layout}
-                        editable
-                        selected={selectedElement === `feature-${feature.id}`}
-                        onSelect={onSelectElement}
-                        onLayoutChange={onPatchLayout}
-                        className="premium-info-card flex gap-4 rounded-2xl border border-[#B6885E]/18 bg-[#120D09]/58 p-4"
-                      >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#B6885E]/28 bg-[#B6885E]/10">
-                          <Icon className="h-4 w-4 text-[#B6885E]" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <EditableText
-                            fieldKey={`${slide.local_id}-${language}-${feature.id}-title`}
-                            value={language === 'ar' ? feature.title_ar || feature.title_en : feature.title_en || feature.title_ar}
-                            placeholder="Feature title"
-                            onCommit={(value) => commitFeature(feature.id, 'title', value)}
-                            className="font-semibold text-[#F5E6D8]"
-                          />
-                          <EditableText
-                            fieldKey={`${slide.local_id}-${language}-${feature.id}-description`}
-                            value={language === 'ar' ? feature.description_ar || feature.description_en || '' : feature.description_en || feature.description_ar || ''}
-                            placeholder="Feature description"
-                            multiline
-                            onCommit={(value) => commitFeature(feature.id, 'description', value)}
-                            className="mt-1 text-sm leading-relaxed text-[#B79B85]/70"
-                          />
-                        </div>
-                      </DraggableElement>
-                    )
-                  })}
-                </div>
-
-                {section.supportsCta !== false && (
-                  <DraggableElement
-                    id="story-cta"
-                    layout={layout}
-                    editable
-                    selected={selectedElement === 'story-cta'}
-                    onSelect={onSelectElement}
-                    onLayoutChange={onPatchLayout}
-                    className="mt-8 inline-flex rounded-full border border-[#D6A373]/30 px-6 py-3"
-                  >
-                    <EditableText
-                      fieldKey={`${slide.local_id}-${language}-button`}
-                      value={buttonText}
-                      placeholder={section.defaultButtonTextEn || 'Learn More'}
-                      onCommit={(value) => commitText('button_text', value)}
-                      className="text-sm font-semibold text-[#D6A373]"
-                    />
-                  </DraggableElement>
-                )}
-              </div>
-            </DraggableElement>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      className={cn('mx-auto overflow-hidden rounded-3xl border border-[#D6A373]/18 bg-[#120D09] shadow-2xl transition-all', deviceClass(device))}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={handleDrop}
-    >
-      <div className={cn('relative flex items-center justify-center overflow-hidden', device === 'mobile' ? 'min-h-[680px]' : 'min-h-[540px]')}>
-        <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ ...sharedStyle, ...(hasFx && imgFilter ? { filter: imgFilter } : {}) }} />
-        <div className="absolute inset-0" style={{ background: overlayGrad }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806]/85 via-transparent to-[#0B0806]/40" />
-        {fxVignette > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />}
-        {fxGlow > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 50%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />}
-        {fxGrain > 0.05 && <div className="pointer-events-none absolute inset-0" style={{ opacity: fxGrain, backgroundImage: GRAIN_SVG, backgroundRepeat: 'repeat', backgroundSize: '180px 180px', mixBlendMode: 'screen' }} />}
-        <DraggableElement
-          id="main-copy"
-          layout={layout}
-          editable
-          selected={selectedElement === 'main-copy'}
-          onSelect={onSelectElement}
-          onLayoutChange={onPatchLayout}
-          className="relative z-10 mx-auto max-w-4xl px-6 text-center"
-        >
-          <EditableText
-            fieldKey={`${slide.local_id}-${language}-generic-eyebrow`}
-            value={eyebrow}
-            placeholder={section.labelEn}
-            onCommit={(value) => commitText('eyebrow', value)}
-            className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#D6A373]"
-          />
-          <EditableText
-            fieldKey={`${slide.local_id}-${language}-generic-title`}
-            value={title}
-            placeholder={section.defaultTitleEn}
-            onCommit={(value) => commitText('title', value)}
-            className={cn('mx-auto font-serif font-bold leading-[1.05] text-[#F5E6D8]', device === 'mobile' ? 'text-4xl' : 'text-6xl')}
-          />
-          <EditableText
-            fieldKey={`${slide.local_id}-${language}-generic-subtitle`}
-            value={subtitle}
-            placeholder={section.defaultSubtitleEn}
-            multiline
-            onCommit={(value) => commitText('subtitle', value)}
-            className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#D6B79A]/86"
-          />
-          {stats.length > 0 && (
-            <div className="mt-7 flex flex-wrap justify-center gap-5">
-              {stats.slice(0, 4).map((stat) => (
-                <div key={stat.id} className="text-center">
-                  <EditableText
-                    fieldKey={`${slide.local_id}-${language}-${stat.id}-generic-value`}
-                    value={stat.value}
-                    placeholder="10+"
-                    onCommit={(value) => commitStat(stat.id, 'value', value)}
-                    className="font-serif text-2xl font-bold text-[#D6A373]"
-                  />
-                  <EditableText
-                    fieldKey={`${slide.local_id}-${language}-${stat.id}-generic-label`}
-                    value={language === 'ar' ? stat.label_ar || stat.label_en : stat.label_en || stat.label_ar}
-                    placeholder="Label"
-                    onCommit={(value) => commitStat(stat.id, 'label', value)}
-                    className="text-xs text-[#F5E6D8]/55"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-          {section.supportsCta && (
-            <div className="mt-8 inline-flex rounded-xl bg-[#D6A373] px-7 py-3 text-sm font-bold text-[#0B0806] shadow-[0_14px_40px_rgba(214,163,115,0.25)]">
-              <EditableText
-                fieldKey={`${slide.local_id}-${language}-generic-button`}
-                value={buttonText}
-                placeholder={section.defaultButtonTextEn || 'Shop Now'}
-                onCommit={(value) => commitText('button_text', value)}
-                className="px-1 text-[#0B0806]"
-              />
-            </div>
-          )}
-        </DraggableElement>
-      </div>
-    </div>
-  )
+function updateStat(stats: SectionStatBlock[], statId: string, patch: Partial<SectionStatBlock>) {
+  return stats.map((stat) => stat.id === statId ? { ...stat, ...patch } : stat)
 }
 
-function VisualEffectsPanel({
-  slide,
-  onPatch,
-  onPatchContent,
-}: {
-  slide: EditorSlide
-  onPatch: (patch: Partial<EditorSlide>) => void
-  onPatchContent: (patch: Partial<SectionBuilderContent>) => void
-}) {
-  const fx = getVisualEffects(slide)
-  const opacity = Number(slide.overlay_opacity ?? 0.55)
-
-  const patchFx = (patch: Partial<VisualEffects>) => {
-    onPatchContent({ visual_effects: { ...fx, ...patch } })
-  }
-
-  const applyPreset = (preset: VisualPreset) => {
-    onPatch({ overlay_opacity: preset.opacity })
-    onPatchContent({ visual_effects: { ...preset.effects } })
-  }
-
-  const resetEffects = () => {
-    onPatch({ overlay_opacity: 0.55 })
-    onPatchContent({ visual_effects: {} })
-  }
-
-  const analyzeImage = () => {
-    const imgSrc = slide.image_url
-    if (!imgSrc) return
-    const canvas = document.createElement('canvas')
-    const img = new window.Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const W = 40, H = 40
-      canvas.width = W
-      canvas.height = H
-      const ctx = canvas.getContext('2d')
-      if (!ctx) { applyPreset(VISUAL_PRESETS[0]!); return }
-      ctx.drawImage(img, 0, 0, W, H)
-      try {
-        const d = ctx.getImageData(0, 0, W, H).data
-        let r = 0, g = 0, b = 0
-        const px = W * H
-        for (let i = 0; i < d.length; i += 4) { r += d[i]!; g += d[i + 1]!; b += d[i + 2]! }
-        r /= px; g /= px; b /= px
-        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-        const warmth = (r - b) / 255
-        let preset: VisualPreset
-        if (lum > 0.65) preset = VISUAL_PRESETS[0]!
-        else if (warmth > 0.12 && lum < 0.45) preset = VISUAL_PRESETS[6]!
-        else if (warmth > 0.08) preset = VISUAL_PRESETS[1]!
-        else preset = VISUAL_PRESETS[4]!
-        applyPreset(preset)
-      } catch {
-        applyPreset(VISUAL_PRESETS[0]!)
-      }
-    }
-    img.onerror = () => applyPreset(VISUAL_PRESETS[0]!)
-    img.src = imgSrc
-  }
-
-  const readabilityWarn =
-    Number(fx.brightness ?? 1) > 0.90 &&
-    opacity < 0.45 &&
-    Number(fx.vignette ?? 0) < 0.30
-
-  const sliders: { key: keyof VisualEffects; label: string; min: number; max: number; step: number; defaultVal: number; fmt: (v: number) => string }[] = [
-    { key: 'brightness', label: 'Brightness', min: 0.3, max: 1.5, step: 0.02, defaultVal: 1, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'contrast',   label: 'Contrast',   min: 0.5, max: 1.8, step: 0.02, defaultVal: 1, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'saturation', label: 'Saturation', min: 0,   max: 1.6, step: 0.02, defaultVal: 1, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'warmth',     label: 'Warmth',     min: 0,   max: 1,   step: 0.02, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'blur',       label: 'Blur',       min: 0,   max: 6,   step: 0.1,  defaultVal: 0, fmt: (v) => `${v.toFixed(1)}px` },
-    { key: 'vignette',   label: 'Vignette',   min: 0,   max: 1,   step: 0.02, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'glow',       label: 'Glow',       min: 0,   max: 0.6, step: 0.01, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'grain',      label: 'Grain',      min: 0,   max: 0.5, step: 0.01, defaultVal: 0, fmt: (v) => `${Math.round(v * 100)}%` },
-  ]
-
-  return (
-    <div className="space-y-4">
-      {/* AI Enhance */}
-      <button
-        type="button"
-        onClick={analyzeImage}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D6A373]/30 bg-[#D6A373]/10 px-3 py-2.5 text-xs font-bold text-[#D6A373] transition hover:bg-[#D6A373]/18"
-        title="Analyze image colors and apply the best LINE COFFEE preset"
-      >
-        <Sparkles className="h-3.5 w-3.5" />
-        AI Enhance for LINE COFFEE
-      </button>
-
-      {/* Presets */}
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">Presets</p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {VISUAL_PRESETS.map((preset) => (
-            <button
-              key={preset.key}
-              type="button"
-              onClick={() => applyPreset(preset)}
-              title={preset.nameEn}
-              className="rounded-xl border border-white/8 bg-white/[0.03] px-2 py-2 text-[10px] font-semibold text-white/60 transition hover:border-[#D6A373]/30 hover:text-[#D6A373]"
-            >
-              {preset.nameEn}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Overlay opacity */}
-      <div>
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[11px] text-white/45">Overlay Opacity</span>
-          <span className="text-[11px] text-[#D6A373]/80">{Math.round(opacity * 100)}%</span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={0.85}
-          step={0.05}
-          value={opacity}
-          onChange={(e) => onPatch({ overlay_opacity: Number(e.target.value) })}
-          className="w-full accent-[#D6A373]"
-          title="Overlay Opacity"
-        />
-      </div>
-
-      {/* Overlay color */}
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">Overlay Color</p>
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={fx.overlay_color || '#000000'}
-            onChange={(e) => patchFx({ overlay_color: e.target.value })}
-            className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent"
-            title="Overlay Color"
-          />
-          <span className="text-xs text-white/40">{fx.overlay_color || '#000000'}</span>
-        </div>
-      </div>
-
-      {/* Gradient type */}
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">Gradient Type</p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {(['solid', 'radial', 'top_bottom', 'vignette_only'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => patchFx({ gradient_type: type })}
-              title={type}
-              className={cn(
-                'rounded-xl border px-2 py-2 text-[10px] font-semibold transition',
-                fx.gradient_type === type
-                  ? 'border-[#D6A373]/55 bg-[#D6A373]/12 text-[#D6A373]'
-                  : 'border-white/8 bg-white/[0.03] text-white/50',
-              )}
-            >
-              {type === 'solid' ? 'Solid' : type === 'radial' ? 'Radial' : type === 'top_bottom' ? 'Top→Bottom' : 'Vignette'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Effect sliders */}
-      {sliders.map(({ key, label, min, max, step, defaultVal, fmt }) => {
-        const val = Number((fx as Record<string, unknown>)[key] ?? defaultVal)
-        return (
-          <div key={key}>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-[11px] text-white/45">{label}</span>
-              <span className="text-[11px] text-[#D6A373]/80">{fmt(val)}</span>
-            </div>
-            <input
-              type="range"
-              min={min}
-              max={max}
-              step={step}
-              value={val}
-              onChange={(e) => patchFx({ [key]: Number(e.target.value) })}
-              className="w-full accent-[#D6A373]"
-              title={label}
-            />
-          </div>
-        )
-      })}
-
-      {/* Text readability warning */}
-      {readabilityWarn && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2.5 text-[11px] text-amber-200/80">
-          Low contrast — text may be hard to read. Lower brightness or raise overlay opacity.
-        </div>
-      )}
-
-      {/* Reset */}
-      <button
-        type="button"
-        onClick={resetEffects}
-        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/45 transition hover:text-white"
-        title="Reset all visual effects"
-      >
-        Reset Effects
-      </button>
-    </div>
-  )
+function updateFeature(features: SectionTextBlock[], featureId: string, patch: Partial<SectionTextBlock>) {
+  return features.map((feature) => feature.id === featureId ? { ...feature, ...patch } : feature)
 }
 
-export default function BannersPage() {
+function updateDeviceVisibility(value: unknown, key: 'desktop' | 'tablet' | 'mobile', checked: boolean) {
+  return {
+    desktop: true,
+    tablet: true,
+    mobile: true,
+    ...asRecord(value),
+    [key]: checked,
+  }
+}
+
+function newStat(index: number): SectionStatBlock {
+  return {
+    id: `stat-${Date.now()}-${index}`,
+    value: '10+',
+    label_en: 'Premium Moments',
+    label_ar: 'لحظات فاخرة',
+    is_active: true,
+  }
+}
+
+function newFeature(index: number): SectionTextBlock {
+  return {
+    id: `feature-${Date.now()}-${index}`,
+    icon: 'coffee',
+    title_en: 'Premium Detail',
+    title_ar: 'تفصيلة فاخرة',
+    description_en: 'Describe this visual or content point.',
+    description_ar: 'اكتب وصفًا قصيرًا لهذه النقطة.',
+    is_active: true,
+  }
+}
+
+function statusFor(slides: StudioSlide[]) {
+  if (slides.length === 0) return { en: 'Fallback', ar: 'احتياطي', className: 'bg-white/8 text-white/50' }
+  if (slides.some((slide) => !slide.image_url)) return { en: 'Missing media', ar: 'صورة ناقصة', className: 'bg-red-500/12 text-red-300' }
+  if (slides.some((slide) => slide.isNew)) return { en: 'Edited', ar: 'مسودة', className: 'bg-[#D6A373]/14 text-[#D6A373]' }
+  if (slides.some((slide) => slide.is_active !== false)) return { en: 'Live', ar: 'مباشر', className: 'bg-emerald-500/12 text-emerald-300' }
+  return { en: 'Hidden', ar: 'مخفي', className: 'bg-amber-500/12 text-amber-200' }
+}
+
+export default function MediaStudioPage() {
   const { t, language } = useLanguage()
   const [items, setItems] = useState<SiteMediaItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState<WebsiteSectionConfig | null>(null)
-  const [slides, setSlides] = useState<EditorSlide[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [selectedElementId, setSelectedElementId] = useState<string | null>('main-copy')
-  const [deletedIds, setDeletedIds] = useState<string[]>([])
-  const [previewLanguage, setPreviewLanguage] = useState<PreviewLanguage>(language)
-  const [device, setDevice] = useState<PreviewDevice>('desktop')
-  const [activePageKey, setActivePageKey] = useState('home')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(null)
-  const [dbError, setDbError] = useState(false)
-  const [livePreviewKey, setLivePreviewKey] = useState(0)
+  const [activePageKey, setActivePageKey] = useState('home')
+  const [activeSection, setActiveSection] = useState<WebsiteSectionConfig | null>(null)
+  const [slides, setSlides] = useState<StudioSlide[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [deletedIds, setDeletedIds] = useState<string[]>([])
+  const [tab, setTab] = useState<EditorTab>('content')
 
-  const load = useCallback(async () => {
+  const pages = useMemo(() => getWebsitePages(), [])
+
+  const load = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/banners', { cache: 'no-store' })
+      const res = await fetch('/api/admin/media-studio', { cache: 'no-store' })
       const json = await res.json()
       if (!json.success) throw new Error(json.error || 'Failed to load media')
-      setItems(json.data || [])
-      setDbError(false)
-    } catch {
+      setItems(Array.isArray(json.data) ? json.data : [])
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('Failed to load media', 'فشل تحميل الوسائط'))
       setItems([])
-      setDbError(true)
     } finally {
       setLoading(false)
     }
-  }, [])
-
-  useEffect(() => { load() }, [load])
+  }
 
   useEffect(() => {
-    setPreviewLanguage(language)
-  }, [language])
+    void load()
+  }, [])
 
-  const websitePages = useMemo(() => getWebsitePages(), [])
-
-  const sectionGroups = useMemo(() => {
-    return WEBSITE_SECTIONS.map((section) => {
+  const sectionGroups = useMemo(() => (
+    WEBSITE_SECTIONS.map((section) => {
       const sectionSlides = items
         .filter((item) => slideBelongsToSection(item, section))
         .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
-      const activeSlides = sectionSlides.filter((item) => item.is_active)
+        .map(normalizeSlide)
+      const activeSlides = sectionSlides.filter((slide) => slide.is_active !== false)
       return {
         section,
         slides: sectionSlides,
@@ -1294,58 +258,44 @@ export default function BannersPage() {
         preview: activeSlides[0] || sectionSlides[0] || null,
       }
     })
-  }, [items])
+  ), [items])
 
-  const filteredSectionGroups = useMemo(() => {
-    return sectionGroups.filter(({ section }) => section.pageKey === activePageKey)
-  }, [activePageKey, sectionGroups])
-
-  const selectedSlide = slides.find((slide) => slide.local_id === selectedId) || slides[0]
+  const visibleGroups = sectionGroups.filter(({ section }) => section.pageKey === activePageKey)
+  const selectedSlide = slides.find((slide) => slide.local_id === selectedId) || slides[0] || null
+  const selectedContent = activeSection && selectedSlide ? getSectionBuilderContent(activeSection, selectedSlide) : {} as SectionBuilderContent
+  const selectedLayout = activeSection && selectedSlide ? getSectionBuilderLayout(activeSection, selectedSlide) : {} as SectionBuilderLayout
+  const selectedFx = getVisualEffects(selectedSlide)
+  const selectedImage = selectedSlide?.image_url || activeSection?.fallbackImage || EMPTY_IMAGE
+  const selectedOverlay = selectedSlide ? getMediaOverlayOpacity(selectedSlide, 0.55) : 0.55
 
   const openSection = (section: WebsiteSectionConfig) => {
     const sectionSlides = items
       .filter((item) => slideBelongsToSection(item, section))
       .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
       .map(normalizeSlide)
+    const nextSlides = sectionSlides.length > 0 ? sectionSlides : [makeSlide(section, 0)]
 
-    const initialSlides = sectionSlides.length > 0
-      ? sectionSlides
-      : section.editorTemplate === 'hero'
-        ? makeHeroInitialSlides(section)
-        : [makeSlide(section, 0)]
     setActiveSection(section)
-    setSlides(initialSlides)
-    setSelectedId(initialSlides[0]?.local_id || null)
-    setSelectedElementId(section.editorTemplate === 'story' ? 'story-copy' : 'main-copy')
+    setSlides(nextSlides)
+    setSelectedId(nextSlides[0]?.local_id || null)
     setDeletedIds([])
-    setPendingUpload(null)
-    setDevice('desktop')
+    setTab('content')
   }
 
   const closeEditor = () => {
     setActiveSection(null)
     setSlides([])
     setSelectedId(null)
-    setSelectedElementId(null)
     setDeletedIds([])
-    setPendingUpload(null)
   }
 
-  const patchSelected = (patch: Partial<EditorSlide>) => {
+  const patchSelected = (patch: Partial<StudioSlide>) => {
     if (!selectedSlide) return
-    setSlides((prev) => prev.map((slide) => (
-      slide.local_id === selectedSlide.local_id ? { ...slide, ...patch } : slide
-    )))
+    setSlides((prev) => prev.map((slide) => slide.local_id === selectedSlide.local_id ? { ...slide, ...patch } : slide))
   }
 
-  const patchSelectedContent = (patch: Partial<SectionBuilderContent>) => {
-    if (!activeSection || !selectedSlide) return
-    const current = getSectionBuilderContent(activeSection, selectedSlide)
-    patchSelected({ content: { ...current, ...patch } })
-  }
-
-  const patchSelectedLayout = (layout: SectionBuilderLayout) => {
-    patchSelected({ layout })
+  const replaceSelected = (nextSlide: StudioSlide) => {
+    setSlides((prev) => prev.map((slide) => slide.local_id === nextSlide.local_id ? nextSlide : slide))
   }
 
   const addSlide = () => {
@@ -1358,287 +308,185 @@ export default function BannersPage() {
   const duplicateSlide = () => {
     if (!selectedSlide) return
     const localId = createLocalId()
-    const duplicate: EditorSlide = {
+    const copy: StudioSlide = {
       ...selectedSlide,
       id: localId,
       local_id: localId,
       slide_key: localId,
       isNew: true,
       sort_order: slides.length,
-      title_en: selectedSlide.title_en ? `${selectedSlide.title_en} Copy` : selectedSlide.title_en,
+      is_featured: false,
     }
-    setSlides((prev) => [...prev, duplicate])
+    setSlides((prev) => [...prev, copy])
     setSelectedId(localId)
   }
 
-  const removeSlide = (localId: string) => {
-    const target = slides.find((slide) => slide.local_id === localId)
-    if (!target) return
-
-    if (!target.isNew) {
-      setDeletedIds((prev) => [...prev, target.id])
-    }
-
-    setSlides((prev) => {
-      const next = prev.filter((slide) => slide.local_id !== localId)
-      if (selectedId === localId) setSelectedId(next[0]?.local_id || null)
-      return next
-    })
+  const moveSlide = (direction: -1 | 1) => {
+    if (!selectedSlide) return
+    const index = slides.findIndex((slide) => slide.local_id === selectedSlide.local_id)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= slides.length) return
+    const next = [...slides]
+    const [picked] = next.splice(index, 1)
+    next.splice(target, 0, picked)
+    setSlides(next.map((slide, sort_order) => ({ ...slide, sort_order })))
   }
 
-  const moveSlide = (localId: string, direction: -1 | 1) => {
-    setSlides((prev) => {
-      const index = prev.findIndex((slide) => slide.local_id === localId)
-      const nextIndex = index + direction
-      if (index < 0 || nextIndex < 0 || nextIndex >= prev.length) return prev
-      const next = [...prev]
-      const [slide] = next.splice(index, 1)
-      next.splice(nextIndex, 0, slide)
-      return next.map((item, sortOrder) => ({ ...item, sort_order: sortOrder }))
-    })
+  const removeSlide = () => {
+    if (!selectedSlide) return
+    if (!selectedSlide.isNew && selectedSlide.id) setDeletedIds((prev) => [...prev, selectedSlide.id!])
+    const next = slides.filter((slide) => slide.local_id !== selectedSlide.local_id)
+    setSlides(next)
+    setSelectedId(next[0]?.local_id || null)
   }
 
-  const validateAndPrepareFile = async (file: File) => {
-    if (!activeSection) return
-
-    if (!fileIsAllowed(file)) {
-      toast.error(t('Only JPG, PNG, and WebP images are allowed', 'Only JPG, PNG, and WebP images are allowed'))
-      return
-    }
-
-    if (file.size > MEDIA_MAX_UPLOAD_SIZE) {
-      toast.error(t('Image is too large. Maximum size is 8MB', 'Image is too large. Maximum size is 8MB'))
-      return
-    }
-
-    try {
-      const dimensions = await readImageDimensions(file)
-      const warnings: string[] = []
-      if (isUploadedImageSmall(activeSection.usageArea, dimensions.width, dimensions.height)) {
-        warnings.push(t('This image is small and may not fill the section properly', 'This image is small and may not fill the section properly'))
-      }
-      if (aspectWarning(activeSection, dimensions.width, dimensions.height)) {
-        warnings.push(t('Aspect ratio may crop differently in this section', 'Aspect ratio may crop differently in this section'))
-      }
-
-      const upload = { file, ...dimensions, warnings }
-      if (warnings.length > 0) {
-        setPendingUpload(upload)
-        return
-      }
-
-      await uploadImage(upload)
-    } catch {
-      toast.error(t('Could not read image dimensions', 'Could not read image dimensions'))
-    }
-  }
-
-  const uploadImage = async (upload: PendingUpload) => {
+  const uploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!activeSection || !selectedSlide) return
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
     setUploading(true)
     try {
       const body = new FormData()
-      body.append('file', upload.file)
+      body.append('file', file)
       body.append('usage_area', selectedSlide.usage_area || activeSection.usageArea)
-
       const res = await fetch('/api/admin/media/upload', { method: 'POST', body })
       const json = await res.json()
       if (!json.success) throw new Error(json.error || 'Upload failed')
-
       patchSelected({
         image_url: json.data.url,
-        object_position: selectedSlide.object_position || 'center center',
-        images: [{
-          url: json.data.url,
-          path: json.data.path,
-          bucket: json.data.bucket,
-          width: upload.width,
-          height: upload.height,
-          object_position: selectedSlide.object_position || 'center center',
-          uploaded_at: new Date().toISOString(),
-        }],
+        images: [{ url: json.data.url, path: json.data.path, bucket: json.data.bucket, object_position: getMediaObjectPosition(selectedSlide) }],
       })
-      setPendingUpload(null)
-      toast.success(t('Image uploaded', 'Image uploaded'))
+      toast.success(t('Image uploaded', 'تم رفع الصورة'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('Upload failed', 'Upload failed'))
+      toast.error(error instanceof Error ? error.message : t('Upload failed', 'فشل رفع الصورة'))
     } finally {
       setUploading(false)
+    }
+  }
+
+  const buildPayload = (slide: StudioSlide, index: number) => {
+    if (!activeSection) return {}
+    const content = getSectionBuilderContent(activeSection, slide)
+    const layout = getSectionBuilderLayout(activeSection, slide)
+    const imageUrl = slide.image_url || activeSection.fallbackImage || EMPTY_IMAGE
+
+    return {
+      title_en: content.title_en || slide.title_en || activeSection.defaultTitleEn,
+      title_ar: content.title_ar || slide.title_ar || activeSection.defaultTitleAr,
+      subtitle_en: content.subtitle_en || slide.subtitle_en || activeSection.defaultSubtitleEn,
+      subtitle_ar: content.subtitle_ar || slide.subtitle_ar || activeSection.defaultSubtitleAr,
+      image_url: imageUrl,
+      fallback_image: activeSection.fallbackImage || EMPTY_IMAGE,
+      link_url: content.button_link || slide.link_url || slide.button_link || activeSection.defaultButtonLink || null,
+      button_link: content.button_link || slide.button_link || slide.link_url || activeSection.defaultButtonLink || null,
+      button_text_en: content.button_text_en || slide.button_text_en || null,
+      button_text_ar: content.button_text_ar || slide.button_text_ar || null,
+      sort_order: index,
+      is_active: slide.is_active !== false,
+      section_key: activeSection.key,
+      slide_key: slide.slide_key || slide.local_id,
+      section_type: activeSection.sectionType,
+      media_type: slide.media_type || activeSection.mediaType,
+      usage_area: slide.usage_area || activeSection.usageArea,
+      alt_en: slide.alt_en || content.title_en || activeSection.defaultTitleEn,
+      alt_ar: slide.alt_ar || content.title_ar || activeSection.defaultTitleAr,
+      is_featured: index === 0 || Boolean(slide.is_featured),
+      mobile_image_url: slide.mobile_image_url || null,
+      overlay_opacity: Number(slide.overlay_opacity ?? 0.55),
+      object_position: getMediaObjectPosition(slide),
+      content,
+      layout,
+      animation_type: slide.animation_type || 'fade',
+      animation_duration: Number(slide.animation_duration || 6000),
+      device_visibility: asRecord(slide.device_visibility),
+      starts_at: slide.starts_at || null,
+      ends_at: slide.ends_at || null,
+      images: Array.isArray(slide.images) && slide.images.length > 0
+        ? slide.images
+        : [{ url: imageUrl, object_position: getMediaObjectPosition(slide) }],
     }
   }
 
   const saveSection = async () => {
     if (!activeSection) return
     setSaving(true)
-
     try {
       for (const id of deletedIds) {
-        await fetch(`/api/admin/banners/${id}`, { method: 'DELETE' })
+        const res = await fetch(`/api/admin/media-studio/${id}`, { method: 'DELETE' })
+        const json = await res.json()
+        if (!json.success) throw new Error(json.error || 'Failed to delete media item')
       }
 
       for (const [index, slide] of slides.entries()) {
-        const imageMeta = getMediaImageMeta(slide)
-        const imageUrl = slide.image_url || activeSection.fallbackImage
-        const payload = {
-          title_ar: slide.title_ar || '',
-          title_en: slide.title_en || '',
-          subtitle_ar: slide.subtitle_ar || '',
-          subtitle_en: slide.subtitle_en || '',
-          image_url: imageUrl,
-          mobile_image_url: slide.mobile_image_url || null,
-          link_url: slide.link_url || slide.button_link || null,
-          button_link: slide.button_link || slide.link_url || null,
-          button_text_ar: slide.button_text_ar || null,
-          button_text_en: slide.button_text_en || null,
-          sort_order: index,
-          is_active: slide.is_active,
-          section_key: activeSection.key,
-          slide_key: slide.slide_key || slide.local_id,
-          section_type: activeSection.sectionType,
-          media_type: slide.media_type || activeSection.mediaType,
-          usage_area: slide.usage_area || activeSection.usageArea,
-          alt_ar: slide.alt_ar || slide.title_ar || '',
-          alt_en: slide.alt_en || slide.title_en || '',
-          is_featured: index === 0 || Boolean(slide.is_featured),
-          overlay_opacity: Number(slide.overlay_opacity ?? 0.55),
-          object_position: getMediaObjectPosition(slide),
-          content: slide.content && typeof slide.content === 'object' ? slide.content : getSectionBuilderContent(activeSection, slide),
-          layout: slide.layout && typeof slide.layout === 'object' ? slide.layout : getSectionBuilderLayout(activeSection, slide),
-          animation_type: slide.animation_type || 'fade',
-          animation_duration: Number(slide.animation_duration || 6000),
-          device_visibility: slide.device_visibility && typeof slide.device_visibility === 'object'
-            ? slide.device_visibility
-            : { desktop: true, tablet: true, mobile: true },
-          starts_at: slide.starts_at || null,
-          ends_at: slide.ends_at || null,
-          images: [{
-            ...(imageMeta || {}),
-            url: imageUrl,
-            object_position: getMediaObjectPosition(slide),
-          }],
-        }
-
-        const url = slide.isNew ? '/api/admin/banners' : `/api/admin/banners/${slide.id}`
+        const url = slide.isNew ? '/api/admin/media-studio' : `/api/admin/media-studio/${slide.id}`
         const method = slide.isNew ? 'POST' : 'PUT'
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(buildPayload(slide, index)),
         })
         const json = await res.json()
-        if (!json.success) throw new Error(json.error || 'Failed to save section')
+        if (!json.success) throw new Error(json.error || 'Failed to save media item')
       }
 
-      toast.success(t('Section saved', 'Section saved'))
+      toast.success(t('Media section saved', 'تم حفظ القسم'))
       await load()
-      setLivePreviewKey((k) => k + 1)
+      closeEditor()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('Failed to save section', 'Failed to save section'))
+      toast.error(error instanceof Error ? error.message : t('Failed to save section', 'فشل حفظ القسم'))
     } finally {
       setSaving(false)
     }
   }
 
-  const selectedLayout = activeSection && selectedSlide ? getSectionBuilderLayout(activeSection, selectedSlide) : {}
-  const selectedElementPosition = selectedElementId ? selectedLayout.elements?.[selectedElementId] || {} : {}
-  const selectedContent = activeSection && selectedSlide ? getSectionBuilderContent(activeSection, selectedSlide) : {} as SectionBuilderContent
-  const selectedTitleScale = Math.min(1.25, Math.max(0.75, Number(selectedContent.title_scale ?? 1)))
-  const selectedSubtitleScale = Math.min(1.15, Math.max(0.75, Number(selectedContent.subtitle_scale ?? 1)))
-  const selectedStatsScale = Math.min(1.15, Math.max(0.75, Number(selectedContent.stats_scale ?? 1)))
-  const editorStateChips = selectedSlide
-    ? [
-        selectedSlide.isNew
-          ? { en: 'Fallback', ar: 'احتياطي' }
-          : selectedSlide.image_url
-            ? { en: 'Live', ar: 'مباشر' }
-            : { en: 'Missing media', ar: 'صورة ناقصة' },
-        !selectedSlide.isNew && (selectedSlide.content || selectedSlide.layout) ? { en: 'Edited', ar: 'معدل' } : null,
-      ].filter(Boolean) as Array<{ en: string; ar: string }>
-    : []
-
   if (activeSection) {
+    const stats = selectedContent.stats || []
+    const features = selectedContent.features || []
+    const sectionStatus = statusFor(slides)
+
     return (
-      <div className="min-h-screen bg-[#0f0900] p-5 text-white">
+      <div className="min-h-screen bg-[#0B0806] p-5 text-white">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={closeEditor}
-              title="Back to sections"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/55 transition hover:text-white"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/60 transition hover:text-white"
+              aria-label={t('Back', 'رجوع')}
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-[#D6A373]/80">{t('Website Section Editor', 'محرر أقسام الموقع')}</p>
-              <h2 className="font-serif text-2xl font-bold text-[#F5E6D8]">{localText(previewLanguage, activeSection.labelEn, activeSection.labelAr)}</h2>
-              {editorStateChips.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {editorStateChips.map((chip) => (
-                    <span key={chip.en} className="rounded-full border border-[#D6A373]/18 bg-[#D6A373]/8 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/80">
-                      {localText(previewLanguage, chip.en, chip.ar)}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]/80">{t('Media Studio', 'استوديو الوسائط')}</p>
+              <h1 className="font-serif text-2xl font-bold text-[#F5E6D8]">
+                {localText(language, activeSection.labelEn, activeSection.labelAr)}
+              </h1>
+              <span className={cn('mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]', sectionStatus.className)}>
+                {localText(language, sectionStatus.en, sectionStatus.ar)}
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-xl border border-white/10 bg-[#180d04] p-1">
-              {(['en', 'ar'] as PreviewLanguage[]).map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => setPreviewLanguage(lang)}
-                  className={cn('rounded-lg px-3 py-1.5 text-xs font-bold transition', previewLanguage === lang ? 'bg-[#D6A373] text-black' : 'text-white/45 hover:text-white')}
-                >
-                  {lang.toUpperCase()}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex rounded-xl border border-white/10 bg-[#180d04] p-1">
-              {[
-                { id: 'desktop', icon: Monitor },
-                { id: 'tablet', icon: Tablet },
-                { id: 'mobile', icon: Phone },
-              ].map((item) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setDevice(item.id as PreviewDevice)}
-                    title={item.id.charAt(0).toUpperCase() + item.id.slice(1)}
-                    className={cn('flex h-8 w-9 items-center justify-center rounded-lg transition', device === item.id ? 'bg-[#D6A373] text-black' : 'text-white/45 hover:text-white')}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                )
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={saveSection}
-              disabled={saving || uploading}
-              className="flex h-10 items-center gap-2 rounded-xl bg-[#D6A373] px-4 text-sm font-bold text-black transition hover:bg-[#c8941a] disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? t('Saving...', 'جار الحفظ...') : t('Save Section', 'حفظ القسم')}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={saveSection}
+            disabled={saving || uploading}
+            className="flex h-10 items-center gap-2 rounded-xl bg-[#D6A373] px-4 text-sm font-bold text-black transition hover:bg-[#c8941a] disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? t('Saving...', 'جار الحفظ...') : t('Save Section', 'حفظ القسم')}
+          </button>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[260px_1fr_260px]">
-          <aside className="rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/85 p-4">
+        <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+          <aside className="rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/86 p-4">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-[#F5E6D8]">{t('Slides', 'الشرائح')}</p>
+                <p className="text-sm font-bold text-[#F5E6D8]">{t('Slides & Media', 'الشرائح والصور')}</p>
                 <p className="text-xs text-[#D6B79A]/45">{slides.length} {t('items', 'عنصر')}</p>
               </div>
-              <button type="button" onClick={addSlide} title="Add slide" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black">
+              <button type="button" onClick={addSlide} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black" aria-label={t('Add slide', 'إضافة شريحة')}>
                 <Plus className="h-4 w-4" />
               </button>
             </div>
@@ -1649,276 +497,313 @@ export default function BannersPage() {
                   key={slide.local_id}
                   type="button"
                   onClick={() => setSelectedId(slide.local_id)}
-                  className={cn('group w-full overflow-hidden rounded-2xl border p-2 text-left transition', selectedId === slide.local_id ? 'border-[#D6A373]/55 bg-[#D6A373]/10' : 'border-white/8 bg-white/[0.03] hover:border-[#D6A373]/24')}
+                  className={cn(
+                    'w-full rounded-2xl border p-2 text-start transition',
+                    selectedId === slide.local_id ? 'border-[#D6A373]/55 bg-[#D6A373]/10' : 'border-white/8 bg-white/[0.03] hover:border-[#D6A373]/25',
+                  )}
                 >
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-4 w-4 shrink-0 text-white/20" />
+                  <div className="flex items-center gap-3">
                     <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl bg-black">
                       <img src={slide.image_url || activeSection.fallbackImage} alt="" className="h-full w-full object-cover" style={{ objectPosition: getMediaObjectPosition(slide) }} />
-                      {!slide.is_active && <div className="absolute inset-0 bg-black/65" />}
+                      {slide.is_active === false && <div className="absolute inset-0 bg-black/65" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-[#F5E6D8]">{localText(previewLanguage, slide.title_en, slide.title_ar) || `${t('Slide', 'شريحة')} ${index + 1}`}</p>
-                      <p className="text-[10px] text-[#D6B79A]/45">#{index + 1}</p>
+                      <p className="truncate text-xs font-bold text-[#F5E6D8]">
+                        {localText(language, slide.title_en, slide.title_ar) || `${t('Slide', 'شريحة')} ${index + 1}`}
+                      </p>
+                      <p className="mt-1 text-[10px] text-[#D6B79A]/45">#{index + 1}</p>
                     </div>
                   </div>
                 </button>
               ))}
             </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => patchSelected({ is_active: selectedSlide?.is_active === false })} disabled={!selectedSlide} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70 disabled:opacity-40">
+                {selectedSlide?.is_active === false ? <Eye className="me-1 inline h-3.5 w-3.5" /> : <EyeOff className="me-1 inline h-3.5 w-3.5" />}
+                {selectedSlide?.is_active === false ? t('Show', 'إظهار') : t('Hide', 'إخفاء')}
+              </button>
+              <button type="button" onClick={duplicateSlide} disabled={!selectedSlide} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70 disabled:opacity-40">
+                <Copy className="me-1 inline h-3.5 w-3.5" />
+                {t('Duplicate', 'نسخ')}
+              </button>
+              <button type="button" onClick={() => moveSlide(-1)} disabled={!selectedSlide} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70 disabled:opacity-40">
+                <ArrowUp className="me-1 inline h-3.5 w-3.5" />
+                {t('Up', 'أعلى')}
+              </button>
+              <button type="button" onClick={() => moveSlide(1)} disabled={!selectedSlide} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70 disabled:opacity-40">
+                <ArrowDown className="me-1 inline h-3.5 w-3.5" />
+                {t('Down', 'أسفل')}
+              </button>
+            </div>
           </aside>
 
           <main className="min-w-0">
-            {pendingUpload && (
-              <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-amber-100">{pendingUpload.width}x{pendingUpload.height}</p>
-                    <div className="mt-1 space-y-1 text-xs text-amber-100/70">
-                      {pendingUpload.warnings.map((warning) => <p key={warning}>{warning}</p>)}
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <button type="button" onClick={() => uploadImage(pendingUpload)} disabled={uploading} className="rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-bold text-black disabled:opacity-50">
-                        {uploading ? t('Uploading...', 'Uploading...') : t('Continue anyway', 'Continue anyway')}
-                      </button>
-                      <button type="button" onClick={() => setPendingUpload(null)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-bold text-white/55">
-                        {t('Cancel / choose another image', 'Cancel / choose another image')}
-                      </button>
-                    </div>
-                  </div>
+            <div className="overflow-hidden rounded-3xl border border-[#D6A373]/14 bg-[#050302] shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
+              <div className="flex items-center justify-between border-b border-[#D6A373]/10 px-4 py-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D6A373]/70">{t('Live Preview', 'معاينة مباشرة')}</p>
+                  <p className="text-[11px] text-[#D6B79A]/45">{t('Preview uses saved section structure and current draft values.', 'المعاينة تستخدم بنية القسم الحالية وقيم المسودة.')}</p>
                 </div>
+                <CheckCircle2 className="h-4 w-4 text-emerald-300/70" />
               </div>
-            )}
 
-            {selectedSlide && (
-              <SectionPreview
+              <MediaSectionPreview
                 section={activeSection}
                 slide={selectedSlide}
-                language={previewLanguage}
-                device={device}
-                onPatch={patchSelected}
-                onPatchContent={patchSelectedContent}
-                onPatchLayout={patchSelectedLayout}
-                selectedElement={selectedElementId}
-                onSelectElement={setSelectedElementId}
-                onDropFile={validateAndPrepareFile}
+                content={selectedContent}
+                layout={selectedLayout}
+                effects={selectedFx}
+                image={selectedImage}
+                overlay={selectedOverlay}
+                language={language}
               />
-            )}
+            </div>
           </main>
 
-          <aside className="space-y-4 overflow-y-auto max-h-[calc(100vh-9rem)] rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/85 p-4">
-            {selectedSlide && (
-              <>
-                <div>
-                  <p className="mb-3 text-sm font-bold text-[#F5E6D8]">{t('Slide Controls', 'تحكم الشريحة')}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => patchSelected({ is_active: !selectedSlide.is_active })}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
-                      {selectedSlide.is_active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      {selectedSlide.is_active ? t('Hide', 'إخفاء') : t('Show', 'إظهار')}
-                    </button>
-                    <button type="button" onClick={duplicateSlide}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
-                      <Copy className="h-3.5 w-3.5" />
-                      {t('Duplicate', 'نسخ')}
-                    </button>
-                    <button type="button" onClick={() => moveSlide(selectedSlide.local_id, -1)}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
-                      <ArrowUp className="h-3.5 w-3.5" />
-                      {t('Up', 'أعلى')}
-                    </button>
-                    <button type="button" onClick={() => moveSlide(selectedSlide.local_id, 1)}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
-                      <ArrowDown className="h-3.5 w-3.5" />
-                      {t('Down', 'أسفل')}
-                    </button>
-                  </div>
-                </div>
-
-                <details className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Slide Animation', 'حركة الشريحة')}</summary>
-                  <div className="mt-3">
-                  <select
-                    value={selectedSlide.animation_type || 'fade'}
-                    onChange={(event) => patchSelected({ animation_type: event.target.value })}
-                    title="Animation type"
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/75 outline-none focus:border-[#D6A373]/45"
+          <aside className="max-h-[calc(100vh-8rem)] overflow-y-auto rounded-3xl border border-[#D6A373]/12 bg-[#120D09]/86 p-4">
+            <div className="mb-4 grid grid-cols-5 gap-1 rounded-2xl border border-white/8 bg-black/24 p-1">
+              {[
+                { id: 'content', icon: Layers, label: t('Content', 'النصوص') },
+                { id: 'image', icon: ImageIcon, label: t('Image', 'الصورة') },
+                { id: 'layout', icon: Settings2, label: t('Layout', 'التخطيط') },
+                { id: 'effects', icon: Sparkles, label: t('Effects', 'المؤثرات') },
+                { id: 'advanced', icon: Settings2, label: t('More', 'المزيد') },
+              ].map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setTab(item.id as EditorTab)}
+                    className={cn('flex h-10 items-center justify-center rounded-xl transition', tab === item.id ? 'bg-[#D6A373] text-black' : 'text-white/42 hover:text-white')}
+                    title={item.label}
                   >
-                    <option value="fade">Fade</option>
-                    <option value="slide">Slide</option>
-                    <option value="none">None</option>
-                  </select>
-                  <label className="mb-2 mt-3 block text-[11px] text-white/45">
-                    {t('Duration', 'المدة')}: {Number(selectedSlide.animation_duration || 6000)}ms
-                  </label>
-                  <input
-                    type="range"
-                    min={2000}
-                    max={12000}
-                    step={500}
-                    value={Number(selectedSlide.animation_duration || 6000)}
-                    onChange={(event) => patchSelected({ animation_duration: Number(event.target.value) })}
-                    title="Slide duration"
-                    className="w-full accent-[#D6A373]"
-                  />
-                  </div>
-                </details>
+                    <Icon className="h-4 w-4" />
+                  </button>
+                )
+              })}
+            </div>
 
-                <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Replace Image', 'استبدال الصورة')}</p>
-                  <label
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#D6A373]/24 bg-[#0B0806]/65 p-5 text-center transition hover:border-[#D6A373]/55"
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      const file = event.dataTransfer.files?.[0]
-                      if (file) validateAndPrepareFile(file)
-                    }}
-                  >
-                    {uploading ? <Loader2 className="mb-2 h-5 w-5 animate-spin text-[#D6A373]" /> : <Upload className="mb-2 h-5 w-5 text-[#D6A373]" />}
-                    <span className="text-xs text-[#F5E6D8]/80">{t('Drag image here or choose file', 'اسحب الصورة هنا أو اختر ملفًا')}</span>
-                    <span className="mt-1 text-[10px] text-[#D6B79A]/38">JPG, PNG, WebP · 8MB</span>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                      const file = event.target.files?.[0]
-                      event.target.value = ''
-                      if (file) validateAndPrepareFile(file)
-                    }} />
-                  </label>
-                </div>
-
-                {activeSection.key === 'categories' && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Target Category Card', 'Target Category Card')}</label>
-                    <select
-                      value={selectedSlide.usage_area || 'category:turkish-coffee'}
-                      onChange={(event) => patchSelected({ usage_area: event.target.value, media_type: 'category' })}
-                      title="Target category"
-                      className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/75 outline-none focus:border-[#D6A373]/45"
-                    >
-                      {MEDIA_USAGE_OPTIONS.filter((option) => option.mediaType === 'category').map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {localText(previewLanguage, option.labelEn, option.labelAr)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <details className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">{t('Image Position', 'موضع الصورة')}</summary>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {OBJECT_POSITION_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => patchSelected({
-                          object_position: option.value,
-                          images: [{
-                            ...(getMediaImageMeta(selectedSlide) || {}),
-                            url: selectedSlide.image_url,
-                            object_position: option.value,
-                          }],
-                        })}
-                        className={cn('rounded-xl border px-3 py-2 text-xs transition', getMediaObjectPosition(selectedSlide) === option.value ? 'border-[#D6A373]/55 bg-[#D6A373]/12 text-[#D6A373]' : 'border-white/8 bg-white/[0.03] text-white/50')}
-                      >
-                        {localText(previewLanguage, option.labelEn, option.labelAr)}
-                      </button>
-                    ))}
-                  </div>
-                </details>
-
-                {selectedElementId && (
-                  <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Position & Scale', 'الموضع والحجم')}</p>
-                      <span className="rounded-full bg-[#D6A373]/10 px-2 py-1 text-[10px] text-[#D6A373]">{selectedElementId}</span>
+            {!selectedSlide ? (
+              <div className="rounded-2xl border border-white/8 bg-black/18 p-5 text-sm text-white/45">
+                {t('Select or add a slide to edit.', 'اختر أو أضف شريحة للتعديل.')}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {tab === 'content' && (
+                  <div className="space-y-3">
+                    <TextField label="Eyebrow EN" value={selectedContent.eyebrow_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { eyebrow_en: value }))} />
+                    <TextField label="Eyebrow AR" value={selectedContent.eyebrow_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { eyebrow_ar: value }))} dir="rtl" />
+                    <TextField label="Title EN" value={selectedContent.title_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { title_en: value }))} />
+                    <TextField label="Title AR" value={selectedContent.title_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { title_ar: value }))} dir="rtl" />
+                    <TextArea label="Subtitle EN" value={selectedContent.subtitle_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { subtitle_en: value }))} />
+                    <TextArea label="Subtitle AR" value={selectedContent.subtitle_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { subtitle_ar: value }))} dir="rtl" />
+                    <TextArea label="Body EN" value={selectedContent.body_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { body_en: value }))} />
+                    <TextArea label="Body AR" value={selectedContent.body_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { body_ar: value }))} dir="rtl" />
+                    <TextField label="CTA EN" value={selectedContent.button_text_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { button_text_en: value }))} />
+                    <TextField label="CTA AR" value={selectedContent.button_text_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { button_text_ar: value }))} dir="rtl" />
+                    <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Feature Cards', 'كروت التفاصيل')}</p>
+                        <button
+                          type="button"
+                          onClick={() => replaceSelected(patchContent(selectedSlide, { features: [...features, newFeature(features.length)] }))}
+                          className="rounded-lg border border-[#D6A373]/24 px-2 py-1 text-[11px] font-bold text-[#D6A373]"
+                        >
+                          {t('Add', 'إضافة')}
+                        </button>
+                      </div>
+                      {features.length === 0 ? (
+                        <p className="text-xs leading-relaxed text-white/40">{t('No feature cards yet. Add one when this section needs editable cards.', 'لا توجد كروت تفاصيل بعد. أضف كارتًا عندما يحتاج القسم لذلك.')}</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {features.map((feature, index) => (
+                            <div key={feature.id} className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                              <div className="mb-3 flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-white/45">#{index + 1}</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { is_active: feature.is_active === false }) }))}
+                                    className="text-[11px] font-bold text-[#D6A373]"
+                                  >
+                                    {feature.is_active === false ? t('Show', 'إظهار') : t('Hide', 'إخفاء')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => replaceSelected(patchContent(selectedSlide, { features: features.filter((item) => item.id !== feature.id) }))}
+                                    className="text-[11px] font-bold text-red-300"
+                                  >
+                                    {t('Remove', 'حذف')}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <TextField label="Icon" value={feature.icon || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { icon: value }) }))} placeholder="coffee / leaf / award / heart" />
+                                <TextField label="Title EN" value={feature.title_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { title_en: value }) }))} />
+                                <TextField label="Title AR" value={feature.title_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { title_ar: value }) }))} dir="rtl" />
+                                <TextArea label="Description EN" value={feature.description_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { description_en: value }) }))} />
+                                <TextArea label="Description AR" value={feature.description_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { description_ar: value }) }))} dir="rtl" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                    <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Stats', 'الإحصائيات')}</p>
+                        <button
+                          type="button"
+                          onClick={() => replaceSelected(patchContent(selectedSlide, { stats: [...stats, newStat(stats.length)] }))}
+                          className="rounded-lg border border-[#D6A373]/24 px-2 py-1 text-[11px] font-bold text-[#D6A373]"
+                        >
+                          {t('Add', 'إضافة')}
+                        </button>
+                      </div>
+                      {stats.length === 0 ? (
+                        <p className="text-xs leading-relaxed text-white/40">{t('No stats yet. Add stats for hero or highlight sections.', 'لا توجد أرقام بعد. أضف أرقامًا للواجهة أو الأقسام البارزة.')}</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {stats.map((stat) => (
+                            <div key={stat.id} className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                              <div className="mb-2 flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-white/45">{stat.id}</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { is_active: stat.is_active === false }) }))}
+                                    className="text-[11px] font-bold text-[#D6A373]"
+                                  >
+                                    {stat.is_active === false ? t('Show', 'إظهار') : t('Hide', 'إخفاء')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => replaceSelected(patchContent(selectedSlide, { stats: stats.filter((item) => item.id !== stat.id) }))}
+                                    className="text-[11px] font-bold text-red-300"
+                                  >
+                                    {t('Remove', 'حذف')}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <input value={stat.value} onChange={(e) => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { value: e.target.value }) }))} className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none" />
+                                <input value={stat.label_en} onChange={(e) => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { label_en: e.target.value }) }))} className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none" />
+                                <input dir="rtl" value={stat.label_ar} onChange={(e) => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { label_ar: e.target.value }) }))} className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                    <label className="mb-2 block text-[11px] text-white/45">X: {Number(selectedElementPosition.x || 0)}px</label>
-                    <input type="range" min={-96} max={96} step={2}
-                      value={Number(selectedElementPosition.x || 0)}
-                      onChange={(event) => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { x: Number(event.target.value) }))}
-                      className="w-full accent-[#D6A373]" title="X position"
-                    />
-                    <label className="mb-2 mt-3 block text-[11px] text-white/45">Y: {Number(selectedElementPosition.y || 0)}px</label>
-                    <input type="range" min={-80} max={80} step={2}
-                      value={Number(selectedElementPosition.y || 0)}
-                      onChange={(event) => patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { y: Number(event.target.value) }))}
-                      className="w-full accent-[#D6A373]" title="Y position"
-                    />
+                {tab === 'image' && (
+                  <div className="space-y-3">
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#D6A373]/24 bg-[#0B0806]/70 p-6 text-center transition hover:border-[#D6A373]/55">
+                      {uploading ? <Loader2 className="mb-2 h-5 w-5 animate-spin text-[#D6A373]" /> : <Upload className="mb-2 h-5 w-5 text-[#D6A373]" />}
+                      <span className="text-xs text-[#F5E6D8]/75">{t('Upload or replace image', 'رفع أو استبدال الصورة')}</span>
+                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={uploadImage} />
+                    </label>
+                    <TextField label="Image URL" value={selectedSlide.image_url || ''} onChange={(value) => patchSelected({ image_url: value })} />
+                    <TextField label="Mobile Image URL" value={selectedSlide.mobile_image_url || ''} onChange={(value) => patchSelected({ mobile_image_url: value })} />
+                    <TextField label="Alt EN" value={selectedSlide.alt_en || ''} onChange={(value) => patchSelected({ alt_en: value })} />
+                    <TextField label="Alt AR" value={selectedSlide.alt_ar || ''} onChange={(value) => patchSelected({ alt_ar: value })} dir="rtl" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {OBJECT_POSITION_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => patchSelected({ object_position: option.value, images: [{ url: selectedImage, object_position: option.value }] })}
+                          className={cn('rounded-xl border px-3 py-2 text-xs transition', getMediaObjectPosition(selectedSlide) === option.value ? 'border-[#D6A373]/55 bg-[#D6A373]/12 text-[#D6A373]' : 'border-white/8 bg-white/[0.03] text-white/52')}
+                        >
+                          {localText(language, option.labelEn, option.labelAr)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                    {activeSection.editorTemplate === 'hero' && selectedElementId === 'main-copy' && (
-                      <>
-                        <div className="my-3 h-px bg-white/8" />
-                        <label className="mb-2 block text-[11px] text-white/45">{t('Title Scale', 'حجم العنوان')}: {selectedTitleScale.toFixed(2)}×</label>
-                        <input type="range" min={0.75} max={1.25} step={0.05}
-                          value={selectedTitleScale}
-                          onChange={(e) => patchSelectedContent({ title_scale: Number(e.target.value) })}
-                          className="w-full accent-[#D6A373]" title="Title scale"
-                        />
-                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Subtitle Scale', 'حجم الوصف')}: {selectedSubtitleScale.toFixed(2)}×</label>
-                        <input type="range" min={0.75} max={1.15} step={0.05}
-                          value={selectedSubtitleScale}
-                          onChange={(e) => patchSelectedContent({ subtitle_scale: Number(e.target.value) })}
-                          className="w-full accent-[#D6A373]" title="Subtitle scale"
-                        />
-                        <label className="mb-2 mt-3 block text-[11px] text-white/45">{t('Stats Scale', 'حجم الإحصائيات')}: {selectedStatsScale.toFixed(2)}×</label>
-                        <input type="range" min={0.75} max={1.15} step={0.05}
-                          value={selectedStatsScale}
-                          onChange={(e) => patchSelectedContent({ stats_scale: Number(e.target.value) })}
-                          className="w-full accent-[#D6A373]" title="Stats scale"
-                        />
-                      </>
-                    )}
+                {tab === 'layout' && (
+                  <div className="space-y-4">
+                    <RangeField label={t('Overlay', 'التعتيم')} value={Number(selectedSlide.overlay_opacity ?? 0.55)} min={0} max={0.9} step={0.05} onChange={(value) => patchSelected({ overlay_opacity: value })} />
+                    <RangeField label={t('Animation Duration', 'مدة الحركة')} value={Number(selectedSlide.animation_duration || 6000)} min={2000} max={12000} step={500} onChange={(value) => patchSelected({ animation_duration: value })} suffix="ms" />
+                    <RangeField label="Text X" value={Number(selectedLayout.textPosition?.x || 0)} min={-120} max={120} step={2} onChange={(value) => replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), x: value } }))} suffix="px" />
+                    <RangeField label="Text Y" value={Number(selectedLayout.textPosition?.y || 0)} min={-120} max={120} step={2} onChange={(value) => replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), y: value } }))} suffix="px" />
+                    <RangeField label="Eyebrow Scale" value={Number(selectedContent.eyebrow_scale || 1)} min={0.75} max={1.2} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { eyebrow_scale: value }))} />
+                    <RangeField label="Title Scale" value={Number(selectedContent.title_scale || 1)} min={0.75} max={1.25} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { title_scale: value }))} />
+                    <RangeField label="Subtitle Scale" value={Number(selectedContent.subtitle_scale || 1)} min={0.75} max={1.15} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { subtitle_scale: value }))} />
+                    <RangeField label="Stats Scale" value={Number(selectedContent.stats_scale || 1)} min={0.75} max={1.2} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { stats_scale: value }))} />
+                  </div>
+                )}
 
-                    <button type="button"
-                      onClick={() => {
-                        patchSelectedLayout(patchLayoutElement(selectedLayout, selectedElementId, { x: 0, y: 0 }))
-                        if (activeSection.editorTemplate === 'hero' && selectedElementId === 'main-copy') {
-                          patchSelectedContent({ title_scale: 1, subtitle_scale: 1, stats_scale: 1 })
-                        }
-                      }}
-                      className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-white/55 transition hover:text-white"
-                    >
-                      {t('Reset', 'إعادة ضبط')}
+                {tab === 'effects' && (
+                  <div className="space-y-4">
+                    <TextField label="Overlay Color" value={selectedFx.overlay_color || ''} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { overlay_color: value }))} placeholder="#0B0806" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { value: 'solid', label: 'Solid' },
+                        { value: 'radial', label: 'Radial' },
+                        { value: 'top_bottom', label: 'Top/Bottom' },
+                        { value: 'vignette_only', label: 'Vignette' },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => replaceSelected(patchEffects(selectedSlide, { gradient_type: option.value as VisualEffects['gradient_type'] }))}
+                          className={cn('rounded-xl border px-3 py-2 text-xs transition', (selectedFx.gradient_type || 'solid') === option.value ? 'border-[#D6A373]/55 bg-[#D6A373]/12 text-[#D6A373]' : 'border-white/8 bg-white/[0.03] text-white/52')}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <RangeField label="Brightness" value={Number(selectedFx.brightness ?? 1)} min={0.5} max={1.4} step={0.05} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { brightness: value }))} />
+                    <RangeField label="Contrast" value={Number(selectedFx.contrast ?? 1)} min={0.5} max={1.5} step={0.05} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { contrast: value }))} />
+                    <RangeField label="Saturation" value={Number(selectedFx.saturation ?? 1)} min={0.5} max={1.6} step={0.05} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { saturation: value }))} />
+                    <RangeField label="Warmth" value={Number(selectedFx.warmth ?? 0)} min={0} max={0.7} step={0.05} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { warmth: value }))} />
+                    <RangeField label="Blur" value={Number(selectedFx.blur ?? 0)} min={0} max={8} step={0.5} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { blur: value }))} suffix="px" />
+                    <RangeField label="Glow" value={Number(selectedFx.glow ?? 0)} min={0} max={0.35} step={0.01} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { glow: value }))} />
+                    <RangeField label="Vignette" value={Number(selectedFx.vignette ?? 0)} min={0} max={0.9} step={0.05} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { vignette: value }))} />
+                    <RangeField label="Grain" value={Number(selectedFx.grain ?? 0)} min={0} max={0.3} step={0.01} onChange={(value) => replaceSelected(patchEffects(selectedSlide, { grain: value }))} />
+                  </div>
+                )}
+
+                {tab === 'advanced' && (
+                  <div className="space-y-3">
+                    <TextField label="Button Link" value={selectedContent.button_link || selectedSlide.button_link || selectedSlide.link_url || ''} onChange={(value) => replaceSelected(patchContent({ ...selectedSlide, button_link: value, link_url: value }, { button_link: value }))} />
+                    <TextField label="Usage Area" value={selectedSlide.usage_area || ''} onChange={(value) => patchSelected({ usage_area: value })} />
+                    <TextField label="Section Key" value={selectedSlide.section_key || ''} onChange={(value) => patchSelected({ section_key: value })} />
+                    <TextField label="Start Date" type="datetime-local" value={String(selectedSlide.starts_at || '')} onChange={(value) => patchSelected({ starts_at: value })} />
+                    <TextField label="End Date" type="datetime-local" value={String(selectedSlide.ends_at || '')} onChange={(value) => patchSelected({ ends_at: value })} />
+                    <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Device Visibility', 'الظهور حسب الجهاز')}</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'desktop', label: t('Desktop', 'ديسكتوب') },
+                          { key: 'tablet', label: t('Tablet', 'تابلت') },
+                          { key: 'mobile', label: t('Mobile', 'موبايل') },
+                        ].map((device) => (
+                          <label key={device.key} className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-2 py-2 text-xs text-white/62">
+                            <input
+                              type="checkbox"
+                              checked={asRecord(selectedSlide.device_visibility)[device.key] !== false}
+                              onChange={(event) => patchSelected({ device_visibility: updateDeviceVisibility(selectedSlide.device_visibility, device.key as 'desktop' | 'tablet' | 'mobile', event.target.checked) })}
+                              className="accent-[#D6A373]"
+                            />
+                            {device.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <button type="button" onClick={removeSlide} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/16">
+                      <Trash2 className="h-4 w-4" />
+                      {t('Delete Slide', 'حذف الشريحة')}
                     </button>
                   </div>
                 )}
-
-                <details className="rounded-2xl border border-white/8 bg-black/18 p-3 group">
-                  <summary className="cursor-pointer list-none text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80 select-none">
-                    {t('Visual Effects', 'المؤثرات البصرية')}
-                  </summary>
-                  <div className="mt-3">
-                  <VisualEffectsPanel
-                    slide={selectedSlide}
-                    onPatch={patchSelected}
-                    onPatchContent={patchSelectedContent}
-                  />
-                  </div>
-                </details>
-
-                {activeSection.supportsCta && (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Button Link', 'Button Link')}</label>
-                    <input
-                      value={selectedSlide.button_link || selectedSlide.link_url || ''}
-                      onChange={(event) => patchSelected({ button_link: event.target.value, link_url: event.target.value })}
-                      placeholder="/products"
-                      className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/75 outline-none focus:border-[#D6A373]/45"
-                    />
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => removeSlide(selectedSlide.local_id)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/15"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t('Remove Slide', 'Remove Slide')}
-                </button>
-              </>
+              </div>
             )}
           </aside>
         </div>
@@ -1927,50 +812,31 @@ export default function BannersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0900] p-6 text-white">
+    <div className="min-h-screen bg-[#0B0806] p-6 text-white">
       <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D6A373]/75">{t('Website Content Builder', 'Website Content Builder')}</p>
-          <h2 className="mt-1 font-serif text-3xl font-bold text-[#F5E6D8]">{t('Section Media Editor', 'Section Media Editor')}</h2>
-          <p className="mt-1 text-sm text-[#D6B79A]/50">{t('Open a website section and edit its live visual content.', 'Open a website section and edit its live visual content.')}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D6A373]/75">{t('Media Studio', 'استوديو الوسائط')}</p>
+          <h1 className="mt-1 font-serif text-3xl font-bold text-[#F5E6D8]">{t('Site Images & Text Control', 'التحكم في صور ونصوص الموقع')}</h1>
+          <p className="mt-1 text-sm text-[#D6B79A]/55">{t('Manage every visual section from one clean workspace.', 'تحكم في كل أقسام الموقع المرئية من مساحة عمل واحدة.')}</p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm font-bold text-white/55 transition hover:text-white"
-        >
-          <RefreshCw className="h-4 w-4" />
-          {t('Refresh', 'Refresh')}
+        <button type="button" onClick={load} disabled={loading} className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm font-bold text-white/62 transition hover:text-white disabled:opacity-50">
+          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+          {t('Refresh', 'تحديث')}
         </button>
       </div>
 
-      {dbError && !loading && (
-        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-5">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-          <div>
-            <p className="text-sm font-bold text-amber-100">{t('Media schema needs setup', 'Media schema needs setup')}</p>
-            <p className="mt-1 text-xs text-amber-100/70">
-              {t('Run the latest section media migration, then refresh this page.', 'Run the latest section media migration, then refresh this page.')}
-            </p>
-          </div>
-        </div>
-      )}
-
       <div className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-[#D6A373]/10 bg-[#120D09]/70 p-2">
-        {websitePages.map((page) => {
-          const isActive = activePageKey === page.key
+        {pages.map((page) => {
+          const active = activePageKey === page.key
           return (
             <button
               key={page.key}
               type="button"
               onClick={() => setActivePageKey(page.key)}
-              className={cn(
-                'shrink-0 rounded-xl px-4 py-2 text-sm font-bold transition',
-                isActive ? 'bg-[#D6A373] text-black' : 'text-[#D6B79A]/55 hover:bg-white/[0.04] hover:text-[#F5E6D8]'
-              )}
+              className={cn('shrink-0 rounded-xl px-4 py-2 text-sm font-bold transition', active ? 'bg-[#D6A373] text-black' : 'text-[#D6B79A]/60 hover:bg-white/[0.04] hover:text-[#F5E6D8]')}
             >
               {localText(language, page.labelEn, page.labelAr)}
-              <span className={cn('ms-2 text-xs', isActive ? 'text-black/55' : 'text-white/30')}>{page.sections.length}</span>
+              <span className={cn('ms-2 text-xs', active ? 'text-black/55' : 'text-white/30')}>{page.sections.length}</span>
             </button>
           )
         })}
@@ -1984,58 +850,276 @@ export default function BannersPage() {
         </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {filteredSectionGroups.map(({ section, slides: sectionSlides, activeSlides, preview }) => (
-            <button
-              key={section.key}
-              type="button"
-              onClick={() => openSection(section)}
-              className="group relative overflow-hidden rounded-3xl border border-[#D6A373]/12 bg-[#120D09] text-left shadow-[0_18px_70px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35 hover:shadow-[0_28px_90px_rgba(214,163,115,0.12)]"
-            >
-              <div className="relative h-52 overflow-hidden">
-                <img
-                  src={preview?.image_url || section.fallbackImage}
-                  alt=""
-                  className="h-full w-full object-cover opacity-80 transition duration-700 group-hover:scale-105 group-hover:opacity-100"
-                  style={{ objectPosition: preview ? getMediaObjectPosition(preview) : 'center center' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0806] via-[#0B0806]/24 to-transparent" />
-                <div className="absolute inset-0 bg-black/20" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <p className="mb-2 inline-flex rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#D6A373] backdrop-blur">
-                    {localText(language, section.pageLabelEn, section.pageLabelAr)} · {section.sectionType.replace(/_/g, ' ')}
-                  </p>
-                  <h3 className="font-serif text-2xl font-bold text-[#F5E6D8]">{localText(language, section.labelEn, section.labelAr)}</h3>
+          {visibleGroups.map(({ section, slides: sectionSlides, activeSlides, preview }) => {
+            const image = preview?.image_url || section.fallbackImage || EMPTY_IMAGE
+            const status = statusFor(sectionSlides)
+            return (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => openSection(section)}
+                className="group relative overflow-hidden rounded-3xl border border-[#D6A373]/12 bg-[#120D09] text-start shadow-[0_18px_70px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35 hover:shadow-[0_28px_90px_rgba(214,163,115,0.12)]"
+              >
+                <div className="relative h-52 overflow-hidden">
+                  <img src={image} alt="" className="h-full w-full object-cover opacity-82 transition duration-700 group-hover:scale-105 group-hover:opacity-100" style={{ objectPosition: preview ? getMediaObjectPosition(preview) : 'center center' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#120D09] via-[#120D09]/42 to-transparent" />
                 </div>
-              </div>
-
-              <div className="space-y-4 p-4">
-                <p className="line-clamp-2 text-sm leading-relaxed text-[#D6B79A]/56">{localText(language, section.descriptionEn, section.descriptionAr)}</p>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#D6B79A]/42">{sectionSlides.length} {t('slides/images', 'slides/images')}</span>
-                  <span className={cn('rounded-full px-2 py-1 font-bold', activeSlides.length > 0 ? 'bg-emerald-500/12 text-emerald-300' : 'bg-white/5 text-white/35')}>
-                    {activeSlides.length > 0 ? t('Live', 'Live') : t('Fallback', 'Fallback')}
-                  </span>
+                <div className="space-y-4 p-5">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#D6A373]/78">{localText(language, section.pageLabelEn, section.pageLabelAr)} · {section.sectionType.replaceAll('_', ' ')}</p>
+                    <h2 className="mt-3 font-serif text-2xl font-bold text-[#F5E6D8]">{localText(language, section.labelEn, section.labelAr)}</h2>
+                    <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-[#D6B79A]/58">{localText(language, section.descriptionEn, section.descriptionAr)}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={cn('rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.13em]', status.className)}>
+                      {localText(language, status.en, status.ar)}
+                    </span>
+                    <span className="text-xs text-[#D6B79A]/42">{activeSlides.length || sectionSlides.length} {t('items', 'عنصر')}</span>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 text-sm font-bold text-[#D6A373]">
+                    {t('Edit visually', 'تعديل بصري')}
+                    <Sparkles className="h-4 w-4" />
+                  </div>
                 </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
-                <div className="flex items-center gap-1.5">
-                  {(sectionSlides.length > 0 ? sectionSlides : [{ id: 'fallback', image_url: section.fallbackImage } as SiteMediaItem]).slice(0, 5).map((slide, index) => (
-                    <div key={slide.id || index} className="h-9 w-11 overflow-hidden rounded-lg border border-white/8 bg-black">
-                      <img src={slide.image_url || section.fallbackImage} alt="" className="h-full w-full object-cover" />
-                    </div>
-                  ))}
-                  {sectionSlides.length > 5 && <span className="text-xs text-white/35">+{sectionSlides.length - 5}</span>}
-                </div>
+function MediaSectionPreview({
+  section,
+  slide,
+  content,
+  layout,
+  effects,
+  image,
+  overlay,
+  language,
+}: {
+  section: WebsiteSectionConfig
+  slide: StudioSlide | null
+  content: SectionBuilderContent
+  layout: SectionBuilderLayout
+  effects: VisualEffects
+  image: string
+  overlay: number
+  language: 'en' | 'ar'
+}) {
+  const isRtl = language === 'ar'
+  const activeStats = (content.stats || []).filter((stat) => stat.is_active !== false)
+  const activeFeatures = (content.features || []).filter((feature) => feature.is_active !== false)
+  const textPosition = layout.textPosition || {}
+  const titleScale = Math.min(1.25, Math.max(0.75, Number(content.title_scale || 1)))
+  const subtitleScale = Math.min(1.15, Math.max(0.75, Number(content.subtitle_scale || 1)))
+  const eyebrowScale = Math.min(1.2, Math.max(0.75, Number(content.eyebrow_scale || 1)))
+  const statsScale = Math.min(1.2, Math.max(0.75, Number(content.stats_scale || 1)))
+  const transform = `translate(${Number(textPosition.x || 0)}px, ${Number(textPosition.y || 0)}px)`
+  const filter = buildEffectsFilter(effects)
+  const overlayBackground = buildOverlayGradient(effects.gradient_type, effects.overlay_color, overlay)
+  const title = localText(language, content.title_en, content.title_ar) || localText(language, section.defaultTitleEn, section.defaultTitleAr)
+  const subtitle = localText(language, content.subtitle_en, content.subtitle_ar) || localText(language, section.defaultSubtitleEn, section.defaultSubtitleAr)
+  const body = localText(language, content.body_en, content.body_ar)
+  const buttonText = localText(language, content.button_text_en, content.button_text_ar) || localText(language, section.defaultButtonTextEn, section.defaultButtonTextAr)
+  const objectPosition = slide ? getMediaObjectPosition(slide) : 'center center'
 
-                <div className="flex items-center gap-2 text-sm font-bold text-[#D6A373]">
-                  <Pencil className="h-4 w-4" />
-                  {t('Edit section visually', 'Edit section visually')}
-                </div>
-              </div>
-            </button>
+  const background = (
+    <>
+      <img
+        src={image}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ objectPosition, filter: filter || undefined }}
+      />
+      <div className="absolute inset-0" style={{ background: overlayBackground }} />
+      {Number(effects.vignette || 0) > 0.05 && (
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,${Number(effects.vignette).toFixed(2)}) 100%)` }} />
+      )}
+      {Number(effects.glow || 0) > 0.05 && (
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 60% at 50% 20%, rgba(214,163,115,${Number(effects.glow).toFixed(2)}) 0%, transparent 68%)` }} />
+      )}
+      {Number(effects.grain || 0) > 0.05 && (
+        <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(effects.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+      )}
+      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#0B0806] to-transparent" />
+    </>
+  )
+
+  const copyBlock = (
+    <div
+      className={cn('max-w-xl', isRtl ? 'text-right' : 'text-left')}
+      style={{ transform }}
+    >
+      {content.eyebrow_en || content.eyebrow_ar ? (
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]" style={{ transform: `scale(${eyebrowScale})`, transformOrigin: isRtl ? 'top right' : 'top left' }}>
+          {localText(language, content.eyebrow_en, content.eyebrow_ar)}
+        </p>
+      ) : null}
+      <h2 className="font-serif text-4xl font-bold leading-tight text-[#F5E6D8] md:text-6xl" style={{ transform: `scale(${titleScale})`, transformOrigin: isRtl ? 'top right' : 'top left' }}>
+        {title}
+      </h2>
+      <p className="mt-5 max-w-lg text-base leading-relaxed text-[#D6B79A]/82" style={{ transform: `scale(${subtitleScale})`, transformOrigin: isRtl ? 'top right' : 'top left' }}>
+        {body || subtitle}
+      </p>
+      {(buttonText || section.supportsCta) && (
+        <div className="mt-7 inline-flex rounded-xl bg-[#D6A373] px-6 py-3 text-sm font-bold text-black">
+          {buttonText || localText(language, 'Shop Now', 'تسوق الآن')}
+        </div>
+      )}
+      {activeStats.length > 0 && (
+        <div className="mt-9 grid max-w-lg grid-cols-3 gap-4 border-t border-[#D6A373]/20 pt-5" style={{ transform: `scale(${statsScale})`, transformOrigin: isRtl ? 'top right' : 'top left' }}>
+          {activeStats.slice(0, 3).map((stat) => (
+            <div key={stat.id}>
+              <p dir="ltr" className="font-serif text-2xl font-bold text-[#D6A373]">{stat.value}</p>
+              <p className={cn('mt-1 text-[10px] text-[#F5E6D8]/50', isRtl ? 'tracking-normal' : 'uppercase tracking-[0.16em]')}>
+                {localText(language, stat.label_en, stat.label_ar)}
+              </p>
+            </div>
           ))}
         </div>
       )}
     </div>
+  )
+
+  if (section.sectionType === 'split_content') {
+    return (
+      <div className="relative min-h-[560px] overflow-hidden bg-[#0B0806] p-6 md:p-10">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(214,163,115,0.08),transparent_70%)]" />
+        <div className="relative grid min-h-[500px] items-center gap-8 lg:grid-cols-2">
+          <div className={cn(isRtl && 'lg:order-2')}>{copyBlock}</div>
+          <div className="relative min-h-[340px] overflow-hidden rounded-3xl border border-[#D6A373]/18 bg-black">
+            {background}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (section.editorTemplate === 'cards' || section.editorTemplate === 'text_cards') {
+    return (
+      <div className="relative min-h-[560px] overflow-hidden bg-[#0B0806] p-6 md:p-10">
+        {background}
+        <div className="relative z-10">
+          <div className={cn('mb-8 max-w-2xl', isRtl ? 'ms-auto text-right' : 'text-left')}>{copyBlock}</div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {(activeFeatures.length > 0 ? activeFeatures : activeStats.map((stat) => ({
+              id: stat.id,
+              title_en: stat.value,
+              title_ar: stat.value,
+              description_en: stat.label_en,
+              description_ar: stat.label_ar,
+            }))).slice(0, 3).map((feature) => (
+              <div key={feature.id} className="min-h-32 rounded-2xl border border-[#D6A373]/14 bg-[#120D09]/82 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+                <p className="font-serif text-xl font-bold text-[#F5E6D8]">{localText(language, feature.title_en, feature.title_ar)}</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#D6B79A]/62">{localText(language, feature.description_en, feature.description_ar)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative min-h-[560px] overflow-hidden bg-[#0B0806]">
+      {background}
+      <div className={cn('relative z-10 flex min-h-[560px] items-center p-7 md:p-12', isRtl ? 'justify-end text-right' : 'justify-start text-left')}>
+        {copyBlock}
+      </div>
+    </div>
+  )
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  dir,
+  placeholder,
+  type = 'text',
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  dir?: 'rtl' | 'ltr'
+  placeholder?: string
+  type?: string
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/70">{label}</span>
+      <input
+        type={type}
+        dir={dir}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border border-white/10 bg-black/24 px-3 py-2 text-sm text-[#F5E6D8] outline-none transition focus:border-[#D6A373]/45"
+      />
+    </label>
+  )
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  dir,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  dir?: 'rtl' | 'ltr'
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/70">{label}</span>
+      <textarea
+        dir={dir}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={3}
+        className="w-full resize-none rounded-xl border border-white/10 bg-black/24 px-3 py-2 text-sm leading-relaxed text-[#F5E6D8] outline-none transition focus:border-[#D6A373]/45"
+      />
+    </label>
+  )
+}
+
+function RangeField({
+  label,
+  value,
+  min,
+  max,
+  step,
+  suffix,
+  onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  suffix?: string
+  onChange: (value: number) => void
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 flex justify-between text-[11px] text-white/48">
+        <span>{label}</span>
+        <span>{value}{suffix || ''}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full accent-[#D6A373]"
+      />
+    </label>
   )
 }

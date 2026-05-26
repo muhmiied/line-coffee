@@ -169,12 +169,12 @@ export default function CheckoutPage() {
     }
 
     const errors: Record<string, string> = {}
-    if (!formData.firstName.trim()) errors.firstName = t('Please enter your first name', 'من فضلك ادخل اسمك الأول')
-    if (!formData.lastName.trim()) errors.lastName = t('Please enter your last name', 'من فضلك ادخل اسمك الأخير')
-    if (!formData.phone.trim()) errors.phone = t('Please enter your phone number', 'من فضلك ادخل رقم تليفونك')
+    if (!formData.firstName.trim()) errors.firstName = t('Please enter your first name', 'من فضلك أدخل اسمك الأول')
+    if (!formData.lastName.trim()) errors.lastName = t('Please enter your last name', 'من فضلك أدخل اسمك الأخير')
+    if (!formData.phone.trim()) errors.phone = t('Please enter your phone number', 'من فضلك أدخل رقم هاتفك')
     if (formData.email.trim() && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) errors.email = t('Please enter a valid email', 'من فضلك أدخل بريد إلكتروني صحيح')
-    if (!formData.address.trim()) errors.address = t('Please enter your address', 'من فضلك ادخل عنوانك')
-    if (!formData.city.trim()) errors.city = t('Please enter your city', 'من فضلك ادخل مدينتك')
+    if (!formData.address.trim()) errors.address = t('Please enter your address', 'من فضلك أدخل عنوانك')
+    if (!formData.city.trim()) errors.city = t('Please enter your city', 'من فضلك أدخل مدينتك')
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)

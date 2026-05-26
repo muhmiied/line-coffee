@@ -188,7 +188,7 @@ export const MEDIA_USAGE_OPTIONS: MediaUsageOption[] = [
   {
     value: 'category:turkish-coffee',
     labelEn: 'Category: Turkish Coffee',
-    labelAr: 'فئة: القهوة التركي',
+    labelAr: 'فئة: القهوة التركية',
     mediaType: 'category',
     minWidth: 1000,
     minHeight: 700,
@@ -208,7 +208,7 @@ export const MEDIA_USAGE_OPTIONS: MediaUsageOption[] = [
   {
     value: 'category:flavored-coffee',
     labelEn: 'Category: Flavored Coffee',
-    labelAr: 'فئة: القهوة بالنكهات',
+    labelAr: 'فئة: القهوة المنكهة',
     mediaType: 'category',
     minWidth: 1000,
     minHeight: 700,

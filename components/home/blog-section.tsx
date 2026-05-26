@@ -5,6 +5,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Calendar, FileText } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { useSectionContent } from '@/lib/hooks/use-section-media'
+import {
+  buildEffectsFilter,
+  buildOverlayGradient,
+  getMediaObjectPosition,
+  getMediaOverlayOpacity,
+  getVisualEffects,
+  GRAIN_SVG,
+} from '@/lib/media'
 import { cn } from '@/lib/utils'
 
 type Post = {
@@ -23,7 +32,12 @@ type Post = {
 
 export function BlogSection() {
   const { t, language, dir } = useLanguage()
+  const { media: sectionMedia, content: sectionContent } = useSectionContent('home_blog')
   const [posts, setPosts] = useState<Post[]>([])
+  const bgFx = getVisualEffects(sectionMedia)
+  const bgFilter = buildEffectsFilter(bgFx)
+  const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.78) : 0.78
+  const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
 
   useEffect(() => {
     fetch('/api/blog/public', { cache: 'no-store' })
@@ -38,6 +52,24 @@ export function BlogSection() {
 
   return (
     <section className="cinematic-section relative overflow-hidden py-20 md:py-28" style={{ background: '#0F0A07' }}>
+      {sectionMedia?.image_url && (
+        <>
+          <Image
+            src={sectionMedia.image_url}
+            alt={sectionMedia.alt_en || sectionContent.title_en || ''}
+            fill
+            sizes="100vw"
+            loading="lazy"
+            className="object-cover"
+            style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
+            unoptimized
+          />
+          <div className="absolute inset-0" style={{ background: bgOverlay }} />
+          {Number(bgFx.grain || 0) > 0.05 && (
+            <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+          )}
+        </>
+      )}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/18 to-transparent" />
 
@@ -45,14 +77,19 @@ export function BlogSection() {
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]">
-              {t('Coffee Journal', 'مجلة القهوة')}
+              {t(sectionContent.eyebrow_en || 'Coffee Journal', sectionContent.eyebrow_ar || 'مجلة القهوة')}
             </p>
             <h2 className="font-serif text-3xl font-bold leading-[1.18] text-[#F5E6D8] md:text-4xl">
-              {t('Latest From The Blog', 'أحدث المقالات')}
+              {t(sectionContent.title_en || 'Latest From The Blog', sectionContent.title_ar || 'أحدث المقالات')}
             </h2>
+            {(sectionContent.subtitle_en || sectionContent.subtitle_ar) && (
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#D6B79A]/64">
+                {t(sectionContent.subtitle_en || '', sectionContent.subtitle_ar || sectionContent.subtitle_en || '')}
+              </p>
+            )}
           </div>
-          <Link href="/blog" className="group inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#D6A373] transition-colors hover:text-[#F5E6D8]">
-            {t('View all posts', 'عرض كل المقالات')}
+          <Link href={sectionContent.button_link || '/blog'} className="group inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#D6A373] transition-colors hover:text-[#F5E6D8]">
+            {t(sectionContent.button_text_en || 'View all posts', sectionContent.button_text_ar || 'عرض كل المقالات')}
             <ArrowRight className={cn('h-4 w-4 transition-transform group-hover:translate-x-1', dir === 'rtl' && 'rotate-180 group-hover:-translate-x-1')} />
           </Link>
         </div>

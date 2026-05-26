@@ -14,10 +14,10 @@ export function Footer() {
   const footerLinks = {
     shop: [
       { href: '/products', labelEn: 'All Products', labelAr: 'جميع المنتجات' },
-      { href: '/products?category=turkish-coffee', labelEn: 'Turkish Coffee', labelAr: 'قهوة تركي' },
+      { href: '/products?category=turkish-coffee', labelEn: 'Turkish Coffee', labelAr: 'قهوة تركية' },
       { href: '/products?category=espresso', labelEn: 'Espresso', labelAr: 'إسبريسو' },
       { href: '/products?category=cappuccino', labelEn: 'Cappuccino', labelAr: 'كابتشينو' },
-      { href: '/products?featured=true', labelEn: 'Best Sellers', labelAr: 'الأكثر مبيعاً' },
+      { href: '/products?featured=true', labelEn: 'Best Sellers', labelAr: 'الأكثر طلبًا' },
     ],
     company: [
       { href: '/about', labelEn: 'About Us', labelAr: 'من نحن' },
@@ -31,7 +31,7 @@ export function Footer() {
       { href: '/shipping', labelEn: 'Shipping', labelAr: 'الشحن' },
       { href: '/returns', labelEn: 'Returns', labelAr: 'الإرجاع' },
       { href: '/privacy', labelEn: 'Privacy Policy', labelAr: 'سياسة الخصوصية' },
-      { href: '/terms', labelEn: 'Terms of Service', labelAr: 'شروط الخدمة' },
+      { href: '/terms', labelEn: 'Terms of Use', labelAr: 'شروط الاستخدام' },
     ],
   }
 
@@ -65,8 +65,8 @@ export function Footer() {
 
               <p className="mb-7 max-w-sm leading-relaxed text-sm" style={{ color: 'rgba(183,155,133,0.75)' }}>
                 {t(
-                  "Premium artisan coffee beans sourced from the world's finest growing regions. Experience the perfect cup, every time.",
-                  'حبوب قهوة حرفية فاخرة من أفضل مناطق الزراعة في العالم. استمتع بالكوب المثالي، في كل مرة.'
+                  'Freshly roasted coffee crafted for warm daily rituals, from rich Turkish coffee to smooth espresso blends and flavored favorites.',
+                  'قهوة طازجة التحميص لطقوس يومية دافئة، من القهوة التركية الغنية إلى توليفات الإسبريسو والنكهات المميزة.'
                 )}
               </p>
 

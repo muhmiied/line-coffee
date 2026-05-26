@@ -5,6 +5,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Calendar, FileText } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { useSectionContent } from '@/lib/hooks/use-section-media'
+import {
+  buildEffectsFilter,
+  buildOverlayGradient,
+  getMediaObjectPosition,
+  getMediaOverlayOpacity,
+  getVisualEffects,
+  GRAIN_SVG,
+} from '@/lib/media'
 import { cn } from '@/lib/utils'
 
 type Post = {
@@ -23,8 +32,13 @@ type Post = {
 
 export default function BlogListPage() {
   const { t, language, dir } = useLanguage()
+  const { media: sectionMedia, content: sectionContent } = useSectionContent('blog_page')
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const bgFx = getVisualEffects(sectionMedia)
+  const bgFilter = buildEffectsFilter(bgFx)
+  const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.78) : 0.78
+  const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
 
   useEffect(() => {
     fetch('/api/blog/public', { cache: 'no-store' })
@@ -35,17 +49,35 @@ export default function BlogListPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#0B0806] py-14 md:py-24">
-      <div className="container mx-auto max-w-5xl px-4">
+    <div className="relative min-h-screen overflow-hidden bg-[#0B0806] py-14 md:py-24">
+      {sectionMedia?.image_url && (
+        <>
+          <Image
+            src={sectionMedia.image_url}
+            alt={sectionMedia.alt_en || sectionContent.title_en || ''}
+            fill
+            sizes="100vw"
+            loading="lazy"
+            className="object-cover"
+            style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
+            unoptimized
+          />
+          <div className="absolute inset-0" style={{ background: bgOverlay }} />
+          {Number(bgFx.grain || 0) > 0.05 && (
+            <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+          )}
+        </>
+      )}
+      <div className="container relative z-10 mx-auto max-w-5xl px-4">
         <div className="mb-8 text-center md:mb-12">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]">
-            {t('Coffee Journal', 'مجلة القهوة')}
+            {t(sectionContent.eyebrow_en || 'Coffee Journal', sectionContent.eyebrow_ar || 'مجلة القهوة')}
           </p>
           <h1 className="mb-3 font-serif text-3xl font-bold leading-[1.18] text-[#F5E6D8] md:text-5xl">
-            {t('Blog', 'المدونة')}
+            {t(sectionContent.title_en || 'Blog', sectionContent.title_ar || 'المدونة')}
           </h1>
           <p className="text-lg text-[#D6B79A]/72">
-            {t('Coffee stories, brewing guides & more', 'قصص القهوة، أدلة التحضير والمزيد')}
+            {t(sectionContent.subtitle_en || 'Coffee stories, brewing guides & more', sectionContent.subtitle_ar || 'قصص القهوة، أدلة التحضير والمزيد')}
           </p>
         </div>
 

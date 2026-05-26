@@ -48,7 +48,7 @@ type SidebarCategory = {
 const FALLBACK_DB_CATEGORIES: DbCategory[] = [
   { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'القهوة التركية',   image_url: null },
   { id: 'esp', slug: 'espresso',        name_en: 'Espresso',         name_ar: 'الإسبريسو',        image_url: null },
-  { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'القهوة بالنكهات', image_url: null },
+  { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'القهوة المنكهة', image_url: null },
   { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',        image_url: null },
   { id: 'cap', slug: 'cappuccino',      name_en: 'Cappuccino',       name_ar: 'كابتشينو',          image_url: null },
   { id: 'hc',  slug: 'hot-chocolate',   name_en: 'Hot Chocolate',    name_ar: 'هوت شوكليت',       image_url: null },
@@ -115,7 +115,7 @@ const IMG_HC   = 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=80
 const LAST_RESORT_PRODUCTS: Product[] = [
   // ── Turkish Coffee ───────────────────────────────────────────────────────────
   // Prices mirror the expected public catalog fallback values.
-  mkProduct('tc-1','velvet-turkish','Velvet Turkish','فيلفيت تركي',
+  mkProduct('tc-1','velvet-turkish','Velvet Turkish','تحميصة مخملية تركية',
     'Velvety smooth body with balanced bitterness and warm roast depth.',
     'قوام مخملي ناعم مع مرارة متوازنة وعمق تحميص دافئ.',
     'turkish-coffee',[200,400,800],{ images:[IMG_TC], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Velvety'] }),
@@ -123,13 +123,13 @@ const LAST_RESORT_PRODUCTS: Product[] = [
     'Dark roast with deep caramel undertones — a cup that captures the night.',
     'تحميص داكن مع نغمات كراميل عميقة — كوب يجسّد ليالي القاهرة.',
     'turkish-coffee',[220,440,880],{ images:[IMG_TC], is_featured:true, flavor_notes:['Caramel','Dark Roast'] }),
-  mkProduct('tc-3','midnight-turkish','Midnight Turkish','ميدنايت تركي',
+  mkProduct('tc-3','midnight-turkish','Midnight Turkish','تركية منتصف الليل',
     'Rich and full-bodied with a smoky chocolate finish.',
     'غني وثقيل القوام مع نهاية شوكولاتة مدخنة.',
     'turkish-coffee',[235,470,940],{ images:[IMG_TC], flavor_notes:['Chocolate','Smoky'] }),
-  mkProduct('tc-4','royal-line','Royal Line','رويال لاين',
+  mkProduct('tc-4','royal-line','Royal Line','توليفة رويال لاين',
     'A premium specialty blend of finest arabica — floral, fruity, and refined.',
-    'توليفة specialty من أجود الأرابيكا — فلورال وفاكهي وراقي.',
+    'توليفة مختصة من أجود الأرابيكا — زهرية وفاكهية وراقية.',
     'turkish-coffee',[410,825,1650],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral','Fruity'] }),
 
   // ── Espresso ─────────────────────────────────────────────────────────────────
@@ -146,8 +146,8 @@ const LAST_RESORT_PRODUCTS: Product[] = [
     'إسبريسو محمص بدقة مع حموضة نابضة وقوام نظيف.',
     'espresso',[190,380,760],{ images:[IMG_ESP], is_new:true, flavor_notes:['Bright','Clean'] }),
   mkProduct('esp-4','gold-shot','Gold Shot','جولد شوت',
-    'Single-origin specialty espresso — golden crema and complex florals.',
-    'إسبريسو specialty أحادي المصدر — كريمة ذهبية وفلورال معقد.',
+    'Single-origin specialty espresso — golden crema and layered floral notes.',
+    'إسبريسو مختص أحادي المصدر — كريمة ذهبية ولمسات زهرية متعددة الطبقات.',
     'espresso',[260,520,1040],{ images:[IMG_ESP], flavor_notes:['Specialty','Floral'] }),
 
   // ── Flavored Coffee (French Coffee) ─────────────────────────────────────────
@@ -155,7 +155,7 @@ const LAST_RESORT_PRODUCTS: Product[] = [
     'Classic French-roast coffee blend — bold, smooth, and full-bodied.',
     'توليفة قهوة فرنسي كلاسيك — جريئة وناعمة وثقيلة القوام.',
     'flavored-coffee',[87,174,349],{ images:[IMG_FC], is_featured:true, is_best_seller:true, flavor_notes:['French Roast','Bold'] }),
-  mkProduct('fc-2','french-coffee-flavored','Flavored French Coffee','قهوة فرنسية بالنكهات',
+  mkProduct('fc-2','french-coffee-flavored','Flavored French Coffee','قهوة فرنسية منكهة',
     'French roast coffee with premium added flavor — a refined sensory experience.',
     'قهوة فرنسي بنكهة مضافة فاخرة — تجربة حسية راقية.',
     'flavored-coffee',[87,174,349],{ images:[IMG_FC], is_featured:true, flavor_notes:['French Roast','Flavored'] }),
@@ -165,21 +165,21 @@ const LAST_RESORT_PRODUCTS: Product[] = [
     'flavored-coffee',[107,214,429],{ images:[IMG_FC], flavor_notes:['French Roast','Pieces'] }),
 
   // ── Coffee Mix ───────────────────────────────────────────────────────────────
-  mkProduct('cm-1','coffee-mix-original','Original Coffee Mix','كوفي ميكس أوريجينال',
+  mkProduct('cm-1','coffee-mix-original','Original Coffee Mix','كوفي ميكس أصلي',
     'Classic balanced coffee mix — smooth, creamy, and consistently satisfying.',
     'كوفي ميكس كلاسيك متوازن — ناعم وكريمي ومُرضٍ على الدوام.',
     'coffee-mix',[88,176,352],{ images:[IMG_CM], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Creamy'] }),
-  mkProduct('cm-2','coffee-mix-flavored','Flavored Coffee Mix','كوفي ميكس نكهات',
+  mkProduct('cm-2','coffee-mix-flavored','Flavored Coffee Mix','كوفي ميكس منكه',
     'Coffee mix infused with premium flavors — a richer, more aromatic experience.',
-    'كوفي ميكس بنكهات فاخرة مضافة — تجربة أغنى وأكثر عطراً.',
+    'كوفي ميكس منكه بلمسات فاخرة — تجربة أغنى وأكثر عطرًا.',
     'coffee-mix',[108,216,432],{ images:[IMG_CM], is_featured:true, flavor_notes:['Flavored','Aromatic'] }),
 
   // ── Cappuccino ───────────────────────────────────────────────────────────────
-  mkProduct('cap-1','cappuccino-original','Original Cappuccino','كابتشينو أوريجينال',
+  mkProduct('cap-1','cappuccino-original','Original Cappuccino','كابتشينو أصلي',
     'Classic creamy cappuccino mix — perfectly balanced foam and espresso.',
     'كابتشينو كريمي كلاسيك — توازن مثالي بين الرغوة والإسبريسو.',
     'cappuccino',[108,216,432],{ images:[IMG_CAP], is_featured:true, is_best_seller:true, flavor_notes:['Creamy','Classic'] }),
-  mkProduct('cap-2','cappuccino-flavored','Flavored Cappuccino','كابتشينو نكهات',
+  mkProduct('cap-2','cappuccino-flavored','Flavored Cappuccino','كابتشينو منكه',
     'Premium cappuccino mix with an added layer of flavor complexity.',
     'كابتشينو فاخر مع طبقة إضافية من تعقيد النكهة.',
     'cappuccino',[128,256,512],{ images:[IMG_CAP], is_featured:true, flavor_notes:['Flavored','Premium'] }),

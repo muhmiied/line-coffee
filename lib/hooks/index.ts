@@ -20,3 +20,6 @@ export { useCart } from './use-cart'
 
 // Wishlist Hook
 export { useWishlist } from './use-wishlist'
+
+// Media section content
+export { useSectionContent, useSectionMedia } from './use-section-media'

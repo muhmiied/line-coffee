@@ -1,19 +1,34 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { MapPin, Phone, Mail, Send, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/lib/context/language'
+import { useSectionContent } from '@/lib/hooks/use-section-media'
+import {
+  buildEffectsFilter,
+  buildOverlayGradient,
+  getMediaObjectPosition,
+  getMediaOverlayOpacity,
+  getVisualEffects,
+  GRAIN_SVG,
+} from '@/lib/media'
 import { toast } from 'sonner'
 import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
 
 export default function ContactPage() {
   const { t } = useLanguage()
+  const { media: sectionMedia, content: sectionContent } = useSectionContent('contact_page')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const bgFx = getVisualEffects(sectionMedia)
+  const bgFilter = buildEffectsFilter(bgFx)
+  const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.82) : 0.82
+  const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -110,7 +125,25 @@ export default function ContactPage() {
   ]
 
   return (
-    <div className="min-h-screen" style={{ background: '#0B0806' }}>
+    <div className="relative min-h-screen overflow-hidden" style={{ background: '#0B0806' }}>
+      {sectionMedia?.image_url && (
+        <>
+          <Image
+            src={sectionMedia.image_url}
+            alt={sectionMedia.alt_en || sectionContent.title_en || ''}
+            fill
+            sizes="100vw"
+            loading="lazy"
+            className="object-cover"
+            style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
+            unoptimized
+          />
+          <div className="absolute inset-0" style={{ background: bgOverlay }} />
+          {Number(bgFx.grain || 0) > 0.05 && (
+            <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+          )}
+        </>
+      )}
 
       {/* Cinematic background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -126,17 +159,17 @@ export default function ContactPage() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#B6885E]/60" />
             <p className="text-[11px] tracking-[0.28em] uppercase font-semibold" style={{ color: '#B6885E' }}>
-              {t('Get In Touch', 'تواصل معنا')}
+              {t(sectionContent.eyebrow_en || 'Get In Touch', sectionContent.eyebrow_ar || 'تواصل معنا')}
             </p>
             <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#B6885E]/60" />
           </div>
           <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4" style={{ color: '#F5E6D8' }}>
-            {t('Contact Us', 'تواصل معنا')}
+            {t(sectionContent.title_en || 'Contact Us', sectionContent.title_ar || 'تواصل معنا')}
           </h1>
           <p className="max-w-2xl mx-auto px-4" style={{ color: 'rgba(183,155,133,0.72)' }}>
             {t(
-              'Have a question or feedback? We would love to hear from you.',
-              'لديك سؤال أو ملاحظة؟ يسعدنا سماعك.'
+              sectionContent.body_en || sectionContent.subtitle_en || 'Have a question, order request, or partnership idea? We would love to hear from you.',
+              sectionContent.body_ar || sectionContent.subtitle_ar || 'لديك سؤال أو طلب أو فكرة تعاون؟ يسعدنا التواصل معك.'
             )}
           </p>
         </motion.div>
@@ -247,7 +280,7 @@ export default function ContactPage() {
                       name="email"
                       type="email"
                       required
-                      placeholder={t('your@email.com', 'بريدك@الإلكتروني.com')}
+                      placeholder={t('your@email.com', 'name@example.com')}
                       aria-invalid={Boolean(fieldErrors.email)}
                       onChange={() => setFieldErrors(prev => ({ ...prev, email: '' }))}
                       style={{

@@ -10,8 +10,8 @@ import { ContactSection } from '@/components/home/contact-section'
 import { createPageMetadata } from '@/lib/seo'
 
 export const metadata = createPageMetadata({
-  title: 'Line Coffee | Premium Egyptian Coffee | قهوتك بطعم مختلف',
-  description: 'Shop premium Turkish coffee, espresso blends, flavored coffee, cappuccino, and hot chocolate from Line Coffee in Egypt.',
+  title: 'Line Coffee | Premium Coffee in Egypt | قهوة فاخرة بطابع دافئ',
+  description: 'Shop freshly roasted Turkish coffee, espresso blends, flavored coffee, cappuccino, and hot chocolate from Line Coffee in Egypt.',
   path: '/',
 })
 

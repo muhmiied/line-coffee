@@ -112,8 +112,8 @@ export function CartDrawer() {
                   </h3>
                   <p className="text-muted-foreground mb-6">
                     {t(
-                      'Discover our premium coffee collection',
-                      'اكتشف مجموعتنا المميزة من القهوة'
+                      'Discover freshly roasted coffee for your next ritual',
+                      'اكتشف قهوة طازجة التحميص لطقسك القادم'
                     )}
                   </p>
                   <Button onClick={closeCart} asChild>
@@ -269,7 +269,7 @@ export function CartDrawer() {
                     <p className="text-xs text-muted-foreground">
                       {t(
                         `Add ${freeShippingRemaining} EGP to get free delivery`,
-                        `أضف ${freeShippingRemaining} ج للحصول على توصيل مجاني`
+                        `أضف ${freeShippingRemaining} ج.م للحصول على توصيل مجاني`
                       )}
                     </p>
                   )}

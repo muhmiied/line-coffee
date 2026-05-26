@@ -55,7 +55,7 @@ export const VALVE_BAG_COST = 5
 export const PROFIT_MARGIN = 1.6
 
 export const FLAVOR_BASES: FlavorBaseOption[] = [
-  { id: 'turkish-coffee', nameAr: 'القهوة التركي', nameEn: 'Turkish Coffee', price: 400 },
+  { id: 'turkish-coffee', nameAr: 'القهوة التركية', nameEn: 'Turkish Coffee', price: 400 },
   { id: 'coffee-mix',     nameAr: 'كوفي ميكس',    nameEn: 'Coffee Mix',     price: 220 },
   { id: 'cappuccino',     nameAr: 'كابتشينو',      nameEn: 'Cappuccino',     price: 270 },
 ]
@@ -111,14 +111,14 @@ export const DEFAULT_FLAVOR_ADDITIONS: FlavorAdditionOption[] = [
 const ALL_CUSTOMIZE_FLAVOR_BASES = ['turkish-coffee', 'coffee-mix', 'cappuccino', 'hot-chocolate']
 
 export const CUSTOMIZE_FLAVOR_BASES: FlavorBaseOption[] = [
-  { id: 'turkish-coffee', nameAr: 'القهوة التركي', nameEn: 'Turkish Coffee', price: 400 },
+  { id: 'turkish-coffee', nameAr: 'القهوة التركية', nameEn: 'Turkish Coffee', price: 400 },
   { id: 'coffee-mix', nameAr: 'كوفي ميكس', nameEn: 'Coffee Mix', price: 430 },
   { id: 'cappuccino', nameAr: 'كابتشينو', nameEn: 'Cappuccino', price: 530 },
   { id: 'hot-chocolate', nameAr: 'هوت شوكلت', nameEn: 'Hot Chocolate', price: 430 },
 ]
 
 export const CUSTOMIZE_FLAVOR_ADDITIONS: FlavorAdditionOption[] = [
-  { id: 'french-original', nameEn: 'French / Original', nameAr: 'فرنساوي / أوريجينال', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 1 },
+  { id: 'french-original', nameEn: 'French / Original', nameAr: 'فرنسي / أصلي', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 1 },
   { id: 'chocolate-chunks', nameEn: 'Chocolate Chunks', nameAr: 'شوكولاتة قطع', type: 'chunks', price: 70, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 2 },
   { id: 'chocolate', nameEn: 'Chocolate', nameAr: 'شوكولاتة', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 3 },
   { id: 'caramel', nameEn: 'Caramel', nameAr: 'كراميل', type: 'standard', price: 50, bases: ALL_CUSTOMIZE_FLAVOR_BASES, sortOrder: 4 },

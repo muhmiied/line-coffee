@@ -137,8 +137,8 @@ export default function ReviewsPage() {
           </h1>
           <p className="mt-3 text-sm text-[#F5E6D8]/45 leading-relaxed">
             {t(
-              'Your feedback helps us craft a better coffee experience.',
-              'ملاحظاتك تساعدنا على تقديم تجربة قهوة أفضل.',
+              'Your feedback helps us refine every roast, package, and delivery.',
+              'مراجعتك تساعدنا على تحسين كل تحميصة وتغليف وتجربة توصيل.',
             )}
           </p>
         </div>
@@ -199,8 +199,8 @@ export default function ReviewsPage() {
               required
               rows={4}
               placeholder={t(
-                'Tell us about your experience with Line Coffee...',
-                'أخبرنا عن تجربتك مع لاين كوفي...',
+                'Tell us about the aroma, taste, delivery, or anything we can improve...',
+                'اكتب لنا عن الرائحة أو الطعم أو التوصيل أو أي تفصيلة يمكننا تحسينها...',
               )}
               className="w-full resize-none rounded-xl border border-[#B6885E]/18 bg-[#0B0806]/60 px-4 py-3 text-sm text-[#F5E6D8] placeholder-[#F5E6D8]/20 outline-none transition-all focus:border-[#D6A373]/50 focus:ring-1 focus:ring-[#D6A373]/20"
             />

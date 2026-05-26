@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Instagram, Facebook } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { useSectionContent, useSectionMedia } from '@/lib/hooks/use-section-media'
 import { SectionReveal, FadeUp, ImageReveal, StaggerContainer, WordByWord, viewportConfig } from '@/components/ui/motion-primitives'
 
 const instagramPhotos = [
@@ -17,6 +18,11 @@ const instagramPhotos = [
 
 export function InstagramSection() {
   const { t } = useLanguage()
+  const { content } = useSectionContent('home_instagram')
+  const mediaItems = useSectionMedia('home_instagram')
+  const controlledPhotos = mediaItems.filter((item) => item.image_url).map((item) => item.image_url)
+  const photos = controlledPhotos.length > 0 ? controlledPhotos : instagramPhotos
+  const socialHref = content.button_link || 'https://instagram.com/linecoffee.eg'
 
   return (
     <SectionReveal className="cinematic-section relative py-16 md:py-24 overflow-hidden" style={{ background: '#0F0A07' }}>
@@ -29,15 +35,20 @@ export function InstagramSection() {
         <div className="text-center mb-10">
           <FadeUp>
             <p className="premium-section-kicker mx-auto mb-4" style={{ color: '#D6A373' }}>
-              @linecoffee.eg
+              {t(content.eyebrow_en || '@linecoffee.eg', content.eyebrow_ar || content.eyebrow_en || '@linecoffee.eg')}
             </p>
           </FadeUp>
           <FadeUp className="premium-heading-shimmer font-serif text-4xl md:text-5xl font-bold mb-5" style={{ color: '#F5E6D8' }}>
-            <WordByWord text={t('Follow Our Journey', 'تابع رحلتنا')} />
+            <WordByWord text={t(content.title_en || 'Follow Our Journey', content.title_ar || 'تابع رحلتنا')} />
           </FadeUp>
+          {(content.subtitle_en || content.subtitle_ar) && (
+            <FadeUp className="mx-auto mb-5 max-w-xl text-sm leading-relaxed text-[#D6B79A]/64">
+              {t(content.subtitle_en || '', content.subtitle_ar || content.subtitle_en || '')}
+            </FadeUp>
+          )}
           <FadeUp className="flex items-center justify-center gap-5">
             {[
-              { href: 'https://instagram.com/linecoffee.eg', Icon: Instagram, label: 'Instagram' },
+              { href: socialHref, Icon: Instagram, label: t(content.button_text_en || 'Instagram', content.button_text_ar || content.button_text_en || 'Instagram') },
               { href: 'https://facebook.com/linecoffee', Icon: Facebook, label: 'Facebook' },
             ].map(({ href, Icon, label }) => (
               <a
@@ -62,10 +73,10 @@ export function InstagramSection() {
           viewport={viewportConfig}
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3"
         >
-          {instagramPhotos.map((photo, index) => (
+          {photos.slice(0, 6).map((photo, index) => (
             <ImageReveal key={index}>
               <motion.a
-                href="https://instagram.com/linecoffee.eg"
+                href={socialHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="premium-image-card relative block aspect-square cursor-pointer overflow-hidden rounded-xl group"

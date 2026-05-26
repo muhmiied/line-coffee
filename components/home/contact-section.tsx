@@ -1,11 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/lib/context/language'
+import { useSectionContent } from '@/lib/hooks/use-section-media'
+import {
+  buildEffectsFilter,
+  buildOverlayGradient,
+  getMediaObjectPosition,
+  getMediaOverlayOpacity,
+  getVisualEffects,
+  GRAIN_SVG,
+} from '@/lib/media'
 import { SectionReveal, FadeUp, StaggerContainer, WordByWord } from '@/components/ui/motion-primitives'
 import { WHATSAPP_ORDER_PHONE_E164, WHATSAPP_DISPLAY, CONTACT_EMAIL } from '@/lib/config/site'
 import { toast } from 'sonner'
@@ -47,7 +57,12 @@ const contactItems = [
 
 export function ContactSection() {
   const { t } = useLanguage()
+  const { media: sectionMedia, content: sectionContent } = useSectionContent('home_contact')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const bgFx = getVisualEffects(sectionMedia)
+  const bgFilter = buildEffectsFilter(bgFx)
+  const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.84) : 0.84
+  const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -94,6 +109,24 @@ export function ContactSection() {
 
   return (
     <SectionReveal className="cinematic-section relative py-20 md:py-28 overflow-hidden" style={{ background: '#0B0806' }}>
+      {sectionMedia?.image_url && (
+        <>
+          <Image
+            src={sectionMedia.image_url}
+            alt={sectionMedia.alt_en || sectionContent.title_en || ''}
+            fill
+            sizes="100vw"
+            loading="lazy"
+            className="object-cover"
+            style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
+            unoptimized
+          />
+          <div className="absolute inset-0" style={{ background: bgOverlay }} />
+          {Number(bgFx.grain || 0) > 0.05 && (
+            <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+          )}
+        </>
+      )}
 
       {/* Cinematic background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,_rgba(182,136,94,0.06)_0%,_transparent_70%)]" />
@@ -108,18 +141,18 @@ export function ContactSection() {
             <div className="flex items-center gap-3 mb-4">
               <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
               <p className="text-[11px] tracking-[0.24em] uppercase font-semibold" style={{ color: '#B6885E' }}>
-                {t('Get In Touch', 'تواصل معنا')}
+                {t(sectionContent.eyebrow_en || 'Get In Touch', sectionContent.eyebrow_ar || 'تواصل معنا')}
               </p>
             </div>
 
             <div className="font-serif text-3xl md:text-4xl font-bold mb-6" style={{ color: '#F5E6D8' }}>
-              <WordByWord text={t("We'd Love To Hear From You", 'نحب أن نسمع منك')} />
+              <WordByWord text={t(sectionContent.title_en || "We'd Love To Hear From You", sectionContent.title_ar || 'نحب أن نسمع منك')} />
             </div>
 
             <p className="mb-10 max-w-md leading-relaxed" style={{ color: 'rgba(183,155,133,0.72)' }}>
               {t(
-                "Have a question about our products or want to place a bulk order? Reach out and we'll get back to you within 24 hours.",
-                'لديك سؤال عن منتجاتنا أو تريد طلب كمية كبيرة؟ تواصل معنا وسنرد عليك خلال 24 ساعة.'
+                sectionContent.body_en || sectionContent.subtitle_en || "Have a question about our products or want to place a bulk order? Reach out and we'll get back to you within 24 hours.",
+                sectionContent.body_ar || sectionContent.subtitle_ar || 'لديك سؤال عن منتجاتنا أو تريد طلب كمية كبيرة؟ تواصل معنا وسنرد عليك خلال 24 ساعة.'
               )}
             </p>
 

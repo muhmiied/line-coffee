@@ -37,9 +37,9 @@ type DbCategory = {
 }
 
 const FALLBACK_CATEGORIES = [
-  { slug: 'turkish-coffee',  nameEn: 'Turkish Coffee',  nameAr: 'قهوة تركي',    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop' },
+  { slug: 'turkish-coffee',  nameEn: 'Turkish Coffee',  nameAr: 'قهوة تركية',    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop' },
   { slug: 'espresso',        nameEn: 'Espresso',         nameAr: 'إسبريسو',       image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop' },
-  { slug: 'flavored-coffee', nameEn: 'Flavored Coffee',  nameAr: 'قهوة نكهات',   image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop' },
+  { slug: 'flavored-coffee', nameEn: 'Flavored Coffee',  nameAr: 'قهوة منكهة',   image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop' },
   { slug: 'coffee-mix',      nameEn: 'Coffee Mix',       nameAr: 'كوفي ميكس',    image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&h=1000&fit=crop' },
   { slug: 'cappuccino',      nameEn: 'Cappuccino',       nameAr: 'كابتشينو',      image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&h=1000&fit=crop' },
   { slug: 'hot-chocolate',   nameEn: 'Hot Chocolate',    nameAr: 'هوت شوكلت',    image: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800&h=1000&fit=crop' },

@@ -2,9 +2,20 @@
 
 import { Coffee, Headphones, ShieldCheck, Truck } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
+import { useSectionContent } from '@/lib/hooks/use-section-media'
 import { SectionReveal, FadeUp, StaggerContainer, viewportConfig } from '@/components/ui/motion-primitives'
 
-const features = [
+const iconMap = {
+  coffee: Coffee,
+  headphones: Headphones,
+  support: Headphones,
+  shield: ShieldCheck,
+  quality: ShieldCheck,
+  truck: Truck,
+  delivery: Truck,
+}
+
+const fallbackFeatures = [
   {
     icon: Headphones,
     labelEn: '24/7 Support',
@@ -37,6 +48,17 @@ const features = [
 
 export function FeaturesPills() {
   const { t } = useLanguage()
+  const { content } = useSectionContent('home_features')
+  const controlledFeatures = (content.features || [])
+    .filter((feature) => feature.is_active !== false)
+    .map((feature) => ({
+      icon: iconMap[(feature.icon || 'coffee') as keyof typeof iconMap] || Coffee,
+      labelEn: feature.title_en,
+      labelAr: feature.title_ar,
+      descEn: feature.description_en || '',
+      descAr: feature.description_ar || feature.description_en || '',
+    }))
+  const features = controlledFeatures.length > 0 ? controlledFeatures : fallbackFeatures
 
   return (
     <SectionReveal className="cinematic-section relative overflow-hidden py-14 md:py-20" style={{ background: '#0B0806' }}>

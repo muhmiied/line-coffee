@@ -5,6 +5,15 @@ import { Search, Package, CheckCircle2, Clock, ChefHat, Truck, XCircle, Coffee }
 import { useLanguage } from '@/lib/context/language'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSectionContent } from '@/lib/hooks/use-section-media'
+import {
+  buildEffectsFilter,
+  buildOverlayGradient,
+  getMediaObjectPosition,
+  getMediaOverlayOpacity,
+  getVisualEffects,
+  GRAIN_SVG,
+} from '@/lib/media'
 import { getOrderItemDetailLines } from '@/lib/order-item-details'
 import { ORDER_STATUS_LABELS } from '@/lib/order-status'
 import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
@@ -34,10 +43,15 @@ const STEP_CONFIG = [
 
 export default function TrackPage() {
   const { t, language } = useLanguage()
+  const { media: sectionMedia, content: sectionContent } = useSectionContent('track_page')
   const [orderNumber, setOrderNumber] = useState('')
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<TrackData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const bgFx = getVisualEffects(sectionMedia)
+  const bgFilter = buildEffectsFilter(bgFx)
+  const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.82) : 0.82
+  const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
 
   const track = async () => {
     if (!orderNumber.trim()) return
@@ -67,17 +81,35 @@ export default function TrackPage() {
     >
       {/* Header */}
       <div
-        className="py-12 px-4 text-center border-b border-[#B6885E]/12"
+        className="relative overflow-hidden py-12 px-4 text-center border-b border-[#B6885E]/12"
         style={{ background: 'linear-gradient(180deg, #18120D 0%, #0B0806 100%)' }}
       >
-        <Link href="/" className="inline-block mb-6">
+        {sectionMedia?.image_url && (
+          <>
+            <Image
+              src={sectionMedia.image_url}
+              alt={sectionMedia.alt_en || sectionContent.title_en || ''}
+              fill
+              sizes="100vw"
+              loading="lazy"
+              className="object-cover"
+              style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
+              unoptimized
+            />
+            <div className="absolute inset-0" style={{ background: bgOverlay }} />
+            {Number(bgFx.grain || 0) > 0.05 && (
+              <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+            )}
+          </>
+        )}
+        <Link href="/" className="relative z-10 inline-block mb-6">
           <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized />
         </Link>
-        <h1 className="font-serif text-2xl font-bold mb-2 text-[#F5E6D8]">
-          {t('Track Your Order', 'تتبع طلبك')}
+        <h1 className="relative z-10 font-serif text-2xl font-bold mb-2 text-[#F5E6D8]">
+          {t(sectionContent.title_en || 'Track Your Order', sectionContent.title_ar || 'تتبع طلبك')}
         </h1>
-        <p className="text-[#D6B79A]/65 text-sm">
-          {t('Enter your order number to see the current status', 'أدخل رقم طلبك لمعرفة الحالة الحالية')}
+        <p className="relative z-10 text-[#D6B79A]/65 text-sm">
+          {t(sectionContent.subtitle_en || 'Enter your order number to see the current status', sectionContent.subtitle_ar || 'أدخل رقم طلبك لمعرفة الحالة الحالية')}
         </p>
       </div>
 
@@ -316,13 +348,13 @@ export default function TrackPage() {
                   {t('Your order arrived! How was it?', 'وصل طلبك! كيف كانت التجربة؟')}
                 </p>
                 <p className="text-xs text-[#D6B79A]/60 mb-3">
-                  {t('Share your experience and help others discover great coffee.', 'شاركنا تجربتك وساعد الآخرين في اكتشاف قهوة مميزة.')}
+                  {t('Share your experience and help others discover their next favorite cup.', 'شاركنا تجربتك وساعد الآخرين على اكتشاف فنجانهم المفضل القادم.')}
                 </p>
                 <Link
                   href="/reviews"
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#D6A373]/30 bg-[#D6A373]/10 px-5 py-2 text-xs font-semibold text-[#D6A373] transition-all duration-200 hover:border-[#D6A373]/55 hover:bg-[#D6A373]/16 hover:text-[#F5E6D8]"
                 >
-                  {t('Leave a Review', 'اترك تقييماً')}
+                  {t('Leave a Review', 'اترك تقييمك')}
                 </Link>
               </div>
             )}

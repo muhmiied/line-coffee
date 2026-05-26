@@ -333,6 +333,7 @@ export function HeroSection() {
             <motion.h1
               key={`heading-${currentSlide}`}
               dir={headingDir}
+              aria-label={headingText}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

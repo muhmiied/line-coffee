@@ -44,8 +44,8 @@ export const metadata: Metadata = {
     default: 'Line Coffee | قهوتك بطعم مختلف',
     template: '%s | Line Coffee',
   },
-  description: 'قهوة مميزة بطعم مختلف. اكتشف أجود أنواع القهوة التركية، الإسبريسو، الكابتشينو، والهوت شوكلت. توصيل لجميع أنحاء مصر.',
-  keywords: ['قهوة', 'لاين كوفي', 'قهوة تركي', 'كابتشينو', 'هوت شوكلت', 'coffee', 'Line Coffee', 'Egypt', 'مصر'],
+  description: 'قهوة فاخرة بطابع دافئ. اكتشف القهوة التركية، توليفات الإسبريسو، الكابتشينو، والشوكولاتة الساخنة مع توصيل داخل مصر.',
+  keywords: ['قهوة', 'لاين كوفي', 'قهوة تركية', 'كابتشينو', 'شوكولاتة ساخنة', 'coffee', 'Line Coffee', 'Egypt', 'مصر'],
   authors: [{ name: 'Line Coffee' }],
   creator: 'Line Coffee',
   openGraph: {
