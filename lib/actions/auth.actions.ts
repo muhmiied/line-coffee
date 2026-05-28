@@ -278,7 +278,7 @@ export async function forgotPassword(email: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(
     normalizeEmail(email),
     {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/auth/reset-password')}`,
+      redirectTo: `${origin}/auth/callback?type=recovery`,
     },
   )
 
