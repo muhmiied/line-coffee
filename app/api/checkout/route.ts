@@ -921,34 +921,68 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // ── Deduct stock ──────────────────────────────────────────────
-    // Deduct product and custom inventory in one DB transaction.
-    const productDeductions = Array.from(productUsage.entries()).flatMap(([id, quantity]) => {
-      const catalogProduct = catalogProducts.get(id)
-      return catalogProduct && typeof catalogProduct.stock_quantity === 'number'
-        ? [{ id, quantity }]
-        : []
-    })
-    const customDeductions = splitCustomStockUsage(customUsage)
-    const { error: stockError } = await admin.rpc('deduct_checkout_stock', {
-      p_products: productDeductions,
-      p_beans: customDeductions.beans,
-      p_flavors: customDeductions.flavors,
-    })
+    // ── Deduct catalog product stock ──────────────────────────────
+    // Each UPDATE is a single atomic statement: the WHERE clause uses the
+    // stock value we read during pre-validation as an optimistic lock.
+    // If another order decremented stock between our read and this write,
+    // the WHERE condition yields 0 rows → we return 409 before confirming.
+    for (const [productId, deductQty] of productUsage.entries()) {
+      const catalogProduct = catalogProducts.get(productId)
+      if (!catalogProduct || typeof catalogProduct.stock_quantity !== 'number') continue
 
-    if (stockError) {
-      console.error('Error deducting checkout stock:', stockError)
-      await admin.from('orders').delete().eq('id', order.id)
-      const isStockConflict = /INSUFFICIENT_(PRODUCT|BEAN|FLAVOR)_STOCK/.test(stockError.message || '')
-      return NextResponse.json(
-        {
-          success: false,
-          error: isStockConflict
-            ? 'Some items are no longer available in the requested quantity'
-            : 'Failed to reserve order stock',
-        },
-        { status: isStockConflict ? 409 : 500 }
-      )
+      const currentStock = catalogProduct.stock_quantity
+      const { data: deducted, error: deductError } = await admin
+        .from('products')
+        .update({ stock_quantity: currentStock - deductQty })
+        .eq('id', productId)
+        .eq('stock_quantity', currentStock)
+        .neq('is_manually_out_of_stock', true)
+        .select('id')
+
+      if (deductError) {
+        console.error('[checkout] product stock deduction error:', deductError)
+        await admin.from('orders').delete().eq('id', order.id)
+        return NextResponse.json(
+          { success: false, error: 'Failed to reserve order stock' },
+          { status: 500 }
+        )
+      }
+
+      if (!deducted || deducted.length === 0) {
+        const productName = catalogProduct.name_en || catalogProduct.name_ar || 'A product'
+        await admin.from('orders').delete().eq('id', order.id)
+        return NextResponse.json(
+          { success: false, error: `${productName} is no longer available in the requested quantity` },
+          { status: 409 }
+        )
+      }
+    }
+
+    // ── Deduct custom inventory (beans/flavors) via RPC ───────────
+    // Requires migration 016_custom_checkout_stock_deduction.sql applied to Supabase.
+    // Skipped entirely when the cart has no custom items.
+    const customDeductions = splitCustomStockUsage(customUsage)
+    if (customDeductions.beans.length > 0 || customDeductions.flavors.length > 0) {
+      const { error: stockError } = await admin.rpc('deduct_checkout_stock', {
+        p_products: [],
+        p_beans: customDeductions.beans,
+        p_flavors: customDeductions.flavors,
+      })
+
+      if (stockError) {
+        console.error('[checkout] custom stock deduction error:', stockError)
+        await admin.from('orders').delete().eq('id', order.id)
+        const isStockConflict = /INSUFFICIENT_(BEAN|FLAVOR)_STOCK/.test(stockError.message || '')
+        return NextResponse.json(
+          {
+            success: false,
+            error: isStockConflict
+              ? 'Some items are no longer available in the requested quantity'
+              : 'Failed to reserve order stock',
+          },
+          { status: isStockConflict ? 409 : 500 }
+        )
+      }
     }
 
     // ── Increment discount usage ──────────────────────────────────
