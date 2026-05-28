@@ -71,7 +71,7 @@ export function FeaturesPills() {
           initial="hidden"
           whileInView="visible"
           viewport={viewportConfig}
-          className="grid grid-cols-2 gap-6 md:gap-8 lg:grid-cols-4"
+          className={`grid grid-cols-2 gap-6 md:gap-8 ${features.length <= 3 ? 'md:grid-cols-3' : 'lg:grid-cols-4'}`}
         >
           {features.map((feature) => {
             const Icon = feature.icon
