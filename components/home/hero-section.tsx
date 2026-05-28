@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -57,6 +56,8 @@ type HeroSlide = {
   animationDuration?: number
   titleScale?: number
   subtitleScale?: number
+  titleWidth?: number
+  textWidth?: number
   hiddenElements?: string[]
 }
 
@@ -217,6 +218,8 @@ export function HeroSection() {
               animationDuration: typeof item.animation_duration === 'number' && item.animation_duration > 0 ? item.animation_duration : 6000,
               titleScale: typeof content.title_scale === 'number' ? Math.min(1.25, Math.max(0.75, content.title_scale)) : undefined,
               subtitleScale: typeof content.subtitle_scale === 'number' ? Math.min(1.15, Math.max(0.75, content.subtitle_scale)) : undefined,
+              titleWidth: typeof content.title_width === 'number' ? Math.min(920, Math.max(280, content.title_width)) : undefined,
+              textWidth: typeof content.text_width === 'number' ? Math.min(920, Math.max(280, content.text_width)) : undefined,
             }
           })
 
@@ -258,6 +261,7 @@ export function HeroSection() {
   const currentLayout = currentHeroSlide?.layout
   const titleScale = currentHeroSlide?.titleScale ?? 1
   const subtitleScale = currentHeroSlide?.subtitleScale ?? 1
+  const heroTitleWidth = currentHeroSlide?.titleWidth ?? currentHeroSlide?.textWidth
   const heroStats = currentHeroSlide?.stats && currentHeroSlide.stats.length > 0
     ? currentHeroSlide.stats.filter((stat) => stat.is_active !== false)
     : [
@@ -326,7 +330,10 @@ export function HeroSection() {
           )}
           style={elementTransform(currentLayout, 'main-copy')}
         >
-          <div className={cn('max-w-[35rem] md:max-w-[38rem]', dir === 'rtl' ? 'ml-auto' : 'mr-auto')}>
+          <div
+            className={cn('max-w-[35rem] md:max-w-[38rem]', dir === 'rtl' ? 'ml-auto' : 'mr-auto')}
+            style={heroTitleWidth ? { maxWidth: heroTitleWidth } : undefined}
+          >
 
           {showEyebrow && (
             <motion.p
@@ -351,8 +358,9 @@ export function HeroSection() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              className="relative mb-5 line-clamp-3 max-w-3xl font-serif text-4xl font-extrabold leading-[1.05] text-balance min-[380px]:text-5xl md:mb-6 md:text-6xl xl:text-7xl"
+              className="relative mb-5 line-clamp-3 font-serif font-extrabold leading-[0.98] text-balance md:mb-6"
               style={{
+                fontSize: 'clamp(2.8rem,5.4vw,5.8rem)',
                 color: '#F5E6D8',
                 textShadow: '0 4px 32px rgba(0,0,0,0.6), 0 0 80px rgba(182,136,94,0.15)',
                 ...(titleScale !== 1 && { transform: `scale(${titleScale})`, transformOrigin: headingDir === 'rtl' ? 'top right' : 'top left' }),

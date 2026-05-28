@@ -1152,7 +1152,7 @@ function HeroLikeMediaPreview({
   const imageAnimationDuration = `${Number(slide?.animation_duration || 6000)}ms`
   const textAnimation = content.text_animation || 'fade_up'
   const textAnimationDuration = `${Number(content.text_animation_duration || 900)}ms`
-  const textWidth = Math.min(920, Math.max(360, Number(content.text_width || 704)))
+  const textWidth = Math.min(920, Math.max(360, Number(content.text_width || 560)))
   const fieldName = (base: 'eyebrow' | 'title' | 'subtitle' | 'body' | 'button_text' | 'secondary_button_text') => `${base}_${language}` as keyof SectionBuilderContent
   const imageAnimationName = imageAnimation === 'slow_zoom'
     ? 'mediaStudioImageZoom'
@@ -1542,12 +1542,13 @@ function HeroLikeMediaPreview({
 
       <div className={cn('relative z-10 flex h-full items-center px-6 py-10 md:px-12 lg:px-20', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
         <div
-          className={cn('group relative max-w-[min(100%,64rem)] touch-none', isRtl ? 'text-right' : 'text-left')}
+          className={cn('group relative max-w-[min(100%,64rem)] touch-none cursor-grab active:cursor-grabbing', isRtl ? 'text-right' : 'text-left')}
           style={{
             width: textWidth,
             transform: `translate(${Number(textPosition.x || 0)}px, ${Number(textPosition.y || 0)}px)`,
           }}
           title={localText(language, 'Drag to move text frame', 'اسحب لتحريك إطار النص')}
+          onPointerDown={handleFramePointerDown}
         >
 
           <div style={{ animation: textAnimationName ? `${textAnimationName} ${textAnimationDuration} ease both` : undefined }}>
@@ -1571,7 +1572,7 @@ function HeroLikeMediaPreview({
               'title',
               <h2
                 {...editable(fieldName('title'), title)}
-                className="font-serif text-[clamp(2.8rem,5.4vw,5.8rem)] font-bold leading-[0.98] text-[#F5E6D8] outline-none"
+                className="font-serif text-[clamp(2.8rem,5.4vw,5.8rem)] font-extrabold leading-[0.98] text-balance text-[#F5E6D8] outline-none"
                 style={{ textShadow: '0 4px 34px rgba(0,0,0,0.62)' }}
               />,
               'title_width',
