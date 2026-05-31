@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/context/language'
-import { cn } from '@/lib/utils'
+import { cn, hasArabic } from '@/lib/utils'
 import { WordByWord } from '@/components/ui/motion-primitives'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
 import {
@@ -24,10 +24,6 @@ import {
 import { HeroBackground } from '@/components/home/hero-background'
 
 const heroSectionConfig = getWebsiteSection('hero')
-
-function hasArabic(s: string | null | undefined): boolean {
-  return !!s && /\p{Script=Arabic}/u.test(s)
-}
 
 // Only trust a string as Arabic if it actually contains Arabic characters.
 // Prevents English text saved-as-Arabic (editor bug) from overriding proper fallbacks.

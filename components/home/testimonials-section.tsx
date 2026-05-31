@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Quote, Star } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
-import { cn } from '@/lib/utils'
+import { cn, hasArabic } from '@/lib/utils'
 import { FadeUp, SectionReveal, StaggerContainer, viewportConfig } from '@/components/ui/motion-primitives'
 import {
   buildEffectsFilter,
@@ -95,10 +95,6 @@ function initials(name: string) {
       .map((part) => part[0]?.toUpperCase())
       .join('') || 'LC'
   )
-}
-
-function hasArabic(s: string | null | undefined): boolean {
-  return !!s && /\p{Script=Arabic}/u.test(s)
 }
 
 function localizedText(language: string, en: string | null | undefined, ar: string | null | undefined) {
