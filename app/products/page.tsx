@@ -16,6 +16,7 @@ import type { Product } from '@/lib/types'
 import {
   calculateBlendPrice,
   calculateFlavorPrice,
+  applyOfficialBeanSalePrice,
   CUSTOMIZE_FLAVOR_ADDITIONS,
   CUSTOMIZE_FLAVOR_BASES,
   DEFAULT_CUSTOM_BLEND_BEANS,
@@ -24,6 +25,18 @@ import {
   type FlavorBaseOption,
   type PackageSize,
 } from '@/lib/config/customization'
+import {
+  CATEGORY_SLUG_ALIASES,
+  LAST_RESORT_PRODUCTS as OFFICIAL_LAST_RESORT_PRODUCTS,
+  OFFICIAL_PRODUCT_CATEGORIES,
+  PRODUCT_IMAGE_LIBRARY,
+} from '@/lib/config/product-system'
+import {
+  IndicatorBar,
+  LiveConfiguratorPanel,
+  PremiumConfiguratorShell,
+  PremiumOptionCard,
+} from '@/components/products/premium-configurator'
 import { getMediaObjectPosition, getMediaOverlayOpacity, type SiteMediaItem } from '@/lib/media'
 import { toast } from 'sonner'
 
@@ -46,188 +59,85 @@ type SidebarCategory = {
 
 // ─── Fallback categories shown when DB fetch returns empty ────────────────────
 const FALLBACK_DB_CATEGORIES: DbCategory[] = [
-  { id: 'tc',  slug: 'turkish-coffee',  name_en: 'Turkish Coffee',  name_ar: 'القهوة التركية',   image_url: null },
-  { id: 'esp', slug: 'espresso',        name_en: 'Espresso',         name_ar: 'الإسبريسو',        image_url: null },
-  { id: 'fc',  slug: 'flavored-coffee', name_en: 'Flavored Coffee',  name_ar: 'القهوة المنكهة', image_url: null },
-  { id: 'cm',  slug: 'coffee-mix',      name_en: 'Coffee Mix',       name_ar: 'كوفي ميكس',        image_url: null },
-  { id: 'cap', slug: 'cappuccino',      name_en: 'Cappuccino',       name_ar: 'كابتشينو',          image_url: null },
-  { id: 'hc',  slug: 'hot-chocolate',   name_en: 'Hot Chocolate',    name_ar: 'هوت شوكليت',       image_url: null },
-  { id: 'nc',  slug: 'nescafe',         name_en: 'Nescafe',          name_ar: 'نسكافيه',           image_url: null },
+  ...OFFICIAL_PRODUCT_CATEGORIES.map((category) => ({
+    id: category.id,
+    slug: category.slug,
+    name_en: category.name_en,
+    name_ar: category.name_ar,
+    image_url: category.image_url,
+  })),
 ]
 
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
-const ALL_ENTRY: SidebarCategory = { slug: 'all', nameEn: 'All Products', nameAr: 'جميع المنتجات' }
-const CUSTOMIZE_BLEND_ENTRY: SidebarCategory = { slug: 'customize-blend', nameEn: 'Make Your Espresso Blend', nameAr: 'اصنع توليفة الإسبريسو الخاصة بك', isCustomizeBlend: true }
-const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Make Your Flavor', nameAr: 'اصنع نكهتك الخاصة', isCustomizeFlavor: true }
-
+const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Make Your Flavor', nameAr: 'اصنع نكهتك', isCustomizeFlavor: true }
+const DEFAULT_CATEGORY_SLUG = 'turkish-coffee'
+const FIXED_OFFICIAL_CATEGORY_SLUGS = new Set(['turkish-coffee', 'espresso-blends', 'easy-coffee'])
+const FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS = new Set(['hot-chocolate'])
+const NO_CHUNK_PRODUCT_CATEGORY_SLUGS = new Set(['coffee-mix', 'cappuccino', 'hot-chocolate'])
+const HIDDEN_CUSTOMIZE_FLAVOR_IDS = new Set(['french-original'])
 
 const customFlavorOptions: FlavorAdditionOption[] = CUSTOMIZE_FLAVOR_ADDITIONS
-
-// ─── Helper to build a Product object ─────────────────────────────────────────
-function mkProduct(
-  id: string,
-  slug: string,
-  nameEn: string,
-  nameAr: string,
-  descEn: string,
-  descAr: string,
-  catId: string,
-  prices: [number, number, number],
-  opts: Partial<Product> = {}
-): Product {
-  return {
-    id,
-    slug,
-    name_en: nameEn,
-    name_ar: nameAr,
-    description_en: descEn,
-    description_ar: descAr,
-    category_id: catId,
-    images: opts.images ?? ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800'],
-    origin: opts.origin ?? 'Egypt',
-    roast_level: opts.roast_level ?? 'medium',
-    flavor_notes: opts.flavor_notes ?? [],
-    is_featured: opts.is_featured ?? false,
-    is_best_seller: opts.is_best_seller ?? false,
-    is_new: opts.is_new ?? false,
-    is_visible: true,
-    stock_quantity: 100,
-    low_stock_threshold: 10,
-    is_manually_out_of_stock: false,
-    created_at: '',
-    updated_at: '',
-    sizes: [
-      { id: `${id}-250`, product_id: id, size: '250g', price: prices[0], compare_at_price: null, sku: null, is_available: true },
-      { id: `${id}-500`, product_id: id, size: '500g', price: prices[1], compare_at_price: null, sku: null, is_available: true },
-      { id: `${id}-1kg`, product_id: id, size: '1kg',  price: prices[2], compare_at_price: null, sku: null, is_available: true },
-    ],
-  }
-}
-
-// Last-resort fallback products used only when API products are unavailable.
-const IMG_TC   = 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800'
-const IMG_ESP  = 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800'
-const IMG_FC   = 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800'
-const IMG_CAP  = 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800'
-const IMG_CM   = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800'
-const IMG_HC   = 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800'
-
-const LAST_RESORT_PRODUCTS: Product[] = [
-  // ── Turkish Coffee ───────────────────────────────────────────────────────────
-  // Prices mirror the expected public catalog fallback values.
-  mkProduct('tc-1','velvet-turkish','Velvet Turkish','تحميصة مخملية تركية',
-    'Velvety smooth body with balanced bitterness and warm roast depth.',
-    'قوام مخملي ناعم مع مرارة متوازنة وعمق تحميص دافئ.',
-    'turkish-coffee',[200,400,800],{ images:[IMG_TC], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Velvety'] }),
-  mkProduct('tc-2','cairo-nights','Cairo Nights','ليالي القاهرة',
-    'Dark roast with deep caramel undertones — a cup that captures the night.',
-    'تحميص داكن مع نغمات كراميل عميقة — كوب يجسّد ليالي القاهرة.',
-    'turkish-coffee',[220,440,880],{ images:[IMG_TC], is_featured:true, flavor_notes:['Caramel','Dark Roast'] }),
-  mkProduct('tc-3','midnight-turkish','Midnight Turkish','تركية منتصف الليل',
-    'Rich and full-bodied with a smoky chocolate finish.',
-    'غني وثقيل القوام مع نهاية شوكولاتة مدخنة.',
-    'turkish-coffee',[235,470,940],{ images:[IMG_TC], flavor_notes:['Chocolate','Smoky'] }),
-  mkProduct('tc-4','royal-line','Royal Line','توليفة رويال لاين',
-    'A premium specialty blend of finest arabica — floral, fruity, and refined.',
-    'توليفة مختصة من أجود الأرابيكا — زهرية وفاكهية وراقية.',
-    'turkish-coffee',[410,825,1650],{ images:[IMG_TC], is_new:true, flavor_notes:['Specialty','Floral','Fruity'] }),
-
-  // ── Espresso ─────────────────────────────────────────────────────────────────
-  mkProduct('esp-1','line-crema','Line Crema','لاين كريما',
-    'Excellent crema and high strength — ideal for espresso machines and large volumes.',
-    'كريمة ممتازة وقوة عالية — مثالي لماكينات الإسبريسو والكميات الكبيرة.',
-    'espresso',[165,330,660],{ images:[IMG_ESP], is_best_seller:true, flavor_notes:['Crema','Strong'] }),
-  mkProduct('esp-2','first-line','First Line','فيرست لاين',
-    'Chocolate and caramel balance with rich crema — perfect for cappuccino and latte.',
-    'توازن شوكولاتة وكراميل مع كريمة غنية — مثالي للكابتشينو واللاتيه.',
-    'espresso',[190,380,760],{ images:[IMG_ESP], is_featured:true, flavor_notes:['Chocolate','Caramel'] }),
-  mkProduct('esp-3','headshot','HEADSHOT','هيد شوت',
-    'Precision-roasted espresso with bright acidity and clean body.',
-    'إسبريسو محمص بدقة مع حموضة نابضة وقوام نظيف.',
-    'espresso',[190,380,760],{ images:[IMG_ESP], is_new:true, flavor_notes:['Bright','Clean'] }),
-  mkProduct('esp-4','gold-shot','Gold Shot','جولد شوت',
-    'Single-origin specialty espresso — golden crema and layered floral notes.',
-    'إسبريسو مختص أحادي المصدر — كريمة ذهبية ولمسات زهرية متعددة الطبقات.',
-    'espresso',[260,520,1040],{ images:[IMG_ESP], flavor_notes:['Specialty','Floral'] }),
-
-  // ── Flavored Coffee (French Coffee) ─────────────────────────────────────────
-  mkProduct('fc-1','french-coffee','French Coffee','قهوة فرنسية',
-    'Classic French-roast coffee blend — bold, smooth, and full-bodied.',
-    'توليفة قهوة فرنسي كلاسيك — جريئة وناعمة وثقيلة القوام.',
-    'flavored-coffee',[87,174,349],{ images:[IMG_FC], is_featured:true, is_best_seller:true, flavor_notes:['French Roast','Bold'] }),
-  mkProduct('fc-2','french-coffee-flavored','Flavored French Coffee','قهوة فرنسية منكهة',
-    'French roast coffee with premium added flavor — a refined sensory experience.',
-    'قهوة فرنسي بنكهة مضافة فاخرة — تجربة حسية راقية.',
-    'flavored-coffee',[87,174,349],{ images:[IMG_FC], is_featured:true, flavor_notes:['French Roast','Flavored'] }),
-  mkProduct('fc-3','french-coffee-pieces','French Coffee with Pieces','قهوة فرنسية بقطع',
-    'French roast coffee enriched with real chocolate or hazelnut pieces.',
-    'قهوة فرنسي مع قطع شوكولاتة أو بندق حقيقية.',
-    'flavored-coffee',[107,214,429],{ images:[IMG_FC], flavor_notes:['French Roast','Pieces'] }),
-
-  // ── Coffee Mix ───────────────────────────────────────────────────────────────
-  mkProduct('cm-1','coffee-mix-original','Original Coffee Mix','كوفي ميكس أصلي',
-    'Classic balanced coffee mix — smooth, creamy, and consistently satisfying.',
-    'كوفي ميكس كلاسيك متوازن — ناعم وكريمي ومُرضٍ على الدوام.',
-    'coffee-mix',[88,176,352],{ images:[IMG_CM], is_featured:true, is_best_seller:true, flavor_notes:['Balanced','Creamy'] }),
-  mkProduct('cm-2','coffee-mix-flavored','Flavored Coffee Mix','كوفي ميكس منكه',
-    'Coffee mix infused with premium flavors — a richer, more aromatic experience.',
-    'كوفي ميكس منكه بلمسات فاخرة — تجربة أغنى وأكثر عطرًا.',
-    'coffee-mix',[108,216,432],{ images:[IMG_CM], is_featured:true, flavor_notes:['Flavored','Aromatic'] }),
-
-  // ── Cappuccino ───────────────────────────────────────────────────────────────
-  mkProduct('cap-1','cappuccino-original','Original Cappuccino','كابتشينو أصلي',
-    'Classic creamy cappuccino mix — perfectly balanced foam and espresso.',
-    'كابتشينو كريمي كلاسيك — توازن مثالي بين الرغوة والإسبريسو.',
-    'cappuccino',[108,216,432],{ images:[IMG_CAP], is_featured:true, is_best_seller:true, flavor_notes:['Creamy','Classic'] }),
-  mkProduct('cap-2','cappuccino-flavored','Flavored Cappuccino','كابتشينو منكه',
-    'Premium cappuccino mix with an added layer of flavor complexity.',
-    'كابتشينو فاخر مع طبقة إضافية من تعقيد النكهة.',
-    'cappuccino',[128,256,512],{ images:[IMG_CAP], is_featured:true, flavor_notes:['Flavored','Premium'] }),
-
-  // ── Nescafe ──────────────────────────────────────────────────────────────────
-  mkProduct('nc-1','nescafe-classic','Classic Nescafe','نسكافيه كلاسيك',
-    'The original instant coffee — rich and satisfying every time.',
-    'القهوة الفورية الأصلية — غنية ومُرضية في كل مرة.',
-    'nescafe',[244,488,976],{ images:[IMG_CM], is_best_seller:true, flavor_notes:['Classic','Rich'] }),
-  mkProduct('nc-2','nescafe-gold','Gold Nescafe','نسكافيه جولد',
-    'Premium gold-blend instant coffee — smoother, more refined, and aromatic.',
-    'قهوة فورية جولد فاخرة — أكثر نعومة وأرقى عطراً.',
-    'nescafe',[284,568,1136],{ images:[IMG_CM], is_featured:true, flavor_notes:['Premium','Smooth'] }),
-
-  // ── Hot Chocolate ─────────────────────────────────────────────────────────────
-  // Prices not yet confirmed — products are hidden until admin sets correct prices
-  mkProduct('hc-1','hot-chocolate-original','Hot Chocolate','هوت شوكليت',
-    'Rich and creamy hot chocolate — coming soon.',
-    'هوت شوكليت غني وكريمي — قريباً.',
-    'hot-chocolate',[0,0,0],{ images:[IMG_HC], is_visible:false }),
-]
 
 // ─── Flavor base options for customize-flavor ──────────────────────────────────
 const flavorBaseOptions = CUSTOMIZE_FLAVOR_BASES
 
 const CUSTOMIZE_FLAVOR_GROUPS = [
-  { key: 'original', nameEn: 'Original LINE', nameAr: 'الأساسي', min: 1, max: 1 },
-  { key: 'sweets', nameEn: 'sweets LINE', nameAr: 'حلويات', min: 2, max: 8 },
+  { key: 'sweets', nameEn: 'Sweets LINE', nameAr: 'خط الحلويات', min: 1, max: 8 },
   { key: 'nuts', nameEn: 'Nuts', nameAr: 'مكسرات', min: 9, max: 12 },
   { key: 'fruits', nameEn: 'Fruits', nameAr: 'فواكه', min: 13, max: 24 },
-  { key: 'special', nameEn: 'Special Order', nameAr: 'سيبشيل أوردر', min: 25, max: 30 },
+  { key: 'special', nameEn: 'Special Order', nameAr: 'طلبات خاصة', min: 25, max: 30 },
 ]
 
 function getCustomizeFlavorGroup(sortOrder: number | undefined) {
   const order = Number(sortOrder || 0)
-  return CUSTOMIZE_FLAVOR_GROUPS.find((group) => order >= group.min && order <= group.max) || CUSTOMIZE_FLAVOR_GROUPS[4]
+  return CUSTOMIZE_FLAVOR_GROUPS.find((group) => order >= group.min && order <= group.max) || CUSTOMIZE_FLAVOR_GROUPS[3]
 }
 
 const SIZE_OPTIONS: PackageSize[] = ['250g', '500g', '1kg']
 
 function getFlavorBaseImage(baseId: string) {
-  if (baseId === 'turkish-coffee') return IMG_TC
-  if (baseId === 'cappuccino') return IMG_CAP
-  return IMG_CM
+  if (baseId === 'turkish-coffee') return PRODUCT_IMAGE_LIBRARY.turkish
+  if (baseId === 'cappuccino') return PRODUCT_IMAGE_LIBRARY.cappuccino
+  if (baseId === 'hot-chocolate') return PRODUCT_IMAGE_LIBRARY.hotChocolate
+  return PRODUCT_IMAGE_LIBRARY.coffeeMix
 }
 
 function formatOptionName(language: 'en' | 'ar', item: { nameEn: string; nameAr: string }) {
   return language === 'ar' ? item.nameAr : item.nameEn
+}
+
+function formatOptionDescription(
+  language: 'en' | 'ar',
+  item: { descriptionEn?: string; descriptionAr?: string; descEn?: string; descAr?: string },
+) {
+  return language === 'ar'
+    ? item.descriptionAr || item.descAr || item.descriptionEn || item.descEn || ''
+    : item.descriptionEn || item.descEn || item.descriptionAr || item.descAr || ''
+}
+
+function normalizeCategorySlug(slug: string | null | undefined) {
+  if (!slug || slug === 'all' || slug === 'customize-flavor') return slug || 'all'
+  return CATEGORY_SLUG_ALIASES[slug] ?? slug
+}
+
+function getBeanMetric(bean: CoffeeBeanOption, metric: 'body' | 'acidity' | 'crema' | 'strength' | 'bitterness') {
+  const explicit = bean[metric]
+  if (typeof explicit === 'number') return explicit
+  if (metric === 'crema') return bean.family === 'robusta' ? 5 : 3
+  if (metric === 'strength') return bean.family === 'robusta' ? 5 : 3
+  if (metric === 'body') return bean.family === 'robusta' ? 5 : 4
+  if (metric === 'bitterness') return bean.family === 'robusta' ? 4 : 2
+  return bean.family === 'arabica' ? 4 : 2
+}
+
+function getBeanNotes(language: 'en' | 'ar', bean: CoffeeBeanOption) {
+  const notes = language === 'ar' ? bean.tastingNotesAr : bean.tastingNotesEn
+  if (notes?.length) return notes.slice(0, 3)
+  return (language === 'ar' ? bean.descAr : bean.descEn)
+    .split(/[،,.]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 3)
 }
 
 function getEqualBlendRatios(count: number) {
@@ -262,7 +172,11 @@ function getFlavorAvailability(flavor: FlavorAdditionOption, baseId: string) {
   }
 }
 
-// ─── Make Your Espresso Blend Component ───────────────────────────────────────
+function isChunkProduct(product: Product) {
+  return /chunks?|pieces?|قطع/i.test(`${product.slug} ${product.name_en} ${product.name_ar}`)
+}
+
+// ─── Make Your Espresso Component ──────────────────────────────────────────────
 function MakeYourEspressoBlend() {
   const { t, language } = useLanguage()
   const { addItem, items } = useCartStore()
@@ -314,18 +228,18 @@ function MakeYourEspressoBlend() {
     .join('-')
   const blendCartItem = finalBlendBeans.length > 0 ? {
     id: `espresso-blend-${blendKey}-${selectedSize}`,
-    product_id: 'make-your-espresso-blend',
-    name_en: 'Make Your Espresso Blend',
-    name_ar: 'توليفة الإسبريسو الخاصة بك',
+    product_id: 'build-your-espresso',
+    name_en: 'Make Your Espresso',
+    name_ar: 'اصنع إسبريسو خاصتك',
     size: selectedSize,
     price: totalPrice,
     quantity: blendQuantity,
-    image: IMG_ESP,
+    image: PRODUCT_IMAGE_LIBRARY.espresso,
     customizations: {
       type: 'espresso-blend',
       mode: blendMode,
-      title_en: 'Make Your Espresso Blend',
-      title_ar: 'توليفة الإسبريسو الخاصة بك',
+      title_en: 'Make Your Espresso',
+      title_ar: 'اصنع إسبريسو خاصتك',
       summary_en: blendPartEn,
       summary_ar: blendPartAr,
       beans: finalBlendBeans.map((bean) => ({
@@ -350,10 +264,15 @@ function MakeYourEspressoBlend() {
       .then((d) => {
         const beans = d?.data?.beans
         if (Array.isArray(beans)) {
-          setBeanOptions(beans)
-          setSelectedBeans((current) => current.filter((bean) =>
-            beans.some((item: CoffeeBeanOption) => item.id === bean.id && !isOptionOutOfStock(item))
-          ))
+          const saleBeans = beans.map((bean: CoffeeBeanOption) => applyOfficialBeanSalePrice(bean))
+          setBeanOptions(saleBeans)
+          setSelectedBeans((current) => current
+            .map((bean) => {
+              const match = saleBeans.find((item) => item.id === bean.id)
+              return match ? { ...match, percent: bean.percent } : bean
+            })
+            .filter((bean) => saleBeans.some((item) => item.id === bean.id && !isOptionOutOfStock(item)))
+          )
         }
       })
       .catch(() => {})
@@ -440,7 +359,7 @@ function MakeYourEspressoBlend() {
         </div>
       </div>
 
-      <div className={cn('grid gap-3', family === 'arabica' ? 'md:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-5')}>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 min-[1760px]:grid-cols-4">
         {groupedBeans[family].map((bean) => {
           const selectedBean = finalBlendBeans.find((item) => item.id === bean.id)
           const selected = Boolean(selectedBean)
@@ -461,7 +380,7 @@ function MakeYourEspressoBlend() {
                 }
               }}
               className={cn(
-                'group relative min-h-32 overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300',
+                'group relative min-h-[15.5rem] overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-300 sm:p-4',
                 'bg-gradient-to-br from-[#1B140F]/90 to-[#0B0806]/88',
                 outOfStock
                   ? 'cursor-not-allowed border-[#B6885E]/8 opacity-45 grayscale'
@@ -478,28 +397,43 @@ function MakeYourEspressoBlend() {
                   {t('Out of Stock', 'غير متاح')}
                 </span>
               )}
-              <div className="pointer-events-none absolute right-5 top-4 h-16 w-16 rounded-full bg-[#B6885E]/10 blur-2xl transition-opacity group-hover:opacity-100" />
-              <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-                <div>
+              <div className="pointer-events-none absolute right-4 top-4 h-12 w-12 rounded-full bg-[#B6885E]/10 blur-xl transition-opacity group-hover:opacity-100" />
+              <div className="relative z-10 flex min-h-[13.5rem] h-full flex-col justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex items-start justify-between gap-3">
-                    <h4 className="font-serif text-xl font-bold leading-tight text-[#F5E6D8]">
+                    <h4 className="min-w-0 pr-1 font-serif text-base font-bold leading-tight text-[#F5E6D8] sm:text-lg">
                       {formatOptionName(language, bean)}
                     </h4>
                     <span className={cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors',
+                      'relative z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors',
                       selected ? 'border-[#D6A373] bg-[#D6A373] text-[#0B0806]' : 'border-[#B6885E]/30 text-[#D6A373]',
                     )}>
                       {selected ? <Check className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-[#D6B79A]/76">
+                  <p className="mt-2 line-clamp-2 min-h-[2.45rem] text-xs leading-relaxed text-[#D6B79A]/76 sm:text-sm">
                     {language === 'ar' ? bean.descAr : bean.descEn}
                   </p>
+                  <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#D6A373]/72">
+                    {t('Tasting notes', 'إيحاءات التذوق')}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {getBeanNotes(language, bean).map((note) => (
+                      <span key={note} className="max-w-[7.5rem] truncate rounded-full border border-[#B6885E]/14 bg-[#B6885E]/8 px-2 py-0.5 text-[10px] font-medium text-[#D6B79A]/72">
+                        {note}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs text-[#D6A373]">
-                    <span>{bean.origin || t('Premium origin', 'منشأ فاخر')}</span>
-                    <span>{bean.price} {t('EGP/kg', 'ج.م/كجم')}</span>
+                <div className="mt-auto space-y-2.5">
+                  <div className="grid gap-1.5">
+                    <IndicatorBar label={t('Body', 'القوام')} value={getBeanMetric(bean, 'body')} />
+                    <IndicatorBar label={t('Acidity', 'الحموضة')} value={getBeanMetric(bean, 'acidity')} />
+                    <IndicatorBar label={t('Crema', 'الكريما')} value={getBeanMetric(bean, 'crema')} />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-[#B6885E]/10 bg-[#0B0806]/35 px-2.5 py-2 text-[11px] text-[#D6A373]">
+                    <span className="min-w-0 truncate">{bean.origin || t('Premium origin', 'منشأ فاخر')}</span>
+                    <span className="shrink-0 whitespace-nowrap">{bean.price} {t('EGP/kg', 'ج.م/كجم')}</span>
                   </div>
                   {selected && blendMode === 'custom' && (
                     <div
@@ -528,21 +462,17 @@ function MakeYourEspressoBlend() {
   )
 
   return (
-    <div className="luxury-panel overflow-hidden rounded-2xl">
+    <PremiumConfiguratorShell
+      icon={<Sparkles className="h-7 w-7 text-[#D6A373]" />}
+      eyebrow={t('Specialty whole beans', 'حبوب مختصة كاملة')}
+      title={t('Make Your Espresso', 'اصنع إسبريسو خاصتك')}
+      description={t(
+        'Buy a single origin alone or compose a custom whole-bean espresso blend with live ratios and specialty profiles.',
+        'اشتر منشأ واحدًا أو اصنع توليفة إسبريسو من الحبوب الكاملة مع نسب مباشرة وملفات مختصة.',
+      )}
+    >
       <div className="border-b border-[#B6885E]/15 p-5 sm:p-6 lg:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#B6885E]/12 ring-1 ring-[#B6885E]/20">
-              <Sparkles className="h-7 w-7 text-[#D6A373]" />
-            </div>
-            <div>
-              <h2 className="font-serif text-3xl font-bold text-[#F5E6D8] md:text-4xl">{t('Make Your Espresso Blend', 'اصنع توليفة الإسبريسو الخاصة بك')}</h2>
-              <p className="mt-1 text-sm text-[#D6B79A]/75">{t('Choose espresso beans, then use quick balance or custom ratios.', 'اختر حبوب الإسبريسو ثم استخدم التوزيع السريع أو النسب المخصصة.')}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-2 rounded-2xl border border-[#B6885E]/15 bg-[#0B0806]/55 p-1 sm:max-w-md sm:grid-cols-2">
+        <div className="grid gap-2 rounded-2xl border border-[#B6885E]/15 bg-[#0B0806]/55 p-1 sm:max-w-md sm:grid-cols-2">
           {([
             { value: 'quick' as const, labelEn: 'Quick Select', labelAr: 'اختيار سريع' },
             { value: 'custom' as const, labelEn: 'Custom Ratios', labelAr: 'نسب مخصصة' },
@@ -625,14 +555,12 @@ function MakeYourEspressoBlend() {
           </section>
         </div>
 
-        <aside className="h-fit rounded-2xl border border-[#B6885E]/18 bg-[#0B0806]/72 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] lg:sticky lg:top-28">
-          <div className="mb-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#D6A373]/75">{t('Live Price', 'السعر المباشر')}</p>
-            <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{blendDisplayPrice} {t('EGP', 'ج.م')}</p>
-            <p className="mt-1 text-xs text-[#D6B79A]/58">{t('Updates instantly as you customize.', 'يتغير فوراً مع كل اختيار.')}</p>
-          </div>
-
-          <div className="space-y-5">
+        <LiveConfiguratorPanel
+          eyebrow={t('Live Price', 'السعر المباشر')}
+          price={blendDisplayPrice}
+          currency={t('EGP', 'ج.م')}
+          note={t('Updates instantly as you customize whole-bean origins.', 'يتغير فورًا مع تخصيص مناشئ الحبوب الكاملة.')}
+        >
             <div className="rounded-xl border border-[#B6885E]/14 bg-[#120D09]/70 p-4">
                 <p className="mb-3 text-sm font-semibold text-[#F5E6D8]">
                   {t(`Selected Beans (${selectedBeans.length})`, `الحبوب المختارة (${selectedBeans.length})`)}
@@ -720,10 +648,9 @@ function MakeYourEspressoBlend() {
               <ShoppingBag className="h-5 w-5" />
               {t('Add to Cart', 'أضف للسلة')}
             </Button>
-          </div>
-        </aside>
+        </LiveConfiguratorPanel>
       </div>
-    </div>
+    </PremiumConfiguratorShell>
   )
 }
 
@@ -741,7 +668,9 @@ function CustomizeFlavor() {
 
   const filteredAdditions = useMemo(() => {
     return additionOptions.filter(
-      (flavor) => !flavor.bases || flavor.bases.includes(selectedBase.id)
+      (flavor) =>
+        !HIDDEN_CUSTOMIZE_FLAVOR_IDS.has(flavor.id) &&
+        (!flavor.bases || flavor.bases.includes(selectedBase.id))
     )
   }, [additionOptions, selectedBase.id])
 
@@ -750,7 +679,7 @@ function CustomizeFlavor() {
       .map((group) => ({
         group,
         flavors: filteredAdditions
-          .filter((flavor) => getCustomizeFlavorGroup(flavor.sortOrder).key === group.key)
+          .filter((flavor) => (flavor.group || getCustomizeFlavorGroup(flavor.sortOrder).key) === group.key)
           .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0)),
       }))
       .filter((entry) => entry.flavors.length > 0)
@@ -826,14 +755,30 @@ function CustomizeFlavor() {
         const nextAdditions = d?.data?.flavorAdditions
 
         if (Array.isArray(nextBases) && nextBases.length > 0) {
-          setBaseOptions(nextBases)
-          setSelectedBase((current) => nextBases.find((base) => base.id === current.id) || nextBases[0])
+          const mergedBases = CUSTOMIZE_FLAVOR_BASES.map((base) => {
+            const override = nextBases.find((item: FlavorBaseOption) => item.id === base.id)
+            return override
+              ? {
+                  ...base,
+                  ...override,
+                  descriptionEn: override.descriptionEn || base.descriptionEn,
+                  descriptionAr: override.descriptionAr || base.descriptionAr,
+                  moodEn: override.moodEn || base.moodEn,
+                  moodAr: override.moodAr || base.moodAr,
+                }
+              : base
+          })
+          setBaseOptions(mergedBases)
+          setSelectedBase((current) => mergedBases.find((base) => base.id === current.id) || mergedBases[0])
         }
 
         if (Array.isArray(nextAdditions)) {
-          setAdditionOptions(nextAdditions)
+          const visibleAdditions = nextAdditions.filter(
+            (item: FlavorAdditionOption) => !HIDDEN_CUSTOMIZE_FLAVOR_IDS.has(item.id)
+          )
+          setAdditionOptions(visibleAdditions)
           setSelectedFlavors((current) => current.filter((flavor) =>
-            nextAdditions.some((item) =>
+            visibleAdditions.some((item) =>
               item.id === flavor.id && !isOptionOutOfStock(getFlavorAvailability(item, selectedBase.id))
             )
           ))
@@ -862,19 +807,15 @@ function CustomizeFlavor() {
 
 
   return (
-    <div className="luxury-panel overflow-hidden rounded-2xl">
-      <div className="border-b border-[#B6885E]/15 p-5 sm:p-6 lg:p-8">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#B6885E]/12 ring-1 ring-[#B6885E]/20">
-            <Sparkles className="h-7 w-7 text-[#D6A373]" />
-          </div>
-          <div>
-            <h2 className="font-serif text-3xl font-bold text-[#F5E6D8] md:text-4xl">{t('Make Your Flavor', 'اصنع نكهتك الخاصة')}</h2>
-            <p className="mt-1 text-sm text-[#D6B79A]/75">{t('Pick a base, then add up to 3 premium flavors.', 'اختر القاعدة ثم أضف حتى 3 نكهات فاخرة.')}</p>
-          </div>
-        </div>
-      </div>
-
+    <PremiumConfiguratorShell
+      icon={<Sparkles className="h-7 w-7 text-[#D6A373]" />}
+      eyebrow={t('Custom flavor', 'نكهة مخصصة')}
+      title={t('Make Your Flavor', 'اصنع نكهتك')}
+      description={t(
+        'Choose a premium base, then layer up to 3 flavor cards for a polished custom cup.',
+        'اختر قاعدة فاخرة ثم أضف حتى 3 بطاقات نكهة لكوب مخصص راق.',
+      )}
+    >
       <div className="grid gap-8 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:p-8">
         <div className="space-y-8">
           <section>
@@ -882,37 +823,25 @@ function CustomizeFlavor() {
               <Coffee className="h-5 w-5 text-[#D6A373]" />
               <h3 className="font-serif text-2xl font-bold text-[#F5E6D8]">{t('Choose Your Base', 'اختر القاعدة')}</h3>
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {baseOptions.map((base) => {
                 const selected = selectedBase.id === base.id
                 const previewPrice = calculateFlavorPrice(base.price, [], selectedSize, valveBag)
                 return (
-                  <button
-                    type="button"
+                  <PremiumOptionCard
                     key={base.id}
+                    title={formatOptionName(language, base)}
+                    description={formatOptionDescription(language, base)}
+                    meta={`${base.price} ${t('EGP/kg', 'ج.م/كجم')}`}
+                    badge={`${t('From', 'من')} ${previewPrice} ${t('EGP', 'ج.م')}`}
+                    selected={selected}
                     onClick={() => {
-                    setSelectedBase(base)
-                    setSelectedFlavors((prev) =>
-                      prev.filter((f) => !f.bases || f.bases.includes(base.id))
-                    )
-                  }}
-                    className={cn(
-                      'relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1',
-                      selected
-                        ? 'border-[#D6A373]/55 bg-[#B6885E]/12 shadow-[0_0_38px_rgba(182,136,94,0.16)]'
-                        : 'border-[#B6885E]/16 bg-[#120D09]/72 hover:border-[#D6A373]/35',
-                    )}
-                  >
-                    <div className="absolute right-0 top-0 h-20 w-20 rounded-full bg-[#B6885E]/10 blur-2xl" />
-                    <div className="relative z-10">
-                      <div className="flex items-start justify-between gap-3">
-                        <h4 className="font-serif text-xl font-bold text-[#F5E6D8]">{formatOptionName(language, base)}</h4>
-                        {selected && <Check className="h-5 w-5 text-[#D6A373]" />}
-                      </div>
-                      <p className="mt-3 text-sm text-[#D6B79A]/68">{base.price} {t('EGP/kg', 'ج.م/كجم')}</p>
-                      <p className="mt-1 text-xs text-[#D6A373]">{t('From', 'من')} {previewPrice} {t('EGP', 'ج.م')}</p>
-                    </div>
-                  </button>
+                      setSelectedBase(base)
+                      setSelectedFlavors((prev) =>
+                        prev.filter((f) => !f.bases || f.bases.includes(base.id))
+                      )
+                    }}
+                  />
                 )
               })}
             </div>
@@ -925,7 +854,9 @@ function CustomizeFlavor() {
                   <SlidersHorizontal className="h-5 w-5 text-[#D6A373]" />
                   <h3 className="font-serif text-2xl font-bold text-[#F5E6D8]">{t('Choose Flavors', 'اختر النكهات')}</h3>
                 </div>
-                <p className="mt-1 text-sm text-[#D6B79A]/70">{t('Standard flavor adds 50 EGP/kg. Chunks add 70 EGP/kg.', 'النكهة العادية تضيف 50 ج.م/كجم والقطع تضيف 70 ج.م/كجم.')}</p>
+                <p className="mt-1 text-sm text-[#D6B79A]/70">
+                  {t('Standard flavor adds 50 EGP/kg. Chunks add 70 EGP/kg.', 'النكهة العادية تضيف 50 ج.م/كجم والقطع تضيف 70 ج.م/كجم.')}
+                </p>
               </div>
               <span className="w-fit rounded-full border border-[#B6885E]/18 bg-[#120D09]/70 px-3 py-1 text-xs text-[#D6B79A]">
                 {selectedFlavors.length}/3
@@ -938,39 +869,30 @@ function CustomizeFlavor() {
                   <h4 className="mb-2 font-serif text-lg font-bold text-[#F5E6D8]">
                     {t(group.nameEn, group.nameAr)}
                   </h4>
-                  <div className="flex flex-wrap gap-2.5">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {flavors.map((flavor) => {
                       const selected = selectedFlavors.some((item) => item.id === flavor.id)
                       const outOfStock = isOptionOutOfStock(getFlavorAvailability(flavor, selectedBase.id))
                       const disabled = outOfStock || (!selected && selectedFlavors.length >= 3)
+                      const flavorDescription = formatOptionDescription(language, flavor)
                       return (
-                        <button
-                          type="button"
+                        <PremiumOptionCard
                           key={flavor.id}
+                          title={formatOptionName(language, flavor)}
+                          description={flavorDescription || t('A premium flavor layer for your custom cup.', 'طبقة نكهة فاخرة لكوبك المخصص.')}
+                          meta={`+${flavor.price} ${t('EGP/kg', 'ج.م/كجم')}`}
+                          badge={outOfStock
+                            ? t('Out of Stock', 'غير متاح')
+                            : flavor.type === 'chunks'
+                              ? t('Chunks', 'قطع')
+                              : t('Flavor', 'نكهة')}
+                          selected={selected}
+                          disabled={disabled}
                           onClick={() => {
                             if (!outOfStock) toggleFlavor(flavor)
                           }}
-                          disabled={disabled}
-                          className={cn(
-                            'relative rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300',
-                            selected
-                              ? 'border-[#D6A373]/55 bg-[#D6A373] text-[#0B0806]'
-                              : outOfStock
-                                ? 'cursor-not-allowed border-[#B6885E]/8 bg-[#120D09]/35 text-[#D6B79A]/30 opacity-55 grayscale'
-                                : disabled
-                                  ? 'border-[#B6885E]/8 bg-[#120D09]/35 text-[#D6B79A]/28'
-                                : 'border-[#B6885E]/14 bg-[#120D09]/76 text-[#D6B79A] hover:-translate-y-0.5 hover:border-[#D6A373]/35 hover:text-[#F5E6D8]',
-                          )}
-                        >
-                          {selected && <Check className="mr-1 inline h-3.5 w-3.5" />}
-                          {formatOptionName(language, flavor)}
-                          <span className="ml-2 text-xs opacity-70">+{flavor.price}</span>
-                          {outOfStock && (
-                            <span className="ml-2 rounded-full bg-red-950/70 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-red-200">
-                              {t('Out of Stock', 'غير متاح')}
-                            </span>
-                          )}
-                        </button>
+                          className="min-h-40"
+                        />
                       )
                     })}
                   </div>
@@ -980,14 +902,12 @@ function CustomizeFlavor() {
           </section>
         </div>
 
-        <aside className="h-fit rounded-2xl border border-[#B6885E]/18 bg-[#0B0806]/72 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] lg:sticky lg:top-28">
-          <div className="mb-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#D6A373]/75">{t('Live Price', 'السعر المباشر')}</p>
-            <p className="mt-2 font-serif text-4xl font-bold text-[#D6A373]">{flavorDisplayPrice} {t('EGP', 'ج.م')}</p>
-            <p className="mt-1 text-xs text-[#D6B79A]/58">{t('Updates from your base, flavors, and selected weight.', 'يتحدث حسب القاعدة والنكهات والوزن المختار.')}</p>
-          </div>
-
-          <div className="space-y-5">
+        <LiveConfiguratorPanel
+          eyebrow={t('Live Price', 'السعر المباشر')}
+          price={flavorDisplayPrice}
+          currency={t('EGP', 'ج.م')}
+          note={t('Updates from your base, flavor cards, and selected weight.', 'يتحدث حسب القاعدة وبطاقات النكهة والوزن المختار.')}
+        >
             <div>
               <p className="mb-2 text-sm font-semibold text-[#F5E6D8]">{t('Weight', 'الوزن')}</p>
               <div className="grid grid-cols-3 gap-2">
@@ -1085,10 +1005,9 @@ function CustomizeFlavor() {
               <ShoppingBag className="h-5 w-5" />
               {t('Add to Cart', 'أضف للسلة')}
             </Button>
-          </div>
-        </aside>
+        </LiveConfiguratorPanel>
       </div>
-    </div>
+    </PremiumConfiguratorShell>
   )
 }
 
@@ -1100,7 +1019,10 @@ function ProductsPageInner() {
   const router = useRouter()
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'all')
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const requestedCategory = normalizeCategorySlug(searchParams.get('category') || DEFAULT_CATEGORY_SLUG)
+    return requestedCategory === 'all' ? DEFAULT_CATEGORY_SLUG : requestedCategory
+  })
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
@@ -1157,7 +1079,7 @@ function ProductsPageInner() {
         if (!cancelled) setProducts(data.data)
       } catch (error) {
         if (cancelled || (error instanceof Error && error.name === 'AbortError')) return
-        setProducts(LAST_RESORT_PRODUCTS)
+        setProducts(OFFICIAL_LAST_RESORT_PRODUCTS)
       } finally {
         if (!cancelled) setProductsLoading(false)
       }
@@ -1173,13 +1095,14 @@ function ProductsPageInner() {
 
   // Build sidebar categories from DB, injecting special UI entries
   const sidebarCategories = useMemo<SidebarCategory[]>(() => {
-    const mainCats = dbCategories.map(c => ({
-      slug: c.slug,
-      nameEn: c.name_en,
-      nameAr: c.name_ar,
+    const mainCats = OFFICIAL_PRODUCT_CATEGORIES.map((category) => ({
+      slug: category.slug,
+      nameEn: category.name_en,
+      nameAr: category.name_ar,
+      isCustomizeBlend: category.slug === 'build-your-espresso',
     }))
-    return [ALL_ENTRY, ...mainCats, CUSTOMIZE_BLEND_ENTRY, CUSTOMIZE_FLAVOR_ENTRY]
-  }, [dbCategories])
+    return [...mainCats, CUSTOMIZE_FLAVOR_ENTRY]
+  }, [])
 
   const currentCat = sidebarCategories.find((c) => c.slug === activeCategory)
   const isCustomizeBlend = currentCat?.isCustomizeBlend
@@ -1188,22 +1111,55 @@ function ProductsPageInner() {
 
   const categorySlugById = useMemo(() => {
     const map = new Map<string, string>()
-    dbCategories.forEach((category) => map.set(category.id, category.slug))
+    dbCategories.forEach((category) => {
+      const normalizedSlug = normalizeCategorySlug(category.slug)
+      map.set(category.id, normalizedSlug)
+      map.set(category.slug, normalizedSlug)
+    })
     return map
   }, [dbCategories])
 
   const filteredProducts = useMemo(() => {
     if (isCustomize) return []
-    let nextProducts = [...products]
-
-    if (activeCategory !== 'all') {
-      nextProducts = nextProducts.filter((product) => {
-        const catSlug =
-          product.category?.slug ??
+    const officialFixedProducts = OFFICIAL_LAST_RESORT_PRODUCTS.filter((product) =>
+      FIXED_OFFICIAL_CATEGORY_SLUGS.has(normalizeCategorySlug(product.category_id))
+    )
+    const officialProductsForCategory = (slug: string) =>
+      OFFICIAL_LAST_RESORT_PRODUCTS.filter((product) => normalizeCategorySlug(product.category_id) === slug)
+    const getProductCategorySlug = (product: Product) =>
+      normalizeCategorySlug(
+        product.category?.slug ??
           (product.category_id ? categorySlugById.get(product.category_id) : undefined) ??
           product.category_id
-        return catSlug === activeCategory
+      )
+    const apiProducts = products.filter((product) => !FIXED_OFFICIAL_CATEGORY_SLUGS.has(getProductCategorySlug(product)))
+    const catalogProducts = [...apiProducts, ...officialFixedProducts].filter((product) => {
+      const categorySlug = getProductCategorySlug(product)
+      return !(NO_CHUNK_PRODUCT_CATEGORY_SLUGS.has(categorySlug) && isChunkProduct(product))
+    })
+
+    FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS.forEach((slug) => {
+      if (!catalogProducts.some((product) => getProductCategorySlug(product) === slug)) {
+        catalogProducts.push(...officialProductsForCategory(slug))
+      }
+    })
+
+    let nextProducts = [...catalogProducts]
+
+    if (searchQuery.trim()) {
+      // Product-page search spans visible catalog entries because the sidebar starts at Turkish Blends.
+    } else if (FIXED_OFFICIAL_CATEGORY_SLUGS.has(activeCategory)) {
+      nextProducts = officialFixedProducts.filter(
+        (product) => normalizeCategorySlug(product.category_id) === activeCategory
+      )
+    } else {
+      nextProducts = nextProducts.filter((product) => {
+        return getProductCategorySlug(product) === activeCategory
       })
+
+      if (nextProducts.length === 0 && FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS.has(activeCategory)) {
+        nextProducts = officialProductsForCategory(activeCategory)
+      }
     }
 
     // Classic / Original always sorts first within a category
@@ -1220,10 +1176,17 @@ function ProductsPageInner() {
 
     return nextProducts
   }, [activeCategory, searchQuery, isCustomize, products, categorySlugById])
+  const isFixedOfficialCategory = FIXED_OFFICIAL_CATEGORY_SLUGS.has(activeCategory)
 
   const handleCategoryChange = (slug: string) => {
-    setActiveCategory(slug)
-    router.push(`/products?category=${slug}`, { scroll: false })
+    const normalizedSlug = normalizeCategorySlug(slug) === 'all' ? DEFAULT_CATEGORY_SLUG : normalizeCategorySlug(slug)
+    setActiveCategory(normalizedSlug)
+    router.push(`/products?category=${normalizedSlug}`, { scroll: false })
+  }
+
+  const handleEmptyStateReset = () => {
+    setSearchQuery('')
+    handleCategoryChange(DEFAULT_CATEGORY_SLUG)
   }
 
   return (
@@ -1307,7 +1270,7 @@ function ProductsPageInner() {
                   <p className="text-sm text-muted-foreground">{t(`Showing ${filteredProducts.length} products`, `عرض ${filteredProducts.length} منتج`)}</p>
                 </div>
 
-                {productsLoading ? (
+                {productsLoading && !isFixedOfficialCategory ? (
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3">
                     {Array.from({ length: 6 }).map((_, index) => (
                       <div key={index} className="luxury-card overflow-hidden rounded-xl border border-[#B6885E]/[16%] bg-[#120D09]/70">
@@ -1324,7 +1287,7 @@ function ProductsPageInner() {
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <PackageSearch className="h-16 w-16 text-muted-foreground/30 mb-4" />
                     <h3 className="font-serif text-xl font-semibold mb-2">{t('No products found', 'لم يتم العثور على منتجات')}</h3>
-                    <Button onClick={() => handleCategoryChange('all')}>{t('View All', 'عرض الكل')}</Button>
+                    <Button onClick={handleEmptyStateReset}>{t('Back to Turkish Blends', 'الرجوع إلى توليفات تركي')}</Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3">

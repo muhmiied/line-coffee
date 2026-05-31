@@ -20,8 +20,11 @@ interface ProductCardProps {
 // Full Tailwind class strings — must be literal so the JIT scanner picks them up
 const CATEGORY_GRADIENTS: Record<string, string> = {
   'turkish-coffee':  'from-[#1c0a00] to-[#3a1600]',
+  'espresso-blends': 'from-[#0e0500] to-[#2b0f00]',
   'espresso':        'from-[#0e0500] to-[#2b0f00]',
+  'flavor-coffee':   'from-[#1a0c00] to-[#3c1b00]',
   'flavored-coffee': 'from-[#1a0c00] to-[#3c1b00]',
+  'easy-coffee':     'from-[#120900] to-[#332008]',
   'cappuccino':      'from-[#231200] to-[#4b2900]',
   'coffee-mix':      'from-[#110800] to-[#2e1500]',
   'hot-chocolate':   'from-[#1b0700] to-[#3c1300]',
