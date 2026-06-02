@@ -32,6 +32,17 @@ import {
   PRODUCT_IMAGE_LIBRARY,
 } from '@/lib/config/product-system'
 import {
+  analyzeEspressoBlend,
+  calculateEspressoBlendMetrics,
+  ESPRESSO_PROFILE_OPTIONS,
+  getEspressoBeanMetrics,
+  recommendEspressoBlend,
+  suggestSmartEspressoRatios,
+  type EspressoBodyPreference,
+  type EspressoPreferences,
+  type EspressoProfileId,
+} from '@/lib/config/espresso-intelligence'
+import {
   IndicatorBar,
   LiveConfiguratorPanel,
   PremiumConfiguratorShell,
@@ -119,16 +130,6 @@ function normalizeCategorySlug(slug: string | null | undefined) {
   return CATEGORY_SLUG_ALIASES[slug] ?? slug
 }
 
-function getBeanMetric(bean: CoffeeBeanOption, metric: 'body' | 'acidity' | 'crema' | 'strength' | 'bitterness') {
-  const explicit = bean[metric]
-  if (typeof explicit === 'number') return explicit
-  if (metric === 'crema') return bean.family === 'robusta' ? 5 : 3
-  if (metric === 'strength') return bean.family === 'robusta' ? 5 : 3
-  if (metric === 'body') return bean.family === 'robusta' ? 5 : 4
-  if (metric === 'bitterness') return bean.family === 'robusta' ? 4 : 2
-  return bean.family === 'arabica' ? 4 : 2
-}
-
 function getBeanNotes(language: 'en' | 'ar', bean: CoffeeBeanOption) {
   const notes = language === 'ar' ? bean.tastingNotesAr : bean.tastingNotesEn
   if (notes?.length) return notes.slice(0, 3)
@@ -137,18 +138,6 @@ function getBeanNotes(language: 'en' | 'ar', bean: CoffeeBeanOption) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 3)
-}
-
-function getEqualBlendRatios(count: number) {
-  if (count <= 0) return []
-
-  const baseTenths = Math.floor(1000 / count)
-  return Array.from({ length: count }, (_, index) => {
-    if (index === count - 1) {
-      return (1000 - baseTenths * (count - 1)) / 10
-    }
-    return baseTenths / 10
-  })
 }
 
 function formatRatio(value: number) {
@@ -186,6 +175,12 @@ function MakeYourEspressoBlend() {
   const [selectedBeans, setSelectedBeans] = useState<Array<CoffeeBeanOption & { percent: string }>>([])
   const [selectedSize, setSelectedSize] = useState<PackageSize>('250g')
   const [blendQuantity, setBlendQuantity] = useState(1)
+  const [espressoPreferences, setEspressoPreferences] = useState<EspressoPreferences>({
+    profileId: 'balanced',
+    body: 'medium',
+    arabicaOnly: false,
+    budgetAware: false,
+  })
 
   const groupedBeans = useMemo(() => {
     const visible = beanOptions.filter((bean) => bean.isVisible)
@@ -195,16 +190,36 @@ function MakeYourEspressoBlend() {
     }
   }, [beanOptions])
 
-  const finalBlendBeans = useMemo(() => {
-    const quickRatios = getEqualBlendRatios(selectedBeans.length)
+  const selectedSmartRatios = useMemo(
+    () => suggestSmartEspressoRatios(selectedBeans, espressoPreferences),
+    [selectedBeans, espressoPreferences],
+  )
 
-    return selectedBeans.map((bean, index) => ({
+  const finalBlendBeans = useMemo(() => {
+    const smartRatioById = new Map(selectedSmartRatios.map(({ bean, percent }) => [bean.id, percent]))
+    const customTotal = selectedBeans.reduce((sum, bean) => sum + Number(bean.percent || 0), 0)
+    const useSmartPreview = blendMode === 'quick' || customTotal <= 0
+
+    return selectedBeans.map((bean) => ({
       ...bean,
-      finalPercent: blendMode === 'quick'
-        ? quickRatios[index] ?? 0
+      finalPercent: useSmartPreview
+        ? smartRatioById.get(bean.id) ?? 0
         : Number(bean.percent || 0),
     }))
-  }, [blendMode, selectedBeans])
+  }, [blendMode, selectedBeans, selectedSmartRatios])
+
+  const espressoRecommendation = useMemo(
+    () => recommendEspressoBlend(beanOptions, espressoPreferences),
+    [beanOptions, espressoPreferences],
+  )
+  const blendMetrics = useMemo(
+    () => calculateEspressoBlendMetrics(finalBlendBeans),
+    [finalBlendBeans],
+  )
+  const blendAdvice = useMemo(
+    () => analyzeEspressoBlend(finalBlendBeans, espressoPreferences),
+    [finalBlendBeans, espressoPreferences],
+  )
 
   const ratioTotal = finalBlendBeans.reduce((sum, bean) => sum + bean.finalPercent, 0)
   const ratioIsValid = blendMode === 'quick'
@@ -295,14 +310,50 @@ function MakeYourEspressoBlend() {
     if (mode === blendMode) return
 
     if (mode === 'custom') {
-      const quickRatios = getEqualBlendRatios(selectedBeans.length)
-      setSelectedBeans((prev) => prev.map((bean, index) => ({
+      const smartRatioById = new Map(selectedSmartRatios.map(({ bean, percent }) => [bean.id, percent]))
+      setSelectedBeans((prev) => prev.map((bean) => ({
         ...bean,
-        percent: formatRatio(quickRatios[index] ?? 0),
+        percent: formatRatio(smartRatioById.get(bean.id) ?? 0),
       })))
     }
 
     setBlendMode(mode)
+  }
+
+  const updateEspressoPreference = <Key extends keyof EspressoPreferences>(
+    key: Key,
+    value: EspressoPreferences[Key],
+  ) => {
+    setEspressoPreferences((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const applySuggestedBlend = () => {
+    if (espressoRecommendation.beans.length === 0) {
+      toast.error(t('No available beans for a suggestion', 'لا توجد حبوب متاحة للاقتراح'))
+      return
+    }
+
+    setBlendMode('custom')
+    setSelectedBeans(espressoRecommendation.beans.map(({ bean, percent }) => ({
+      ...bean,
+      percent: formatRatio(percent),
+    })))
+    toast.success(t('Suggested blend applied', 'تم تطبيق التوليفة المقترحة'))
+  }
+
+  const applySmartRatios = () => {
+    if (selectedSmartRatios.length === 0) {
+      toast.error(t('Select beans first', 'اختر الحبوب أولا'))
+      return
+    }
+
+    const smartRatioById = new Map(selectedSmartRatios.map(({ bean, percent }) => [bean.id, percent]))
+    setBlendMode('custom')
+    setSelectedBeans((prev) => prev.map((bean) => ({
+      ...bean,
+      percent: formatRatio(smartRatioById.get(bean.id) ?? 0),
+    })))
+    toast.success(t('Smart ratios applied', 'تم تطبيق النسب الذكية'))
   }
 
   const updateBeanPercent = (id: string, val: string) => {
@@ -363,6 +414,7 @@ function MakeYourEspressoBlend() {
           const selectedBean = finalBlendBeans.find((item) => item.id === bean.id)
           const selected = Boolean(selectedBean)
           const outOfStock = isOptionOutOfStock(bean)
+          const beanMetrics = getEspressoBeanMetrics(bean)
           return (
             <article
               role="button"
@@ -426,9 +478,9 @@ function MakeYourEspressoBlend() {
                 </div>
                 <div className="mt-auto space-y-2.5">
                   <div className="grid gap-1.5">
-                    <IndicatorBar label={t('Body', 'القوام')} value={getBeanMetric(bean, 'body')} />
-                    <IndicatorBar label={t('Acidity', 'الحموضة')} value={getBeanMetric(bean, 'acidity')} />
-                    <IndicatorBar label={t('Crema', 'الكريما')} value={getBeanMetric(bean, 'crema')} />
+                    <IndicatorBar label={t('Body', 'القوام')} value={beanMetrics.body} />
+                    <IndicatorBar label={t('Acidity', 'الحموضة')} value={beanMetrics.acidity} />
+                    <IndicatorBar label={t('Crema', 'الكريما')} value={beanMetrics.crema} />
                   </div>
                   <div className="flex items-center justify-between gap-2 rounded-xl border border-[#B6885E]/10 bg-[#0B0806]/35 px-2.5 py-2 text-[11px] text-[#D6A373]">
                     <span className="min-w-0 truncate">{bean.origin || t('Premium origin', 'منشأ فاخر')}</span>
@@ -495,8 +547,99 @@ function MakeYourEspressoBlend() {
 
       <div className="grid gap-8 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:p-8">
         <div className="space-y-8">
-          {renderBeanGroup('arabica', 'Arabica', 'أرابيكا', 'Smooth, aromatic and complex with lower bitterness.', 'ناعمة وعطرية ومعقدة بمرارة أقل.')}
-          {renderBeanGroup('robusta', 'Robusta', 'روبوستا', 'Bold, rich and high-caffeine beans for stronger blends.', 'قوية وغنية وعالية الكافيين لتوليفات أثقل.')}
+          <section className="rounded-2xl border border-[#B6885E]/18 bg-[#120D09]/68 p-4 sm:p-5">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-[#D6A373]" />
+                  <h3 className="font-serif text-xl font-bold text-[#D6A373]">{t('Guide Me', 'رشح لي')}</h3>
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-[#D6B79A]/72">
+                  {t('Choose a direction and apply a clean suggested ratio.', 'اختر الاتجاه وطبق نسبة مقترحة بسيطة.')}
+                </p>
+              </div>
+              <Button type="button" onClick={applySuggestedBlend} className="premium-button shrink-0 rounded-full">
+                {t('Apply Suggested Blend', 'طبق التوليفة المقترحة')}
+              </Button>
+            </div>
+
+            <div className="grid gap-3">
+              <div className="grid gap-2 sm:grid-cols-5">
+                {ESPRESSO_PROFILE_OPTIONS.map((profile) => (
+                  <button
+                    key={profile.id}
+                    type="button"
+                    onClick={() => updateEspressoPreference('profileId', profile.id as EspressoProfileId)}
+                    className={cn(
+                      'rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-200',
+                      espressoPreferences.profileId === profile.id
+                        ? 'border-[#D6A373]/55 bg-[#D6A373] text-[#0B0806]'
+                        : 'border-[#B6885E]/16 bg-[#0B0806]/45 text-[#D6B79A] hover:border-[#D6A373]/38 hover:text-[#F5E6D8]',
+                    )}
+                  >
+                    {t(profile.labelEn, profile.labelAr)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid grid-cols-2 gap-2 sm:w-64">
+                  {([
+                    { value: 'medium' as EspressoBodyPreference, labelEn: 'Medium Body', labelAr: 'قوام متوسط' },
+                    { value: 'full' as EspressoBodyPreference, labelEn: 'Full Body', labelAr: 'قوام ممتلئ' },
+                  ]).map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => updateEspressoPreference('body', option.value)}
+                      className={cn(
+                        'rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200',
+                        espressoPreferences.body === option.value
+                          ? 'border-[#D6A373]/55 bg-[#D6A373]/16 text-[#D6A373]'
+                          : 'border-[#B6885E]/16 bg-[#0B0806]/45 text-[#D6B79A]/75 hover:border-[#D6A373]/38 hover:text-[#F5E6D8]',
+                      )}
+                    >
+                      {t(option.labelEn, option.labelAr)}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { key: 'arabicaOnly' as const, labelEn: '100% Arabica', labelAr: 'أرابيكا 100%' },
+                    { key: 'budgetAware' as const, labelEn: 'Budget-aware', labelAr: 'يراعي الميزانية' },
+                  ]).map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => updateEspressoPreference(option.key, !espressoPreferences[option.key])}
+                      className={cn(
+                        'rounded-full border px-3 py-2 text-xs font-semibold transition-all duration-200',
+                        espressoPreferences[option.key]
+                          ? 'border-[#D6A373]/55 bg-[#D6A373]/16 text-[#D6A373]'
+                          : 'border-[#B6885E]/16 bg-[#0B0806]/45 text-[#D6B79A]/75 hover:border-[#D6A373]/38 hover:text-[#F5E6D8]',
+                      )}
+                    >
+                      {t(option.labelEn, option.labelAr)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#B6885E]/12 bg-[#0B0806]/45 p-3">
+                <p className="text-xs leading-relaxed text-[#D6B79A]/68">
+                  {t(espressoRecommendation.reasonEn, espressoRecommendation.reasonAr)}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {espressoRecommendation.beans.map(({ bean, percent }) => (
+                    <span key={bean.id} className="rounded-full border border-[#D6A373]/24 bg-[#D6A373]/10 px-2.5 py-1 text-xs font-medium text-[#D6A373]">
+                      {formatOptionName(language, bean)} {formatRatio(percent)}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
 
           <section className="rounded-2xl border border-[#B6885E]/18 bg-[#120D09]/68 p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -506,14 +649,12 @@ function MakeYourEspressoBlend() {
                 </div>
                 <div>
                   <h3 className="font-serif text-xl font-bold text-[#D6A373]">
-                    {blendMode === 'quick'
-                      ? t('Even Blend Ratios', 'نسب متساوية للتوليفة')
-                      : t('Set Your Perfect Ratio', 'حدد نسبتك المثالية')}
+                    {t('Smart Blend Assistant', 'مساعد التوليفة الذكي')}
                   </h3>
                   <p className="text-sm text-[#D6B79A]/72">
-                    {blendMode === 'quick'
-                      ? t('Selected beans are balanced evenly for an easy espresso blend.', 'يتم توزيع الحبوب المختارة بالتساوي لتوليفة إسبريسو سهلة.')
-                      : t('Adjust each selected bean until the total reaches 100%.', 'اضبط كل نوع بن حتى يصل المجموع إلى 100%.')}
+                    {blendMode === 'custom'
+                      ? t('Adjust each selected bean until the total reaches 100%.', 'اضبط كل نوع بن حتى يصل المجموع إلى 100%.')
+                      : t('Use Guide Me or switch to custom ratios for more control.', 'استخدم رشح لي أو انتقل للنسب المخصصة لتحكم أكبر.')}
                   </p>
                 </div>
               </div>
@@ -525,6 +666,14 @@ function MakeYourEspressoBlend() {
                   {t('Total', 'المجموع')}: {formatRatio(ratioTotal || 0)}%
                 </div>
               )}
+              <Button
+                type="button"
+                onClick={applySmartRatios}
+                disabled={selectedBeans.length === 0}
+                className="premium-button shrink-0 rounded-full"
+              >
+                {t('Apply Smart Ratios', 'طبّق النسب الذكية')}
+              </Button>
             </div>
 
             {selectedBeans.length === 0 ? (
@@ -532,26 +681,42 @@ function MakeYourEspressoBlend() {
                 {t('Selected beans will appear here.', 'ستظهر أنواع البن المختارة هنا.')}
               </p>
             ) : (
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="mt-5 flex flex-wrap gap-2">
                 {finalBlendBeans.map((bean) => (
-                  <div key={bean.id} className="rounded-xl border border-[#B6885E]/14 bg-[#0B0806]/55 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-[#F5E6D8]">{formatOptionName(language, bean)}</p>
-                        <p className="text-xs uppercase tracking-[0.14em] text-[#D6B79A]/45">{bean.family}</p>
-                      </div>
-                      <button type="button" onClick={() => toggleBean(bean)} className="rounded-full p-1 text-[#D6B79A]/55 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8]">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {blendMode === 'custom' && (
-                      <p className="mt-3 text-sm font-semibold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</p>
-                    )}
-                  </div>
+                  <span key={bean.id} className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#B6885E]/18 bg-[#0B0806]/55 px-3 py-2 text-sm">
+                    <span className="min-w-0 truncate font-semibold text-[#F5E6D8]">{formatOptionName(language, bean)}</span>
+                    <span className="shrink-0 font-bold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</span>
+                    <button type="button" onClick={() => toggleBean(bean)} className="shrink-0 rounded-full p-0.5 text-[#D6B79A]/55 hover:bg-[#B6885E]/10 hover:text-[#F5E6D8]">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
                 ))}
               </div>
             )}
+
+            {blendMetrics && (
+              <div className="mt-5 grid gap-2 rounded-xl border border-[#B6885E]/12 bg-[#0B0806]/45 p-4">
+                <IndicatorBar label={t('Blend Body', 'قوام التوليفة')} value={blendMetrics.body} />
+                <IndicatorBar label={t('Blend Acidity', 'حموضة التوليفة')} value={blendMetrics.acidity} />
+                <IndicatorBar label={t('Blend Crema', 'كريما التوليفة')} value={blendMetrics.crema} />
+                <IndicatorBar label={t('Blend Strength', 'قوة التوليفة')} value={blendMetrics.strength} />
+              </div>
+            )}
+
+            {blendAdvice && (
+              <p className={cn(
+                'mt-4 rounded-xl border px-4 py-3 text-sm leading-relaxed',
+                blendAdvice.tone === 'warning'
+                  ? 'border-red-400/20 bg-red-500/10 text-red-200'
+                  : 'border-[#D6A373]/20 bg-[#D6A373]/10 text-[#D6B79A]',
+              )}>
+                {t(blendAdvice.messageEn, blendAdvice.messageAr)}
+              </p>
+            )}
           </section>
+
+          {renderBeanGroup('arabica', 'Arabica', 'أرابيكا', 'Smooth, aromatic and complex with lower bitterness.', 'ناعمة وعطرية ومعقدة بمرارة أقل.')}
+          {renderBeanGroup('robusta', 'Robusta', 'روبوستا', 'Bold, rich and high-caffeine beans for stronger blends.', 'قوية وغنية وعالية الكافيين لتوليفات أثقل.')}
         </div>
 
         <LiveConfiguratorPanel
@@ -573,9 +738,7 @@ function MakeYourEspressoBlend() {
                     {finalBlendBeans.map((bean) => (
                       <div key={bean.id} className="flex items-center justify-between gap-3 rounded-lg border border-[#B6885E]/12 bg-[#120D09]/55 px-3 py-2 text-xs">
                         <span className="truncate font-medium text-[#F5E6D8]/82">{formatOptionName(language, bean)}</span>
-                        {blendMode === 'custom' && (
-                          <span className="shrink-0 font-bold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</span>
-                        )}
+                        <span className="shrink-0 font-bold text-[#D6A373]">{formatRatio(bean.finalPercent)}%</span>
                       </div>
                     ))}
                   </div>

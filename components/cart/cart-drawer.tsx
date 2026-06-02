@@ -142,7 +142,7 @@ export function CartDrawer() {
                     >
                       {/* Product Image */}
                       <div className="relative h-16 w-16 rounded-md overflow-hidden bg-muted shrink-0 sm:h-20 sm:w-20">
-                        {item.image ? (
+                        {item.image && espressoBlendBeans.length === 0 ? (
                           <Image
                             src={item.image}
                             alt={language === 'ar' ? item.name_ar : item.name_en}
