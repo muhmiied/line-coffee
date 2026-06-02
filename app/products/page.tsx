@@ -82,7 +82,6 @@ const FALLBACK_DB_CATEGORIES: DbCategory[] = [
 // ─── Static special sidebar entries (not stored in DB) ─────────────────────────
 const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Make Your Flavor', nameAr: 'اصنع نكهتك', isCustomizeFlavor: true }
 const DEFAULT_CATEGORY_SLUG = 'turkish-coffee'
-const FIXED_OFFICIAL_CATEGORY_SLUGS = new Set(['turkish-coffee', 'espresso-blends', 'easy-coffee'])
 const FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS = new Set(['hot-chocolate'])
 const NO_CHUNK_PRODUCT_CATEGORY_SLUGS = new Set(['coffee-mix', 'cappuccino', 'hot-chocolate'])
 
@@ -1277,44 +1276,49 @@ function ProductsPageInner() {
 
   const filteredProducts = useMemo(() => {
     if (isCustomize) return []
-    const officialFixedProducts = OFFICIAL_LAST_RESORT_PRODUCTS.filter((product) =>
-      FIXED_OFFICIAL_CATEGORY_SLUGS.has(normalizeCategorySlug(product.category_id))
-    )
-    const officialProductsForCategory = (slug: string) =>
-      OFFICIAL_LAST_RESORT_PRODUCTS.filter((product) => normalizeCategorySlug(product.category_id) === slug)
     const getProductCategorySlug = (product: Product) =>
       normalizeCategorySlug(
         product.category?.slug ??
           (product.category_id ? categorySlugById.get(product.category_id) : undefined) ??
           product.category_id
       )
-    const apiProducts = products.filter((product) => !FIXED_OFFICIAL_CATEGORY_SLUGS.has(getProductCategorySlug(product)))
-    const catalogProducts = [...apiProducts, ...officialFixedProducts].filter((product) => {
+    const officialProductsForCategory = (slug: string) =>
+      OFFICIAL_LAST_RESORT_PRODUCTS.filter((product) => normalizeCategorySlug(product.category_id) === slug)
+    const productIsUsableForCategory = (product: Product, categorySlug: string) =>
+      !(NO_CHUNK_PRODUCT_CATEGORY_SLUGS.has(categorySlug) && isChunkProduct(product))
+
+    const catalogProducts = products.filter((product) => {
       const categorySlug = getProductCategorySlug(product)
-      return !(NO_CHUNK_PRODUCT_CATEGORY_SLUGS.has(categorySlug) && isChunkProduct(product))
+      return productIsUsableForCategory(product, categorySlug)
     })
 
-    FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS.forEach((slug) => {
-      if (!catalogProducts.some((product) => getProductCategorySlug(product) === slug)) {
-        catalogProducts.push(...officialProductsForCategory(slug))
+    const categoryHasDbProducts = (slug: string) =>
+      catalogProducts.some((product) => getProductCategorySlug(product) === slug)
+    const fallbackProductsForCategory = (slug: string) =>
+      officialProductsForCategory(slug).filter((product) => productIsUsableForCategory(product, slug))
+    const fallbackCategorySlugs = OFFICIAL_PRODUCT_CATEGORIES
+      .map((category) => category.slug)
+      .filter((slug) => slug !== 'build-your-espresso' && !categoryHasDbProducts(slug))
+
+    const catalogWithFallbacks = [...catalogProducts]
+
+    fallbackCategorySlugs.forEach((slug) => {
+      if (FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS.has(slug) || catalogProducts.length === 0) {
+        catalogWithFallbacks.push(...fallbackProductsForCategory(slug))
       }
     })
 
-    let nextProducts = [...catalogProducts]
+    let nextProducts = [...catalogWithFallbacks]
 
     if (searchQuery.trim()) {
       // Product-page search spans visible catalog entries because the sidebar starts at Turkish Blends.
-    } else if (FIXED_OFFICIAL_CATEGORY_SLUGS.has(activeCategory)) {
-      nextProducts = officialFixedProducts.filter(
-        (product) => normalizeCategorySlug(product.category_id) === activeCategory
-      )
     } else {
       nextProducts = nextProducts.filter((product) => {
         return getProductCategorySlug(product) === activeCategory
       })
 
-      if (nextProducts.length === 0 && FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS.has(activeCategory)) {
-        nextProducts = officialProductsForCategory(activeCategory)
+      if (nextProducts.length === 0) {
+        nextProducts = fallbackProductsForCategory(activeCategory)
       }
     }
 
@@ -1332,7 +1336,6 @@ function ProductsPageInner() {
 
     return nextProducts
   }, [activeCategory, searchQuery, isCustomize, products, categorySlugById])
-  const isFixedOfficialCategory = FIXED_OFFICIAL_CATEGORY_SLUGS.has(activeCategory)
 
   const handleCategoryChange = (slug: string) => {
     const normalizedSlug = normalizeCategorySlug(slug) === 'all' ? DEFAULT_CATEGORY_SLUG : normalizeCategorySlug(slug)
@@ -1426,7 +1429,7 @@ function ProductsPageInner() {
                   <p className="text-sm text-muted-foreground">{t(`Showing ${filteredProducts.length} products`, `عرض ${filteredProducts.length} منتج`)}</p>
                 </div>
 
-                {productsLoading && !isFixedOfficialCategory ? (
+                {productsLoading ? (
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3">
                     {Array.from({ length: 6 }).map((_, index) => (
                       <div key={index} className="luxury-card overflow-hidden rounded-xl border border-[#B6885E]/[16%] bg-[#120D09]/70">
