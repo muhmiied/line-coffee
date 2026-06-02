@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Search, PackageSearch, Sparkles, ChevronRight, Check, X, ShoppingBag, Coffee, Scale, SlidersHorizontal, Minus, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -74,7 +74,6 @@ const DEFAULT_CATEGORY_SLUG = 'turkish-coffee'
 const FIXED_OFFICIAL_CATEGORY_SLUGS = new Set(['turkish-coffee', 'espresso-blends', 'easy-coffee'])
 const FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS = new Set(['hot-chocolate'])
 const NO_CHUNK_PRODUCT_CATEGORY_SLUGS = new Set(['coffee-mix', 'cappuccino', 'hot-chocolate'])
-const HIDDEN_CUSTOMIZE_FLAVOR_IDS = new Set(['french-original'])
 
 const customFlavorOptions: FlavorAdditionOption[] = CUSTOMIZE_FLAVOR_ADDITIONS
 
@@ -508,7 +507,7 @@ function MakeYourEspressoBlend() {
                 <div>
                   <h3 className="font-serif text-xl font-bold text-[#D6A373]">
                     {blendMode === 'quick'
-                      ? t('Auto Blend Ratios', 'نسب تلقائية للتوليفة')
+                      ? t('Even Blend Ratios', 'نسب متساوية للتوليفة')
                       : t('Set Your Perfect Ratio', 'حدد نسبتك المثالية')}
                   </h3>
                   <p className="text-sm text-[#D6B79A]/72">
@@ -667,11 +666,7 @@ function CustomizeFlavor() {
   const valveBag = false
 
   const filteredAdditions = useMemo(() => {
-    return additionOptions.filter(
-      (flavor) =>
-        !HIDDEN_CUSTOMIZE_FLAVOR_IDS.has(flavor.id) &&
-        (!flavor.bases || flavor.bases.includes(selectedBase.id))
-    )
+    return additionOptions.filter((flavor) => !flavor.bases || flavor.bases.includes(selectedBase.id))
   }, [additionOptions, selectedBase.id])
 
   const groupedFilteredAdditions = useMemo(() => {
@@ -773,12 +768,10 @@ function CustomizeFlavor() {
         }
 
         if (Array.isArray(nextAdditions)) {
-          const visibleAdditions = nextAdditions.filter(
-            (item: FlavorAdditionOption) => !HIDDEN_CUSTOMIZE_FLAVOR_IDS.has(item.id)
-          )
-          setAdditionOptions(visibleAdditions)
+          const availableAdditions = nextAdditions as FlavorAdditionOption[]
+          setAdditionOptions(availableAdditions)
           setSelectedFlavors((current) => current.filter((flavor) =>
-            visibleAdditions.some((item) =>
+            availableAdditions.some((item) =>
               item.id === flavor.id && !isOptionOutOfStock(getFlavorAvailability(item, selectedBase.id))
             )
           ))
@@ -1266,7 +1259,7 @@ function ProductsPageInner() {
                     className="border-[#B6885E]/20 bg-[#120D09]/70 pl-10 text-[#F5E6D8] placeholder:text-[#B79B85]/50 focus-visible:ring-[#B6885E]/30" />
                 </div>
 
-<div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-6">
                   <p className="text-sm text-muted-foreground">{t(`Showing ${filteredProducts.length} products`, `عرض ${filteredProducts.length} منتج`)}</p>
                 </div>
 

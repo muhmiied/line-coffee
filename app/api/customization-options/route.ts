@@ -35,7 +35,12 @@ function isCustomizeFlavorBase(value: unknown) {
 function isRemovedFlavor(nameEn: unknown, nameAr: unknown) {
   const normalizedName = normalizeName(nameEn)
   const arabicName = String(nameAr || '')
-  return normalizedName === 'sahlab' || normalizedName === 'salep' || arabicName.includes('سحلب')
+  return normalizedName === 'sahlab' ||
+    normalizedName === 'salep' ||
+    normalizedName === 'french / original' ||
+    normalizedName === 'french original' ||
+    slugifyOptionId(normalizedName) === 'french-original' ||
+    arabicName.includes('سحلب')
 }
 
 export async function GET() {

@@ -3,7 +3,7 @@ import { createPageMetadata } from '@/lib/seo'
 
 export const metadata = createPageMetadata({
   title: 'Products | Line Coffee',
-  description: 'Explore Line Coffee products including Turkish Blends, Espresso Blends, Make Your Espresso, Easy Coffee, Coffee Mix, Cappuccino, and Flavor Coffee.',
+  description: 'Explore Line Coffee products including Turkish Blends, Espresso Blends, Make Your Espresso, Easy Coffee, Coffee Mix, Cappuccino, Flavor Coffee, Hot Chocolate, and Make Your Flavor.',
   path: '/products',
 })
 
