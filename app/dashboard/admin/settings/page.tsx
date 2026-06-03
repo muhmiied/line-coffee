@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import {
   Bell,
+  FileText,
+  Globe,
   Info,
   Key,
   Link as LinkIcon,
+  MapPin,
   MessageCircle,
   Megaphone,
   Package,
@@ -13,6 +16,8 @@ import {
   Phone,
   Plus,
   Save,
+  Search,
+  Share2,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -135,18 +140,23 @@ export default function AdminSettingsPage() {
   const [waApiKey, setWaApiKey] = useState('')
   const [waSaving, setWaSaving] = useState(false)
 
+  const [pubForm, setPubForm] = useState<Record<string, string>>({})
+  const [pubSaving, setPubSaving] = useState(false)
+
   useEffect(() => {
     let mounted = true
 
     const loadSettings = async () => {
       try {
-        const [announcementRes, whatsappRes] = await Promise.all([
+        const [announcementRes, whatsappRes, pubRes] = await Promise.all([
           fetch('/api/settings/announcement', { cache: 'no-store' }),
           fetch('/api/admin/settings/whatsapp', { cache: 'no-store' }),
+          fetch('/api/admin/settings/public', { cache: 'no-store' }),
         ])
 
         const announcement = await announcementRes.json()
         const whatsapp = whatsappRes.ok ? await whatsappRes.json() : null
+        const pub = pubRes.ok ? await pubRes.json() : null
 
         if (!mounted) return
 
@@ -154,6 +164,32 @@ export default function AdminSettingsPage() {
         setAnnRules(normalizeLoadedRules(announcement || {}))
         setWaPhone(whatsapp?.data?.wa_phone ?? '')
         setWaApiKey(whatsapp?.data?.wa_apikey ?? '')
+
+        if (pub?.data) {
+          const d = pub.data
+          setPubForm({
+            brand_site_name: d.brand?.site_name ?? '',
+            brand_tagline: d.brand?.tagline ?? '',
+            brand_logo_url: d.brand?.logo_url ?? '',
+            brand_logo_alt: d.brand?.logo_alt ?? '',
+            brand_favicon_url: d.brand?.favicon_url ?? '',
+            contact_phone: d.contact?.phone ?? '',
+            contact_email: d.contact?.email ?? '',
+            contact_address_line_1: d.contact?.address_line_1 ?? '',
+            contact_address_line_2: d.contact?.address_line_2 ?? '',
+            contact_city: d.contact?.city ?? '',
+            contact_country: d.contact?.country ?? '',
+            contact_opening_hours: d.contact?.opening_hours ?? '',
+            social_facebook_url: d.socials?.facebook_url ?? '',
+            social_instagram_url: d.socials?.instagram_url ?? '',
+            social_tiktok_url: d.socials?.tiktok_url ?? '',
+            social_youtube_url: d.socials?.youtube_url ?? '',
+            footer_blurb: d.footer?.footer_blurb ?? '',
+            seo_default_title: d.seo?.default_title ?? '',
+            seo_default_description: d.seo?.default_description ?? '',
+            seo_default_keywords: d.seo?.default_keywords ?? '',
+          })
+        }
       } catch {
         // Keep the settings page usable even if optional settings fail to load.
       } finally {
@@ -262,6 +298,27 @@ export default function AdminSettingsPage() {
       toast.error(t('Failed to save', 'فشل الحفظ'))
     } finally {
       setWaSaving(false)
+    }
+  }
+
+  const setPub = (key: string, value: string) => {
+    setPubForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const savePubSettings = async () => {
+    setPubSaving(true)
+    try {
+      const res = await fetch('/api/admin/settings/public', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pubForm),
+      })
+      if (res.ok) toast.success(t('Site settings saved', 'تم حفظ إعدادات الموقع'))
+      else toast.error(t('Failed to save', 'فشل الحفظ'))
+    } catch {
+      toast.error(t('Failed to save', 'فشل الحفظ'))
+    } finally {
+      setPubSaving(false)
     }
   }
 
@@ -661,6 +718,175 @@ export default function AdminSettingsPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Brand */}
+      <div className={cardClass}>
+        <div className={headClass}>
+          <Globe className="h-4 w-4 text-[#c8941a]" />
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm">{t('Brand', 'العلامة التجارية')}</h3>
+            <p className="text-white/30 text-xs">{t('Site name, tagline, logo and favicon URLs', 'اسم الموقع، الشعار، الصور')}</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Site Name', 'اسم الموقع')}</label>
+              <input title="Site Name" value={pubForm.brand_site_name ?? ''} onChange={(e) => setPub('brand_site_name', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Tagline', 'الشعار التعريفي')}</label>
+              <input title="Tagline" value={pubForm.brand_tagline ?? ''} onChange={(e) => setPub('brand_tagline', e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Logo URL / Path', 'رابط الشعار')}</label>
+              <input title="Logo URL" value={pubForm.brand_logo_url ?? ''} onChange={(e) => setPub('brand_logo_url', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Logo Alt Text', 'نص بديل للشعار')}</label>
+              <input title="Logo Alt Text" value={pubForm.brand_logo_alt ?? ''} onChange={(e) => setPub('brand_logo_alt', e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Favicon URL / Path', 'رابط الفافيكون')}</label>
+              <input title="Favicon URL" value={pubForm.brand_favicon_url ?? ''} onChange={(e) => setPub('brand_favicon_url', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact */}
+      <div className={cardClass}>
+        <div className={headClass}>
+          <MapPin className="h-4 w-4 text-[#c8941a]" />
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm">{t('Contact', 'معلومات التواصل')}</h3>
+            <p className="text-white/30 text-xs">{t('Phone, email, address and hours', 'الهاتف، البريد، العنوان، الأوقات')}</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Phone', 'الهاتف')}</label>
+              <input title="Phone" value={pubForm.contact_phone ?? ''} onChange={(e) => setPub('contact_phone', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Email', 'البريد الإلكتروني')}</label>
+              <input title="Email" value={pubForm.contact_email ?? ''} onChange={(e) => setPub('contact_email', e.target.value)} className={inputClass} dir="ltr" type="email" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Address Line 1', 'العنوان السطر 1')}</label>
+              <input title="Address Line 1" value={pubForm.contact_address_line_1 ?? ''} onChange={(e) => setPub('contact_address_line_1', e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Address Line 2', 'العنوان السطر 2')}</label>
+              <input title="Address Line 2" value={pubForm.contact_address_line_2 ?? ''} onChange={(e) => setPub('contact_address_line_2', e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('City', 'المدينة')}</label>
+              <input title="City" value={pubForm.contact_city ?? ''} onChange={(e) => setPub('contact_city', e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Country', 'الدولة')}</label>
+              <input title="Country" value={pubForm.contact_country ?? ''} onChange={(e) => setPub('contact_country', e.target.value)} className={inputClass} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-white/40 text-xs mb-1.5">{t('Opening Hours', 'ساعات العمل')}</label>
+              <input title="Opening Hours" value={pubForm.contact_opening_hours ?? ''} onChange={(e) => setPub('contact_opening_hours', e.target.value)} className={inputClass} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Socials */}
+      <div className={cardClass}>
+        <div className={headClass}>
+          <Share2 className="h-4 w-4 text-[#c8941a]" />
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm">{t('Social Media', 'وسائل التواصل')}</h3>
+            <p className="text-white/30 text-xs">{t('Facebook, Instagram, TikTok, YouTube', 'فيسبوك، إنستغرام، تيك توك، يوتيوب')}</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Facebook URL', 'رابط فيسبوك')}</label>
+              <input title="Facebook URL" value={pubForm.social_facebook_url ?? ''} onChange={(e) => setPub('social_facebook_url', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('Instagram URL', 'رابط إنستغرام')}</label>
+              <input title="Instagram URL" value={pubForm.social_instagram_url ?? ''} onChange={(e) => setPub('social_instagram_url', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('TikTok URL', 'رابط تيك توك')}</label>
+              <input title="TikTok URL" value={pubForm.social_tiktok_url ?? ''} onChange={(e) => setPub('social_tiktok_url', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+            <div>
+              <label className="block text-white/40 text-xs mb-1.5">{t('YouTube URL', 'رابط يوتيوب')}</label>
+              <input title="YouTube URL" value={pubForm.social_youtube_url ?? ''} onChange={(e) => setPub('social_youtube_url', e.target.value)} className={inputClass} dir="ltr" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className={cardClass}>
+        <div className={headClass}>
+          <FileText className="h-4 w-4 text-[#c8941a]" />
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm">{t('Footer', 'التذييل')}</h3>
+            <p className="text-white/30 text-xs">{t('Footer blurb / tagline text', 'نص التذييل')}</p>
+          </div>
+        </div>
+        <div className="p-6">
+          <label className="block text-white/40 text-xs mb-1.5">{t('Footer Blurb', 'نص التذييل')}</label>
+          <textarea
+            title="Footer Blurb"
+            value={pubForm.footer_blurb ?? ''}
+            onChange={(e) => setPub('footer_blurb', e.target.value)}
+            rows={3}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+      </div>
+
+      {/* SEO */}
+      <div className={cardClass}>
+        <div className={headClass}>
+          <Search className="h-4 w-4 text-[#c8941a]" />
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm">{t('SEO', 'تحسين محركات البحث')}</h3>
+            <p className="text-white/30 text-xs">{t('Default page title, description, keywords', 'العنوان والوصف والكلمات المفتاحية الافتراضية')}</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-white/40 text-xs mb-1.5">{t('Default Title', 'العنوان الافتراضي')}</label>
+            <input title="Default Title" value={pubForm.seo_default_title ?? ''} onChange={(e) => setPub('seo_default_title', e.target.value)} className={inputClass} dir="ltr" />
+          </div>
+          <div>
+            <label className="block text-white/40 text-xs mb-1.5">{t('Default Description', 'الوصف الافتراضي')}</label>
+            <textarea
+              title="Default Description"
+              value={pubForm.seo_default_description ?? ''}
+              onChange={(e) => setPub('seo_default_description', e.target.value)}
+              rows={3}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+          <div>
+            <label className="block text-white/40 text-xs mb-1.5">{t('Default Keywords', 'الكلمات المفتاحية')}</label>
+            <input title="Default Keywords" value={pubForm.seo_default_keywords ?? ''} onChange={(e) => setPub('seo_default_keywords', e.target.value)} className={inputClass} dir="ltr" />
+          </div>
+        </div>
+      </div>
+
+      {/* Save all public settings */}
+      <div className="flex justify-end">
+        <button type="button" onClick={savePubSettings} disabled={pubSaving} className={btnClass}>
+          <Save className="h-4 w-4" />
+          {pubSaving ? t('Saving...', 'جاري الحفظ...') : t('Save Site Settings', 'حفظ إعدادات الموقع')}
+        </button>
       </div>
     </div>
   )
