@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Instagram, Facebook } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { useSectionContent, useSectionMedia } from '@/lib/hooks/use-section-media'
+import { usePublicSettings } from '@/lib/hooks/use-public-settings'
 import { SectionReveal, FadeUp, ImageReveal, StaggerContainer, WordByWord, viewportConfig } from '@/components/ui/motion-primitives'
 
 const instagramPhotos = [
@@ -20,9 +21,11 @@ export function InstagramSection() {
   const { t } = useLanguage()
   const { content } = useSectionContent('home_instagram')
   const mediaItems = useSectionMedia('home_instagram')
+  const settings = usePublicSettings()
   const controlledPhotos = mediaItems.filter((item) => item.image_url).map((item) => item.image_url)
   const photos = controlledPhotos.length > 0 ? controlledPhotos : instagramPhotos
-  const socialHref = content.button_link || 'https://instagram.com/linecoffee.eg'
+  const socialHref = content.button_link || settings.socials.instagram_url || 'https://instagram.com/linecoffee.eg'
+  const facebookHref = settings.socials.facebook_url || 'https://facebook.com/linecoffee'
 
   return (
     <SectionReveal className="cinematic-section relative py-16 md:py-24 overflow-hidden" style={{ background: '#0F0A07' }}>
@@ -49,7 +52,7 @@ export function InstagramSection() {
           <FadeUp className="flex items-center justify-center gap-5">
             {[
               { href: socialHref, Icon: Instagram, label: t(content.button_text_en || 'Instagram', content.button_text_ar || content.button_text_en || 'Instagram') },
-              { href: 'https://facebook.com/linecoffee', Icon: Facebook, label: 'Facebook' },
+              { href: facebookHref, Icon: Facebook, label: 'Facebook' },
             ].map(({ href, Icon, label }) => (
               <a
                 key={label}

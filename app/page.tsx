@@ -8,12 +8,30 @@ import { TestimonialsSection } from '@/components/home/testimonials-section'
 import { InstagramSection } from '@/components/home/instagram-section'
 import { ContactSection } from '@/components/home/contact-section'
 import { createPageMetadata } from '@/lib/seo'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { buildPublicSettings, PUBLIC_SETTING_KEYS } from '@/lib/config/public-settings'
 
-export const metadata = createPageMetadata({
-  title: 'Line Coffee | Premium Coffee in Egypt | قهوة فاخرة بطابع دافئ',
-  description: 'Shop freshly roasted Turkish coffee, espresso blends, flavored coffee, cappuccino, and hot chocolate from Line Coffee in Egypt.',
-  path: '/',
-})
+const FALLBACK_TITLE = 'Line Coffee | Premium Coffee in Egypt | قهوة فاخرة بطابع دافئ'
+const FALLBACK_DESC = 'Shop freshly roasted Turkish coffee, espresso blends, flavored coffee, cappuccino, and hot chocolate from Line Coffee in Egypt.'
+
+export async function generateMetadata() {
+  try {
+    const admin = createAdminClient()
+    if (admin) {
+      const { data } = await admin
+        .from('site_settings')
+        .select('key, value')
+        .in('key', [...PUBLIC_SETTING_KEYS])
+      const settings = buildPublicSettings(data)
+      return createPageMetadata({
+        title: settings.seo.default_title || FALLBACK_TITLE,
+        description: settings.seo.default_description || FALLBACK_DESC,
+        path: '/',
+      })
+    }
+  } catch {}
+  return createPageMetadata({ title: FALLBACK_TITLE, description: FALLBACK_DESC, path: '/' })
+}
 
 export default function HomePage() {
   return (
