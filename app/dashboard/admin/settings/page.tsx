@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react'
 import {
   Bell,
+  ChevronDown,
+  ChevronUp,
   FileText,
   Globe,
   Info,
   Key,
+  Layers,
   Link as LinkIcon,
   MapPin,
   MessageCircle,
@@ -143,6 +146,10 @@ export default function AdminSettingsPage() {
   const [pubForm, setPubForm] = useState<Record<string, string>>({})
   const [pubSaving, setPubSaving] = useState(false)
 
+  const [hpOrder, setHpOrder] = useState<string[]>(['hero', 'categories', 'features', 'story', 'best_sellers', 'blog', 'testimonials', 'instagram', 'contact'])
+  const [hpVisibility, setHpVisibility] = useState<Record<string, boolean>>({ hero: true, categories: true, features: true, story: true, best_sellers: true, blog: true, testimonials: true, instagram: true, contact: true })
+  const [hpSaving, setHpSaving] = useState(false)
+
   useEffect(() => {
     let mounted = true
 
@@ -167,6 +174,12 @@ export default function AdminSettingsPage() {
 
         if (pub?.data) {
           const d = pub.data
+          if (Array.isArray(d.homepage?.section_order) && d.homepage.section_order.length > 0) {
+            setHpOrder(d.homepage.section_order)
+          }
+          if (d.homepage?.section_visibility && typeof d.homepage.section_visibility === 'object') {
+            setHpVisibility(v => ({ ...v, ...(d.homepage.section_visibility as Record<string, boolean>) }))
+          }
           setPubForm({
             brand_site_name: d.brand?.site_name ?? '',
             brand_tagline: d.brand?.tagline ?? '',
@@ -322,6 +335,35 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const saveHomepageLayout = async () => {
+    setHpSaving(true)
+    try {
+      const res = await fetch('/api/admin/settings/public', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ homepage_section_order: hpOrder, homepage_section_visibility: hpVisibility }),
+      })
+      if (res.ok) toast.success(t('Homepage layout saved', 'تم حفظ ترتيب الصفحة الرئيسية'))
+      else toast.error(t('Failed to save', 'فشل الحفظ'))
+    } catch {
+      toast.error(t('Failed to save', 'فشل الحفظ'))
+    } finally {
+      setHpSaving(false)
+    }
+  }
+
+  const moveSection = (index: number, dir: -1 | 1) => {
+    const next = [...hpOrder]
+    const swap = index + dir
+    if (swap < 0 || swap >= next.length) return
+    ;[next[index], next[swap]] = [next[swap], next[index]]
+    setHpOrder(next)
+  }
+
+  const toggleSection = (key: string) => {
+    setHpVisibility(v => ({ ...v, [key]: !v[key] }))
+  }
+
   const testWhatsApp = async () => {
     if (!waPhone || !waApiKey) {
       toast.error(t('Enter phone and API key first', 'أدخل رقم الهاتف والـ API key أولاً'))
@@ -355,6 +397,18 @@ export default function AdminSettingsPage() {
       return rule.text_ar || rule.text_en
     })
     .filter(Boolean)
+
+  const SECTION_LABELS: Record<string, string> = {
+    hero: t('Hero', 'الواجهة الرئيسية'),
+    categories: t('Categories', 'الفئات'),
+    features: t('Features', 'المميزات'),
+    story: t('Story', 'قصتنا'),
+    best_sellers: t('Best Sellers', 'الأكثر مبيعاً'),
+    blog: t('Blog', 'المدونة'),
+    testimonials: t('Testimonials', 'آراء العملاء'),
+    instagram: t('Instagram', 'إنستغرام'),
+    contact: t('Contact', 'تواصل معنا'),
+  }
 
   const typeOptions: Array<{ value: AnnouncementRuleType; label: string; icon: LucideIcon }> = [
     { value: 'text', label: t('Text only', 'نص فقط'), icon: Megaphone },
@@ -887,6 +941,58 @@ export default function AdminSettingsPage() {
           <Save className="h-4 w-4" />
           {pubSaving ? t('Saving...', 'جاري الحفظ...') : t('Save Site Settings', 'حفظ إعدادات الموقع')}
         </button>
+      </div>
+
+      {/* Homepage Layout */}
+      <div className={cardClass}>
+        <div className={headClass}>
+          <Layers className="h-4 w-4 text-[#c8941a]" />
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm">{t('Homepage Layout', 'ترتيب الصفحة الرئيسية')}</h3>
+            <p className="text-white/30 text-xs">{t('Show/hide and reorder homepage sections', 'إخفاء وترتيب أقسام الصفحة الرئيسية')}</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-2">
+          {hpOrder.map((key, index) => (
+            <div key={key} className="flex items-center gap-3 rounded-xl border border-[#c8941a]/10 bg-[#0f0900] px-4 py-3">
+              <span className="flex-1 text-sm text-white/70">{SECTION_LABELS[key] ?? key}</span>
+              <button
+                type="button"
+                onClick={() => toggleSection(key)}
+                className="text-[#c8941a] hover:opacity-80 transition-opacity"
+                aria-label={t('Toggle section', 'تفعيل أو إخفاء القسم')}
+              >
+                {hpVisibility[key] !== false
+                  ? <ToggleRight className="h-7 w-7" />
+                  : <ToggleLeft className="h-7 w-7 text-white/20" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => moveSection(index, -1)}
+                disabled={index === 0}
+                className="rounded-lg border border-[#c8941a]/10 p-1.5 text-white/40 hover:text-white/70 disabled:opacity-20 transition-colors"
+                aria-label={t('Move up', 'تحريك لأعلى')}
+              >
+                <ChevronUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => moveSection(index, 1)}
+                disabled={index === hpOrder.length - 1}
+                className="rounded-lg border border-[#c8941a]/10 p-1.5 text-white/40 hover:text-white/70 disabled:opacity-20 transition-colors"
+                aria-label={t('Move down', 'تحريك لأسفل')}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+          <div className="flex justify-end pt-2">
+            <button type="button" onClick={saveHomepageLayout} disabled={hpSaving} className={btnClass}>
+              <Save className="h-4 w-4" />
+              {hpSaving ? t('Saving...', 'جاري الحفظ...') : t('Save Layout', 'حفظ الترتيب')}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

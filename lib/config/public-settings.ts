@@ -1,3 +1,8 @@
+export const VALID_SECTION_KEYS = ['hero', 'categories', 'features', 'story', 'best_sellers', 'blog', 'testimonials', 'instagram', 'contact'] as const
+export type SectionKey = typeof VALID_SECTION_KEYS[number]
+export const DEFAULT_SECTION_ORDER: string[] = [...VALID_SECTION_KEYS]
+export const DEFAULT_SECTION_VISIBILITY: Record<string, boolean> = Object.fromEntries(VALID_SECTION_KEYS.map(k => [k, true]))
+
 import {
   BRAND_FAVICON_URL,
   BRAND_LOGO_ALT,
@@ -62,6 +67,10 @@ export type PublicSiteSettings = {
     privacy_policy_content: string
     terms_of_use_content: string
   }
+  homepage: {
+    section_order: string[]
+    section_visibility: Record<string, boolean>
+  }
 }
 
 export const PUBLIC_SETTINGS_FALLBACK: PublicSiteSettings = {
@@ -102,6 +111,10 @@ export const PUBLIC_SETTINGS_FALLBACK: PublicSiteSettings = {
     privacy_policy_content: PRIVACY_POLICY_CONTENT,
     terms_of_use_content: TERMS_OF_USE_CONTENT,
   },
+  homepage: {
+    section_order: DEFAULT_SECTION_ORDER,
+    section_visibility: DEFAULT_SECTION_VISIBILITY,
+  },
 }
 
 export const PUBLIC_SETTING_KEYS = [
@@ -128,6 +141,8 @@ export const PUBLIC_SETTING_KEYS = [
   'seo_default_keywords',
   'legal_privacy_policy_content',
   'legal_terms_of_use_content',
+  'homepage_section_order',
+  'homepage_section_visibility',
 ] as const
 
 type PublicSettingsRow = {
@@ -179,6 +194,37 @@ function getPayloadValue(group: unknown, key: string, fallback: string) {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
 }
 
+function readHomepageOrder(rows: PublicSettingsRow[] | null | undefined): string[] | null {
+  const row = rows?.find(r => r.key === 'homepage_section_order')
+  if (!row) return null
+  const parse = (v: unknown): string[] | null => {
+    if (Array.isArray(v)) {
+      const filtered = v.filter((s): s is string => typeof s === 'string' && VALID_SECTION_KEYS.includes(s as SectionKey))
+      return filtered.length > 0 ? filtered : null
+    }
+    if (typeof v === 'string') { try { return parse(JSON.parse(v)) } catch {} }
+    return null
+  }
+  return parse(row.value)
+}
+
+function readHomepageVisibility(rows: PublicSettingsRow[] | null | undefined): Record<string, boolean> | null {
+  const row = rows?.find(r => r.key === 'homepage_section_visibility')
+  if (!row) return null
+  const parse = (v: unknown): Record<string, boolean> | null => {
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const result: Record<string, boolean> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+        if (VALID_SECTION_KEYS.includes(k as SectionKey)) result[k] = Boolean(val)
+      }
+      return Object.keys(result).length > 0 ? result : null
+    }
+    if (typeof v === 'string') { try { return parse(JSON.parse(v)) } catch {} }
+    return null
+  }
+  return parse(row.value)
+}
+
 export function buildPublicSettings(rows?: PublicSettingsRow[] | null): PublicSiteSettings {
   const values = fromRows(rows)
   const fallback = PUBLIC_SETTINGS_FALLBACK
@@ -220,6 +266,10 @@ export function buildPublicSettings(rows?: PublicSettingsRow[] | null): PublicSi
     legal: {
       privacy_policy_content: getValue(values, 'legal_privacy_policy_content', fallback.legal.privacy_policy_content),
       terms_of_use_content: getValue(values, 'legal_terms_of_use_content', fallback.legal.terms_of_use_content),
+    },
+    homepage: {
+      section_order: readHomepageOrder(rows) ?? fallback.homepage.section_order,
+      section_visibility: { ...fallback.homepage.section_visibility, ...(readHomepageVisibility(rows) ?? {}) },
     },
   }
 }
@@ -266,6 +316,14 @@ export function withPublicSettingsFallback(value: unknown): PublicSiteSettings {
     legal: {
       privacy_policy_content: getPayloadValue(value.legal, 'privacy_policy_content', fallback.legal.privacy_policy_content),
       terms_of_use_content: getPayloadValue(value.legal, 'terms_of_use_content', fallback.legal.terms_of_use_content),
+    },
+    homepage: {
+      section_order: (isRecord(value.homepage) && Array.isArray(value.homepage.section_order))
+        ? (value.homepage.section_order as unknown[]).filter((s): s is string => typeof s === 'string' && VALID_SECTION_KEYS.includes(s as SectionKey))
+        : fallback.homepage.section_order,
+      section_visibility: (isRecord(value.homepage) && isRecord(value.homepage.section_visibility))
+        ? { ...fallback.homepage.section_visibility, ...Object.fromEntries(Object.entries(value.homepage.section_visibility as Record<string, unknown>).map(([k, v]) => [k, Boolean(v)])) }
+        : fallback.homepage.section_visibility,
     },
   }
 }
