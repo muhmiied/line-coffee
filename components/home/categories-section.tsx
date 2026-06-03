@@ -10,22 +10,6 @@ import { cn } from '@/lib/utils'
 import { SectionReveal, FadeUp, ImageReveal, StaggerContainer, WordByWord, viewportConfig } from '@/components/ui/motion-primitives'
 import { getMediaObjectPosition, mediaByUsage, type SiteMediaItem } from '@/lib/media'
 
-const CUSTOMIZE_ENTRY = {
-  slug: 'customize-blend',
-  nameEn: 'Make Your Espresso Blend',
-  nameAr: 'اصنع توليفة الإسبريسو الخاصة بك',
-  image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop',
-  isCustomize: true,
-}
-
-const CUSTOMIZE_FLAVOR_ENTRY = {
-  slug: 'customize-flavor',
-  nameEn: 'Make Your Flavor',
-  nameAr: 'اصنع نكهتك الخاصة',
-  image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop',
-  isCustomizeFlavor: true,
-}
-
 type DbCategory = {
   id: string
   slug: string
@@ -37,12 +21,15 @@ type DbCategory = {
 }
 
 const FALLBACK_CATEGORIES = [
-  { slug: 'turkish-coffee',  nameEn: 'Turkish Coffee',  nameAr: 'قهوة تركية',    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop' },
-  { slug: 'espresso',        nameEn: 'Espresso',         nameAr: 'إسبريسو',       image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop' },
-  { slug: 'flavored-coffee', nameEn: 'Flavored Coffee',  nameAr: 'قهوة منكهة',   image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop' },
+  { slug: 'turkish-blends',  nameEn: 'Turkish Blends',   nameAr: 'توليفات تركي', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=1000&fit=crop' },
+  { slug: 'espresso-blends', nameEn: 'Espresso Blends',  nameAr: 'توليفات إسبريسو', image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop' },
+  { slug: 'make-your-espresso', nameEn: 'Make Your Espresso', nameAr: 'اصنع إسبريسو خاصتك', image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800&h=1000&fit=crop', isCustomize: true },
+  { slug: 'easy-coffee',     nameEn: 'Easy Coffee',      nameAr: 'إيزي كوفي',    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop' },
   { slug: 'coffee-mix',      nameEn: 'Coffee Mix',       nameAr: 'كوفي ميكس',    image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&h=1000&fit=crop' },
   { slug: 'cappuccino',      nameEn: 'Cappuccino',       nameAr: 'كابتشينو',      image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&h=1000&fit=crop' },
-  { slug: 'hot-chocolate',   nameEn: 'Hot Chocolate',    nameAr: 'هوت شوكلت',    image: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800&h=1000&fit=crop' },
+  { slug: 'flavor-coffee',   nameEn: 'Flavor Coffee',    nameAr: 'قهوة بالنكهات', image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop' },
+  { slug: 'hot-chocolate',   nameEn: 'Hot Chocolate',    nameAr: 'هوت شوكليت',   image: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=800&h=1000&fit=crop' },
+  { slug: 'make-your-flavor', nameEn: 'Make Your Flavor', nameAr: 'اصنع نكهتك', image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop', isCustomizeFlavor: true },
 ]
 
 export function CategoriesSection() {
@@ -59,11 +46,6 @@ export function CategoriesSection() {
     ])
       .then(([res, mediaRes]) => {
         const sectionImages = mediaByUsage(Array.isArray(mediaRes?.data) ? mediaRes.data as SiteMediaItem[] : [])
-        const customBlendMedia = sectionImages.get('category:customize-blend')
-        const customFlavorMedia = sectionImages.get('category:customize-flavor')
-        const customBlendEntry = { ...CUSTOMIZE_ENTRY, image: customBlendMedia?.image_url || CUSTOMIZE_ENTRY.image, objectPosition: customBlendMedia ? getMediaObjectPosition(customBlendMedia) : undefined }
-        const customFlavorEntry = { ...CUSTOMIZE_FLAVOR_ENTRY, image: customFlavorMedia?.image_url || CUSTOMIZE_FLAVOR_ENTRY.image, objectPosition: customFlavorMedia ? getMediaObjectPosition(customFlavorMedia) : undefined }
-
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           const mapped = (res.data as DbCategory[])
             .filter((c) => c.is_visible)
@@ -76,18 +58,18 @@ export function CategoriesSection() {
                 ?? 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
               objectPosition: sectionImages.get(`category:${c.slug}`) ? getMediaObjectPosition(sectionImages.get(`category:${c.slug}`) as SiteMediaItem) : undefined,
             }))
-          setCategories([...(mapped.length > 0 ? mapped : FALLBACK_CATEGORIES), customBlendEntry, customFlavorEntry])
+          setCategories(mapped.length > 0 ? mapped : FALLBACK_CATEGORIES)
         } else {
           const fallback = FALLBACK_CATEGORIES.map((category) => ({
             ...category,
             image: sectionImages.get(`category:${category.slug}`)?.image_url || category.image,
             objectPosition: sectionImages.get(`category:${category.slug}`) ? getMediaObjectPosition(sectionImages.get(`category:${category.slug}`) as SiteMediaItem) : undefined,
           }))
-          setCategories([...fallback, customBlendEntry, customFlavorEntry])
+          setCategories(fallback)
         }
       })
       .catch(() => {
-        setCategories([...FALLBACK_CATEGORIES, CUSTOMIZE_ENTRY, CUSTOMIZE_FLAVOR_ENTRY])
+        setCategories(FALLBACK_CATEGORIES)
       })
       .finally(() => setLoaded(true))
   }, [])

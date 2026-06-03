@@ -43,31 +43,15 @@ const navLinks = [
   { href: '/blog', labelEn: 'Blog', labelAr: 'المدونة' },
 ]
 
-const sampleProducts = [
-  { id: '1', name_en: 'Turkish Coffee Classic', name_ar: 'قهوة تركية كلاسيكية', slug: 'turkish-coffee-classic' },
-  { id: '2', name_en: 'Turkish Coffee Dark', name_ar: 'قهوة تركية داكنة', slug: 'turkish-coffee-dark' },
-  { id: '3', name_en: 'Turkish Coffee Light', name_ar: 'قهوة تركية فاتحة', slug: 'turkish-coffee-light' },
-  { id: '4', name_en: 'Espresso Blend', name_ar: 'خلطة إسبريسو', slug: 'espresso-blend' },
-  { id: '5', name_en: 'Espresso Intenso', name_ar: 'إسبريسو إنتنسو', slug: 'espresso-intenso' },
-  { id: '6', name_en: 'Cappuccino Mix', name_ar: 'كابتشينو ميكس', slug: 'cappuccino-mix' },
-  { id: '7', name_en: 'Cappuccino Vanilla', name_ar: 'كابتشينو فانيلا', slug: 'cappuccino-vanilla' },
-  { id: '8', name_en: 'Cappuccino Caramel', name_ar: 'كابتشينو كراميل', slug: 'cappuccino-caramel' },
-  { id: '9', name_en: 'Hazelnut Coffee', name_ar: 'قهوة بالبندق', slug: 'hazelnut-coffee' },
-  { id: '10', name_en: 'Vanilla Latte', name_ar: 'فانيلا لاتيه', slug: 'vanilla-latte' },
-  { id: '11', name_en: 'Hot Chocolate Classic', name_ar: 'شوكولاتة ساخنة كلاسيكية', slug: 'hot-chocolate-classic' },
-  { id: '12', name_en: 'Hot Chocolate Dark', name_ar: 'شوكولاتة ساخنة داكنة', slug: 'hot-chocolate-dark' },
-  { id: '13', name_en: 'Coffee Mix 3in1', name_ar: 'كوفي ميكس 3 في 1', slug: 'coffee-mix-3in1' },
-  { id: '14', name_en: 'Mocha Coffee', name_ar: 'قهوة موكا', slug: 'mocha-coffee' },
-  { id: '15', name_en: 'French Vanilla', name_ar: 'فانيلا فرنسية', slug: 'french-vanilla' },
-]
+type SearchProduct = { id: string; name_en: string; name_ar: string; slug: string }
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchResults, setSearchResults] = useState<typeof sampleProducts>([])
-  const [searchProducts, setSearchProducts] = useState<typeof sampleProducts>([])
+  const [searchResults, setSearchResults] = useState<SearchProduct[]>([])
+  const [searchProducts, setSearchProducts] = useState<SearchProduct[]>([])
   const [isMounted, setIsMounted] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()

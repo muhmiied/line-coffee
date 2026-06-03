@@ -79,15 +79,12 @@ const FALLBACK_DB_CATEGORIES: DbCategory[] = [
   })),
 ]
 
-// ─── Static special sidebar entries (not stored in DB) ─────────────────────────
-const CUSTOMIZE_FLAVOR_ENTRY: SidebarCategory = { slug: 'customize-flavor', nameEn: 'Make Your Flavor', nameAr: 'اصنع نكهتك', isCustomizeFlavor: true }
-const DEFAULT_CATEGORY_SLUG = 'turkish-coffee'
-const FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS = new Set(['hot-chocolate'])
+const DEFAULT_CATEGORY_SLUG = 'turkish-blends'
 const NO_CHUNK_PRODUCT_CATEGORY_SLUGS = new Set(['coffee-mix', 'cappuccino', 'hot-chocolate'])
 
 const customFlavorOptions: FlavorAdditionOption[] = CUSTOMIZE_FLAVOR_ADDITIONS
 
-// ─── Flavor base options for customize-flavor ──────────────────────────────────
+// ─── Flavor base options for Make Your Flavor ──────────────────────────────────
 const flavorBaseOptions = CUSTOMIZE_FLAVOR_BASES
 
 const CUSTOMIZE_FLAVOR_GROUPS = [
@@ -125,7 +122,7 @@ function formatOptionDescription(
 }
 
 function normalizeCategorySlug(slug: string | null | undefined) {
-  if (!slug || slug === 'all' || slug === 'customize-flavor') return slug || 'all'
+  if (!slug || slug === 'all') return slug || 'all'
   return CATEGORY_SLUG_ALIASES[slug] ?? slug
 }
 
@@ -161,6 +158,12 @@ function getFlavorAvailability(flavor: FlavorAdditionOption, baseId: string) {
 
 function isChunkProduct(product: Product) {
   return /chunks?|pieces?|قطع/i.test(`${product.slug} ${product.name_en} ${product.name_ar}`)
+}
+
+function isFrenchCoffeeProduct(product: Product) {
+  return product.slug === 'french-coffee' ||
+    product.name_en.toLowerCase() === 'french coffee' ||
+    product.name_ar.includes('قهوة فرنسا')
 }
 
 // ─── Make Your Espresso Component ──────────────────────────────────────────────
@@ -1183,6 +1186,11 @@ function ProductsPageInner() {
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([])
   const [productsBanner, setProductsBanner] = useState<SiteMediaItem | null>(null)
 
+  useEffect(() => {
+    const requestedCategory = normalizeCategorySlug(searchParams.get('category') || DEFAULT_CATEGORY_SLUG)
+    setActiveCategory(requestedCategory === 'all' ? DEFAULT_CATEGORY_SLUG : requestedCategory)
+  }, [searchParams])
+
   // Fetch categories from DB; fall back to hardcoded if DB is empty or unreachable
   useEffect(() => {
     fetch('/api/categories')
@@ -1227,8 +1235,8 @@ function ProductsPageInner() {
         if (!response.ok) throw new Error('Products API failed')
 
         const data = await response.json()
-        if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
-          throw new Error('Products API returned no products')
+        if (!data.success || !Array.isArray(data.data)) {
+          throw new Error('Products API returned invalid products')
         }
 
         if (!cancelled) setProducts(data.data)
@@ -1248,16 +1256,33 @@ function ProductsPageInner() {
     }
   }, [])
 
-  // Build sidebar categories from DB, injecting special UI entries
+  // Build sidebar categories from DB; config only supplies fallback ordering/metadata.
   const sidebarCategories = useMemo<SidebarCategory[]>(() => {
-    const mainCats = OFFICIAL_PRODUCT_CATEGORIES.map((category) => ({
-      slug: category.slug,
-      nameEn: category.name_en,
-      nameAr: category.name_ar,
-      isCustomizeBlend: category.slug === 'build-your-espresso',
-    }))
-    return [...mainCats, CUSTOMIZE_FLAVOR_ENTRY]
-  }, [])
+    const categoryOrder = new Map(OFFICIAL_PRODUCT_CATEGORIES.map((category, index) => [category.slug, index]))
+    const categoryConfig = new Map(OFFICIAL_PRODUCT_CATEGORIES.map((category) => [category.slug, category]))
+    const seen = new Set<string>()
+    const sourceCategories = dbCategories.length > 0 ? dbCategories : FALLBACK_DB_CATEGORIES
+
+    return sourceCategories
+      .map((category) => {
+        const slug = normalizeCategorySlug(category.slug)
+        const config = categoryConfig.get(slug)
+
+        return {
+          slug,
+          nameEn: category.name_en || config?.name_en || slug,
+          nameAr: category.name_ar || config?.name_ar || category.name_en || slug,
+          isCustomizeBlend: slug === 'make-your-espresso',
+          isCustomizeFlavor: slug === 'make-your-flavor',
+        }
+      })
+      .filter((category) => {
+        if (seen.has(category.slug)) return false
+        seen.add(category.slug)
+        return true
+      })
+      .sort((a, b) => (categoryOrder.get(a.slug) ?? 999) - (categoryOrder.get(b.slug) ?? 999))
+  }, [dbCategories])
 
   const currentCat = sidebarCategories.find((c) => c.slug === activeCategory)
   const isCustomizeBlend = currentCat?.isCustomizeBlend
@@ -1282,8 +1307,6 @@ function ProductsPageInner() {
           (product.category_id ? categorySlugById.get(product.category_id) : undefined) ??
           product.category_id
       )
-    const officialProductsForCategory = (slug: string) =>
-      OFFICIAL_LAST_RESORT_PRODUCTS.filter((product) => normalizeCategorySlug(product.category_id) === slug)
     const productIsUsableForCategory = (product: Product, categorySlug: string) =>
       !(NO_CHUNK_PRODUCT_CATEGORY_SLUGS.has(categorySlug) && isChunkProduct(product))
 
@@ -1292,23 +1315,7 @@ function ProductsPageInner() {
       return productIsUsableForCategory(product, categorySlug)
     })
 
-    const categoryHasDbProducts = (slug: string) =>
-      catalogProducts.some((product) => getProductCategorySlug(product) === slug)
-    const fallbackProductsForCategory = (slug: string) =>
-      officialProductsForCategory(slug).filter((product) => productIsUsableForCategory(product, slug))
-    const fallbackCategorySlugs = OFFICIAL_PRODUCT_CATEGORIES
-      .map((category) => category.slug)
-      .filter((slug) => slug !== 'build-your-espresso' && !categoryHasDbProducts(slug))
-
-    const catalogWithFallbacks = [...catalogProducts]
-
-    fallbackCategorySlugs.forEach((slug) => {
-      if (FALLBACK_WHEN_EMPTY_CATEGORY_SLUGS.has(slug) || catalogProducts.length === 0) {
-        catalogWithFallbacks.push(...fallbackProductsForCategory(slug))
-      }
-    })
-
-    let nextProducts = [...catalogWithFallbacks]
+    let nextProducts = [...catalogProducts]
 
     if (searchQuery.trim()) {
       // Product-page search spans visible catalog entries because the sidebar starts at Turkish Blends.
@@ -1316,14 +1323,16 @@ function ProductsPageInner() {
       nextProducts = nextProducts.filter((product) => {
         return getProductCategorySlug(product) === activeCategory
       })
-
-      if (nextProducts.length === 0) {
-        nextProducts = fallbackProductsForCategory(activeCategory)
-      }
     }
 
     // Classic / Original always sorts first within a category
     nextProducts.sort((a, b) => {
+      if (activeCategory === 'flavor-coffee') {
+        const aFrench = isFrenchCoffeeProduct(a) ? 0 : 1
+        const bFrench = isFrenchCoffeeProduct(b) ? 0 : 1
+        if (aFrench !== bFrench) return aFrench - bFrench
+      }
+
       const aFirst = /classic|original/i.test(a.name_en) ? 0 : 1
       const bFirst = /classic|original/i.test(b.name_en) ? 0 : 1
       return aFirst - bFirst

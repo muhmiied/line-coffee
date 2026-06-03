@@ -5,20 +5,87 @@ import Image from 'next/image'
 import { Instagram, Twitter, Facebook, Mail, Phone, MapPin } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { usePathname } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_DISPLAY } from '@/lib/config/site'
+
+type FooterCategory = {
+  slug: string
+  name_en: string
+  name_ar: string
+}
+
+const FOOTER_CATEGORY_SLUGS = ['turkish-blends', 'espresso-blends', 'easy-coffee', 'flavor-coffee']
+const FOOTER_MAKE_SLUGS = ['make-your-espresso', 'make-your-flavor']
+
+const FALLBACK_CATEGORY_LINKS = [
+  { href: '/products?category=turkish-blends', labelEn: 'Turkish Blends', labelAr: 'توليفات تركي' },
+  { href: '/products?category=espresso-blends', labelEn: 'Espresso Blends', labelAr: 'توليفات إسبريسو' },
+  { href: '/products?category=easy-coffee', labelEn: 'Easy Coffee', labelAr: 'إيزي كوفي' },
+  { href: '/products?category=flavor-coffee', labelEn: 'Flavor Coffee', labelAr: 'قهوة بالنكهات' },
+]
+
+const FALLBACK_MAKE_LINKS = [
+  { href: '/products?category=make-your-espresso', labelEn: 'Make Your Espresso', labelAr: 'اصنع إسبريسو خاصتك' },
+  { href: '/products?category=make-your-flavor', labelEn: 'Make Your Flavor', labelAr: 'اصنع نكهتك' },
+]
 
 export function Footer() {
   const { t } = useLanguage()
   const pathname = usePathname()
-  if (pathname.startsWith('/dashboard/admin')) return null
+  const [categories, setCategories] = useState<FooterCategory[]>([])
+  const [phone, setPhone] = useState(WHATSAPP_DISPLAY)
+
+  useEffect(() => {
+    let mounted = true
+
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((json) => {
+        if (mounted && Array.isArray(json?.data)) {
+          setCategories(json.data.filter((category: FooterCategory) => category.slug && category.name_en))
+        }
+      })
+      .catch(() => {})
+
+    fetch('/api/settings/whatsapp', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (mounted && json?.data?.display_phone) setPhone(json.data.display_phone)
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const footerCategoryLinks = useMemo(() => {
+    if (categories.length === 0) return FALLBACK_CATEGORY_LINKS
+    return FOOTER_CATEGORY_SLUGS
+      .map((slug) => categories.find((category) => category.slug === slug))
+      .filter((category): category is FooterCategory => Boolean(category))
+      .map((category) => ({
+        href: `/products?category=${category.slug}`,
+        labelEn: category.name_en,
+        labelAr: category.name_ar || category.name_en,
+      }))
+  }, [categories])
+
+  const footerMakeLinks = useMemo(() => {
+    if (categories.length === 0) return FALLBACK_MAKE_LINKS
+    return FOOTER_MAKE_SLUGS
+      .map((slug) => categories.find((category) => category.slug === slug))
+      .filter((category): category is FooterCategory => Boolean(category))
+      .map((category) => ({
+        href: `/products?category=${category.slug}`,
+        labelEn: category.name_en,
+        labelAr: category.name_ar || category.name_en,
+      }))
+  }, [categories])
 
   const footerLinks = {
-    shop: [
-      { href: '/products', labelEn: 'All Products', labelAr: 'جميع المنتجات' },
-      { href: '/products?category=turkish-coffee', labelEn: 'Turkish Coffee', labelAr: 'قهوة تركية' },
-      { href: '/products?category=espresso', labelEn: 'Espresso', labelAr: 'إسبريسو' },
-      { href: '/products?category=cappuccino', labelEn: 'Cappuccino', labelAr: 'كابتشينو' },
-      { href: '/products?featured=true', labelEn: 'Best Sellers', labelAr: 'الأكثر طلبًا' },
-    ],
+    categories: footerCategoryLinks,
+    make: footerMakeLinks,
     company: [
       { href: '/about', labelEn: 'About Us', labelAr: 'من نحن' },
       { href: '/contact', labelEn: 'Contact', labelAr: 'تواصل معنا' },
@@ -30,10 +97,12 @@ export function Footer() {
       { href: '/faq', labelEn: 'FAQ', labelAr: 'الأسئلة الشائعة' },
       { href: '/shipping', labelEn: 'Shipping', labelAr: 'الشحن' },
       { href: '/returns', labelEn: 'Returns', labelAr: 'الإرجاع' },
-      { href: '/privacy', labelEn: 'Privacy Policy', labelAr: 'سياسة الخصوصية' },
-      { href: '/terms', labelEn: 'Terms of Use', labelAr: 'شروط الاستخدام' },
+      { href: '/privacy-policy', labelEn: 'Privacy Policy', labelAr: 'سياسة الخصوصية' },
+      { href: '/terms-of-use', labelEn: 'Terms of Use', labelAr: 'شروط الاستخدام' },
     ],
   }
+
+  if (pathname.startsWith('/dashboard/admin')) return null
 
   return (
     <footer className="relative overflow-hidden" style={{ background: '#070504' }}>
@@ -46,7 +115,7 @@ export function Footer() {
 
         {/* Main footer content */}
         <div className="container mx-auto px-4 py-14 md:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 lg:gap-12">
 
             {/* Brand column */}
             <div className="lg:col-span-2">
@@ -65,8 +134,8 @@ export function Footer() {
 
               <p className="mb-7 max-w-sm leading-relaxed text-sm" style={{ color: 'rgba(183,155,133,0.75)' }}>
                 {t(
-                  'Freshly roasted coffee crafted for warm daily rituals, from rich Turkish coffee to smooth espresso blends and flavored favorites.',
-                  'قهوة طازجة التحميص لطقوس يومية دافئة، من القهوة التركية الغنية إلى توليفات الإسبريسو والنكهات المميزة.'
+                  'Freshly roasted coffee crafted for warm daily rituals, from Turkish Blends to Espresso Blends and refined flavored favorites.',
+                  'قهوة طازجة التحميص لطقوس يومية دافئة، من توليفات تركي إلى توليفات إسبريسو والنكهات المميزة.'
                 )}
               </p>
 
@@ -108,13 +177,33 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Shop links */}
+            {/* Category links */}
             <div>
               <h4 className="font-semibold mb-5 text-sm tracking-wide" style={{ color: '#D6A373' }}>
-                {t('Shop', 'المتجر')}
+                {t('Categories', 'الفئات')}
               </h4>
               <ul className="space-y-3">
-                {footerLinks.shop.map((link) => (
+                {footerLinks.categories.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm transition-colors duration-200 hover:text-[#D6A373]"
+                      style={{ color: 'rgba(183,155,133,0.65)' }}
+                    >
+                      {t(link.labelEn, link.labelAr)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Make links */}
+            <div>
+              <h4 className="font-semibold mb-5 text-sm tracking-wide" style={{ color: '#D6A373' }}>
+                {t('Make Your Product', 'اصنع منتجك')}
+              </h4>
+              <ul className="space-y-3">
+                {footerLinks.make.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
@@ -163,21 +252,21 @@ export function Footer() {
                 <li className="flex items-center gap-2.5">
                   <Phone className="h-4 w-4 shrink-0" style={{ color: '#B6885E' }} />
                   <a
-                    href="tel:+201004761171"
+                    href={`tel:${CONTACT_PHONE}`}
                     className="text-sm transition-colors duration-200 hover:text-[#D6A373]"
                     style={{ color: 'rgba(183,155,133,0.65)' }}
                   >
-                    +201004761171
+                    {phone}
                   </a>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <Mail className="h-4 w-4 shrink-0" style={{ color: '#B6885E' }} />
                   <a
-                    href="mailto:m.sayed@abu-elhassan.com"
+                    href={`mailto:${CONTACT_EMAIL}`}
                     className="text-sm transition-colors duration-200 hover:text-[#D6A373]"
                     style={{ color: 'rgba(183,155,133,0.65)' }}
                   >
-                    m.sayed@abu-elhassan.com
+                    {CONTACT_EMAIL}
                   </a>
                 </li>
               </ul>

@@ -37,9 +37,6 @@ function isRemovedFlavor(nameEn: unknown, nameAr: unknown) {
   const arabicName = String(nameAr || '')
   return normalizedName === 'sahlab' ||
     normalizedName === 'salep' ||
-    normalizedName === 'french / original' ||
-    normalizedName === 'french original' ||
-    slugifyOptionId(normalizedName) === 'french-original' ||
     arabicName.includes('سحلب')
 }
 

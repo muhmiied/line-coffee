@@ -2,13 +2,36 @@
 
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
 
 export function WhatsAppButton() {
+  const pathname = usePathname()
+  const [phone, setPhone] = useState(WHATSAPP_ORDER_PHONE_E164)
+  const isAdminSurface = pathname.startsWith('/dashboard') || pathname.startsWith('/auth')
+
+  useEffect(() => {
+    let mounted = true
+
+    fetch('/api/settings/whatsapp', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (mounted && json?.data?.phone) setPhone(json.data.phone)
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const handleClick = () => {
     const message = encodeURIComponent('مرحباً، أريد الاستفسار عن منتجاتكم')
-    window.open(`https://wa.me/${WHATSAPP_ORDER_PHONE_E164}?text=${message}`, '_blank')
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
   }
+
+  if (isAdminSurface) return null
 
   return (
     <motion.button
