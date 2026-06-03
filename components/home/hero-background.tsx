@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { cn } from '@/lib/utils'
 import {
   buildEffectsFilter,
   buildOverlayGradient,
@@ -10,17 +9,14 @@ import {
 } from '@/lib/media'
 
 /**
- * Shared cinematic overlay stack used by BOTH the live HeroSection and the
- * admin editor preview. Any visual change here is automatically reflected in
- * both places — no more duplicate overlay code.
- *
- * Renders only absolute-positioned layers. The caller provides the container.
+ * Cinematic overlay stack shared by HeroSection and the admin editor preview.
+ * Uses inline styles for all gradients to avoid Tailwind JIT cache issues.
  */
 export function HeroBackground({
   image,
   imageAlt = '',
   objectPosition,
-  overlayOpacity = 0.6,
+  overlayOpacity = 0.52,
   visualEffects,
   isRtl,
   priority = false,
@@ -33,7 +29,6 @@ export function HeroBackground({
   visualEffects?: VisualEffects
   isRtl: boolean
   priority?: boolean
-  /** Editor passes true — avoids next/image domain restrictions for blob/Unsplash URLs */
   useImgTag?: boolean
 }) {
   const fx = visualEffects || {}
@@ -44,9 +39,13 @@ export function HeroBackground({
   const fxGlow = Number(fx.glow ?? 0)
   const fxGrain = Number(fx.grain ?? 0)
 
+  const sideGrad = isRtl
+    ? 'linear-gradient(270deg, rgba(11,8,6,0.80) 0%, rgba(11,8,6,0.52) 36%, rgba(11,8,6,0.16) 64%, transparent 100%)'
+    : 'linear-gradient(90deg, rgba(11,8,6,0.80) 0%, rgba(11,8,6,0.52) 36%, rgba(11,8,6,0.16) 64%, transparent 100%)'
+
   return (
     <>
-      {/* ── Background image ── */}
+      {/* Background image */}
       {useImgTag ? (
         <img
           src={image}
@@ -72,46 +71,34 @@ export function HeroBackground({
         />
       )}
 
-      {/* ── Cinematic grading stack ── */}
-
       {/* 1. Dark base overlay */}
       {hasFx
         ? <div className="absolute inset-0" style={{ background: overlayGrad }} />
         : <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
       }
 
-      {/* 2. Warm brown tone cast */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
-
-      {/* 3. Vignette */}
+      {/* 2. Soft vignette — edges only, center stays open */}
       {fxVignette > 0.05
         ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,${fxVignette.toFixed(2)}) 100%)` }} />
-        : <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
+        : <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,0.38) 100%)' }} />
       }
 
-      {/* 4. Bottom lift */}
-      <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
-
-      {/* 5. Top scrim */}
-      <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
-
-      {/* 6. Side gradient — direction flips for RTL */}
+      {/* 3. Bottom lift — blends hero into the section below */}
       <div
-        className={cn(
-          'absolute inset-0',
-          isRtl
-            ? 'bg-[linear-gradient(270deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
-            : 'bg-[linear-gradient(90deg,_rgba(11,8,6,0.94)_0%,_rgba(11,8,6,0.72)_34%,_rgba(11,8,6,0.26)_64%,_rgba(11,8,6,0.08)_100%)]'
-        )}
+        className="absolute inset-x-0 bottom-0 h-[50%]"
+        style={{ background: 'linear-gradient(to top, #0B0806 0%, rgba(11,8,6,0.50) 40%, transparent 100%)' }}
       />
 
-      {/* 7. Ambient gold glow */}
+      {/* 4. Side gradient — darkens behind text for contrast */}
+      <div className="absolute inset-0" style={{ background: sideGrad }} />
+
+      {/* 5. Ambient gold glow */}
       {fxGlow > 0.05
         ? <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,${fxGlow.toFixed(2)}) 0%, transparent 70%)` }} />
-        : <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.12)_0%,_transparent_70%)]" />
+        : <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,0.14) 0%, transparent 70%)' }} />
       }
 
-      {/* 8. Film grain */}
+      {/* 6. Film grain */}
       {fxGrain > 0.05 && (
         <div
           className="pointer-events-none absolute inset-0"
