@@ -5,7 +5,11 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Coffee, Heart, Award, Users } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
-import { getMediaObjectPosition, type SiteMediaItem } from '@/lib/media'
+import { getMediaObjectPosition, getSectionBuilderContent, getWebsiteSection, type SiteMediaItem } from '@/lib/media'
+
+const aboutTopSectionConfig = getWebsiteSection('about_top')
+const aboutStorySectionConfig = getWebsiteSection('about_story')
+const aboutValuesSectionConfig = getWebsiteSection('about_values')
 
 const stats = [
   { icon: Coffee, valueEn: '50+', valueAr: '+٥٠', labelEn: 'Coffee Varieties', labelAr: 'نوع قهوة' },
@@ -17,24 +21,37 @@ const stats = [
 export default function AboutPage() {
   const { t } = useLanguage()
   const [aboutTopMedia, setAboutTopMedia] = useState<SiteMediaItem | null>(null)
-  const [aboutLowerMedia, setAboutLowerMedia] = useState<SiteMediaItem | null>(null)
+  const [aboutStoryMedia, setAboutStoryMedia] = useState<SiteMediaItem | null>(null)
+  const [aboutValuesMedia, setAboutValuesMedia] = useState<SiteMediaItem | null>(null)
 
   useEffect(() => {
     let mounted = true
 
     Promise.all([
-      fetch('/api/media?usage_area=about_top', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
-      fetch('/api/media?usage_area=about_lower', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
-    ]).then(([topRes, lowerRes]) => {
+      fetch('/api/media?section_key=about_top', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
+      fetch('/api/media?section_key=about_story', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
+      fetch('/api/media?section_key=about_values', { cache: 'no-store' }).then((res) => res.json()).catch(() => ({ data: [] })),
+    ]).then(([topRes, storyRes, valuesRes]) => {
       if (!mounted) return
-      if (Array.isArray(topRes?.data) && topRes.data[0]?.image_url) setAboutTopMedia(topRes.data[0])
-      if (Array.isArray(lowerRes?.data) && lowerRes.data[0]?.image_url) setAboutLowerMedia(lowerRes.data[0])
+      if (Array.isArray(topRes?.data) && topRes.data[0]) setAboutTopMedia(topRes.data[0])
+      if (Array.isArray(storyRes?.data) && storyRes.data[0]) setAboutStoryMedia(storyRes.data[0])
+      if (Array.isArray(valuesRes?.data) && valuesRes.data[0]) setAboutValuesMedia(valuesRes.data[0])
     })
 
     return () => {
       mounted = false
     }
   }, [])
+
+  const aboutTopContent = getSectionBuilderContent(aboutTopSectionConfig, aboutTopMedia)
+  const aboutStoryContent = getSectionBuilderContent(aboutStorySectionConfig, aboutStoryMedia)
+  const aboutValuesContent = getSectionBuilderContent(aboutValuesSectionConfig, aboutValuesMedia)
+  const storyBody = t(
+    aboutStoryContent.body_en || aboutStoryContent.subtitle_en || aboutStorySectionConfig.defaultSubtitleEn,
+    aboutStoryContent.body_ar || aboutStoryContent.subtitle_ar || aboutStoryContent.body_en || aboutStorySectionConfig.defaultSubtitleAr,
+  )
+  const storyBodyParagraphs = storyBody.split(/\n+/).map((item) => item.trim()).filter(Boolean)
+  const valueCards = (aboutValuesContent.features || []).filter((item) => item.is_active !== false).slice(0, 3)
 
   return (
     <div className="min-h-screen" style={{ background: '#0B0806' }}>
@@ -45,8 +62,8 @@ export default function AboutPage() {
         style={{ background: '#0B0806' }}
       >
         <Image
-          src={aboutTopMedia?.image_url || 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600'}
-          alt={t(aboutTopMedia?.alt_en || 'About Line Coffee', aboutTopMedia?.alt_ar || aboutTopMedia?.alt_en || 'About Line Coffee')}
+          src={aboutTopMedia?.image_url || aboutTopSectionConfig.fallbackImage}
+          alt={t(aboutTopMedia?.alt_en || aboutTopContent.title_en || 'About Line Coffee', aboutTopMedia?.alt_ar || aboutTopContent.title_ar || aboutTopMedia?.alt_en || 'About Line Coffee')}
           fill
           sizes="100vw"
           className="object-cover"
@@ -67,7 +84,7 @@ export default function AboutPage() {
             className="text-[11px] tracking-[0.28em] uppercase font-semibold mb-4"
             style={{ color: '#B6885E' }}
           >
-            {t('Since 2019', 'منذ 2019')}
+            {t(aboutTopContent.eyebrow_en || 'Since 2019', aboutTopContent.eyebrow_ar || aboutTopContent.eyebrow_en || 'منذ 2019')}
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -76,7 +93,7 @@ export default function AboutPage() {
             className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
             style={{ color: '#F5E6D8', textShadow: '0 4px 32px rgba(0,0,0,0.6)' }}
           >
-            {t(aboutTopMedia?.title_en || 'Our Story', aboutTopMedia?.title_ar || aboutTopMedia?.title_en || 'قصتنا')}
+            {t(aboutTopContent.title_en || aboutTopSectionConfig.defaultTitleEn, aboutTopContent.title_ar || aboutTopContent.title_en || aboutTopSectionConfig.defaultTitleAr)}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -86,8 +103,8 @@ export default function AboutPage() {
             style={{ color: 'rgba(214,183,154,0.85)' }}
           >
             {t(
-              aboutTopMedia?.subtitle_en || 'Crafting the perfect cup since 2019',
-              aboutTopMedia?.subtitle_ar || aboutTopMedia?.subtitle_en || 'نصنع الكوب المثالي منذ 2019',
+              aboutTopContent.subtitle_en || aboutTopSectionConfig.defaultSubtitleEn,
+              aboutTopContent.subtitle_ar || aboutTopContent.subtitle_en || aboutTopSectionConfig.defaultSubtitleAr,
             )}
           </motion.p>
         </div>
@@ -149,31 +166,16 @@ export default function AboutPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
                 <p className="text-[11px] tracking-[0.24em] uppercase font-semibold" style={{ color: '#B6885E' }}>
-                  {t('Our Journey', 'رحلتنا')}
+                  {t(aboutStoryContent.eyebrow_en || 'Our Journey', aboutStoryContent.eyebrow_ar || aboutStoryContent.eyebrow_en || 'رحلتنا')}
                 </p>
               </div>
               <h2 className="font-serif text-3xl md:text-4xl font-bold mb-6" style={{ color: '#F5E6D8' }}>
-                {t('From Passion to Perfection', 'من الشغف إلى الكمال')}
+                {t(aboutStoryContent.title_en || aboutStorySectionConfig.defaultTitleEn, aboutStoryContent.title_ar || aboutStoryContent.title_en || aboutStorySectionConfig.defaultTitleAr)}
               </h2>
               <div className="space-y-4 leading-relaxed" style={{ color: 'rgba(183,155,133,0.72)' }}>
-                <p>
-                  {t(
-                    'Line Coffee started in 2019 with a simple mission: to bring the authentic taste of premium coffee to every Egyptian home. What began as a small family business has grown into a beloved brand trusted by thousands of coffee lovers.',
-                    'بدأت لاين كوفي في 2019 بمهمة بسيطة: جلب المذاق الأصيل للقهوة الفاخرة لكل بيت مصري. ما بدأ كمشروع عائلي صغير تحول إلى علامة تجارية محبوبة يثق بها الآلاف من عشاق القهوة.'
-                  )}
-                </p>
-                <p>
-                  {t(
-                    'We carefully source our beans from the finest growing regions and roast them with precision to unlock their full flavor potential. Every batch is crafted with love and attention to detail.',
-                    'نختار حبوبنا بعناية من أفضل مناطق الزراعة ونحمصها بدقة لإطلاق كامل إمكانياتها من النكهة. كل دفعة مصنوعة بحب واهتمام بالتفاصيل.'
-                  )}
-                </p>
-                <p>
-                  {t(
-                    'Today, we offer over 50 varieties of coffee and beverages, from classic Turkish coffee to innovative flavored blends. Our commitment to quality remains unchanged - only the best for our customers.',
-                    'اليوم، نقدم أكثر من 50 نوعاً من القهوة والمشروبات، من القهوة التركية الكلاسيكية إلى الخلطات المنكهة المبتكرة. التزامنا بالجودة لم يتغير - الأفضل فقط لعملائنا.'
-                  )}
-                </p>
+                {storyBodyParagraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
               </div>
             </motion.div>
 
@@ -185,13 +187,13 @@ export default function AboutPage() {
               style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(182,136,94,0.1)' }}
             >
               <Image
-                src={aboutLowerMedia?.image_url || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800'}
-                alt={t(aboutLowerMedia?.alt_en || 'Coffee beans', aboutLowerMedia?.alt_ar || aboutLowerMedia?.alt_en || 'Coffee beans')}
+                src={aboutStoryMedia?.image_url || aboutStorySectionConfig.fallbackImage}
+                alt={t(aboutStoryMedia?.alt_en || aboutStoryContent.title_en || 'Coffee beans', aboutStoryMedia?.alt_ar || aboutStoryContent.title_ar || aboutStoryMedia?.alt_en || 'Coffee beans')}
                 fill
                 sizes="(min-width: 1024px) 44vw, 92vw"
                 loading="lazy"
                 className="object-cover"
-                style={{ objectPosition: aboutLowerMedia ? getMediaObjectPosition(aboutLowerMedia) : 'center center' }}
+                style={{ objectPosition: aboutStoryMedia ? getMediaObjectPosition(aboutStoryMedia) : 'center center' }}
               />
               <div className="absolute inset-0 bg-gradient-to-br from-[#B6885E]/8 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0B0806]/40 to-transparent" />
@@ -212,40 +214,21 @@ export default function AboutPage() {
               viewport={{ once: true }}
             >
               <p className="text-[11px] tracking-[0.28em] uppercase font-semibold mb-3" style={{ color: '#B6885E' }}>
-                {t('What We Stand For', 'ما نؤمن به')}
+                {t(aboutValuesContent.eyebrow_en || 'What We Stand For', aboutValuesContent.eyebrow_ar || aboutValuesContent.eyebrow_en || 'ما نؤمن به')}
               </p>
               <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4" style={{ color: '#F5E6D8' }}>
-                {t('Our Values', 'قيمنا')}
+                {t(aboutValuesContent.title_en || aboutValuesSectionConfig.defaultTitleEn, aboutValuesContent.title_ar || aboutValuesContent.title_en || aboutValuesSectionConfig.defaultTitleAr)}
               </h2>
               <p className="max-w-2xl mx-auto" style={{ color: 'rgba(183,155,133,0.72)' }}>
-                {t('The principles that guide everything we do', 'المبادئ التي توجه كل ما نقوم به')}
+                {t(aboutValuesContent.subtitle_en || aboutValuesSectionConfig.defaultSubtitleEn, aboutValuesContent.subtitle_ar || aboutValuesContent.subtitle_en || aboutValuesSectionConfig.defaultSubtitleAr)}
               </p>
             </motion.div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                titleEn: 'Quality First',
-                titleAr: 'الجودة أولاً',
-                descEn: 'We never compromise on quality. From sourcing to roasting to packaging, every step meets our high standards.',
-                descAr: 'لا نساوم أبداً على الجودة. من الاختيار إلى التحميص إلى التغليف، كل خطوة تلبي معاييرنا العالية.',
-              },
-              {
-                titleEn: 'Customer Love',
-                titleAr: 'حب العملاء',
-                descEn: 'Our customers are family. We listen, we care, and we always strive to exceed expectations.',
-                descAr: 'عملاؤنا عائلتنا. نستمع، نهتم، ونسعى دائماً لتجاوز التوقعات.',
-              },
-              {
-                titleEn: 'Innovation',
-                titleAr: 'الابتكار',
-                descEn: 'We constantly explore new flavors and blends to bring you unique coffee experiences.',
-                descAr: 'نستكشف باستمرار نكهات وخلطات جديدة لنقدم لك تجارب قهوة فريدة.',
-              },
-            ].map((value, index) => (
+            {valueCards.map((value, index) => (
               <motion.div
-                key={index}
+                key={value.id || index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -270,10 +253,10 @@ export default function AboutPage() {
                   </span>
                 </div>
                 <h3 className="font-serif text-xl font-semibold mb-3" style={{ color: '#F5E6D8' }}>
-                  {t(value.titleEn, value.titleAr)}
+                  {t(value.title_en, value.title_ar || value.title_en)}
                 </h3>
                 <p className="leading-relaxed" style={{ color: 'rgba(183,155,133,0.72)' }}>
-                  {t(value.descEn, value.descAr)}
+                  {t(value.description_en || '', value.description_ar || value.description_en || '')}
                 </p>
               </motion.div>
             ))}
