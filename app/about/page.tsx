@@ -12,10 +12,10 @@ const aboutStorySectionConfig = getWebsiteSection('about_story')
 const aboutValuesSectionConfig = getWebsiteSection('about_values')
 
 const stats = [
-  { icon: Coffee, valueEn: '50+', valueAr: '+٥٠', labelEn: 'Coffee Varieties', labelAr: 'نوع قهوة' },
-  { icon: Users, valueEn: '10K+', valueAr: '+١٠ آلاف', labelEn: 'Happy Customers', labelAr: 'عميل سعيد' },
-  { icon: Award, valueEn: '5+', valueAr: '+٥', labelEn: 'Years Experience', labelAr: 'سنوات خبرة' },
-  { icon: Heart, valueEn: '100%', valueAr: '١٠٠٪', labelEn: 'Made with Love', labelAr: 'صنع بحب' },
+  { icon: Coffee, valueEn: '2015', valueAr: '٢٠١٥', labelEn: 'Family Business Roots', labelAr: 'جذور مشروع عائلي' },
+  { icon: Award, valueEn: '28', valueAr: '٢٨', labelEn: 'Years at Bon Al Orouba', labelAr: 'سنة في بن العروبة' },
+  { icon: Users, valueEn: 'Supply', valueAr: 'توريد', labelEn: 'Built for Cafes', labelAr: 'خبرة مع المقاهي' },
+  { icon: Heart, valueEn: 'Online', valueAr: 'أونلاين', labelEn: 'Now Serving Direct', labelAr: 'خدمة مباشرة الآن' },
 ]
 
 export default function AboutPage() {
