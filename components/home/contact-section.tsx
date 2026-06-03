@@ -18,6 +18,8 @@ import {
 } from '@/lib/media'
 import { SectionReveal, FadeUp, StaggerContainer, WordByWord } from '@/components/ui/motion-primitives'
 import { WHATSAPP_ORDER_PHONE_E164, WHATSAPP_DISPLAY, CONTACT_EMAIL } from '@/lib/config/site'
+import { formatPublicAddress } from '@/lib/config/public-settings'
+import { usePublicSettings } from '@/lib/hooks/use-public-settings'
 import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
 import { toast } from 'sonner'
 
@@ -59,21 +61,42 @@ const contactItems = [
 export function ContactSection() {
   const { t } = useLanguage()
   const { media: sectionMedia, content: sectionContent } = useSectionContent('home_contact')
+  const settings = usePublicSettings()
   const { phone: whatsappPhone, displayPhone: whatsappDisplayPhone } = useWhatsAppSettings()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const bgFx = getVisualEffects(sectionMedia)
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.84) : 0.84
   const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
+  const contactAddress = formatPublicAddress(settings.contact)
   const dynamicContactItems = contactItems.map((item) =>
-    item.labelEn === 'Phone / WhatsApp'
+    item.labelEn === 'Location'
       ? {
           ...item,
-          valueEn: whatsappDisplayPhone,
-          valueAr: whatsappDisplayPhone,
-          href: `https://wa.me/${whatsappPhone}`,
+          valueEn: contactAddress,
+          valueAr: contactAddress,
         }
-      : item
+      : item.labelEn === 'Phone / WhatsApp'
+        ? {
+            ...item,
+            valueEn: whatsappDisplayPhone,
+            valueAr: whatsappDisplayPhone,
+            href: `https://wa.me/${whatsappPhone}`,
+          }
+        : item.labelEn === 'Email'
+          ? {
+              ...item,
+              valueEn: settings.contact.email,
+              valueAr: settings.contact.email,
+              href: `mailto:${settings.contact.email}`,
+            }
+          : item.labelEn === 'Working Hours'
+            ? {
+                ...item,
+                valueEn: settings.contact.opening_hours,
+                valueAr: settings.contact.opening_hours,
+              }
+            : item
   )
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

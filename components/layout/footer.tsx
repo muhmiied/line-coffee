@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Twitter, Facebook, Mail, Phone, MapPin } from 'lucide-react'
+import { Instagram, Facebook, Mail, Music2, Phone, MapPin, Youtube } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { CONTACT_EMAIL } from '@/lib/config/site'
-import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
+import { FOOTER_BLURB } from '@/lib/config/site'
+import { formatPhoneHref, formatPublicAddress } from '@/lib/config/public-settings'
+import { usePublicSettings } from '@/lib/hooks/use-public-settings'
 
 type FooterCategory = {
   slug: string
@@ -34,7 +35,16 @@ export function Footer() {
   const { t } = useLanguage()
   const pathname = usePathname()
   const [categories, setCategories] = useState<FooterCategory[]>([])
-  const { phone, displayPhone } = useWhatsAppSettings()
+  const settings = usePublicSettings()
+  const contactAddress = formatPublicAddress(settings.contact)
+  const contactPhoneHref = formatPhoneHref(settings.contact.phone)
+  const footerBlurb = settings.footer.footer_blurb
+  const socialLinks = [
+    { href: settings.socials.instagram_url, Icon: Instagram, label: 'Instagram' },
+    { href: settings.socials.facebook_url, Icon: Facebook, label: 'Facebook' },
+    { href: settings.socials.tiktok_url, Icon: Music2, label: 'TikTok' },
+    { href: settings.socials.youtube_url, Icon: Youtube, label: 'YouTube' },
+  ].filter((link) => link.href)
 
   useEffect(() => {
     let mounted = true
@@ -114,11 +124,11 @@ export function Footer() {
             {/* Brand column */}
             <div className="lg:col-span-2">
               <Link href="/" className="inline-block mb-6">
-                <span className="sr-only">Line Coffee</span>
+                <span className="sr-only">{settings.brand.site_name}</span>
                 <span className="relative block h-20 w-64 md:h-24 md:w-72">
                   <Image
                     src="/brand/logo-white.svg"
-                    alt="Line Coffee"
+                    alt={settings.brand.logo_alt || settings.brand.site_name}
                     fill
                     unoptimized
                     className="object-contain object-left"
@@ -127,19 +137,15 @@ export function Footer() {
               </Link>
 
               <p className="mb-7 max-w-sm leading-relaxed text-sm" style={{ color: 'rgba(183,155,133,0.75)' }}>
-                {t(
+                {footerBlurb === FOOTER_BLURB ? t(
                   'Freshly roasted coffee crafted for warm daily rituals, from Turkish Blends to Espresso Blends and refined flavored favorites.',
                   'قهوة طازجة التحميص لطقوس يومية دافئة، من توليفات تركي إلى توليفات إسبريسو والنكهات المميزة.'
-                )}
+                ) : footerBlurb}
               </p>
 
               {/* Social links */}
               <div className="flex gap-3">
-                {[
-                  { href: 'https://instagram.com/linecoffee.eg', Icon: Instagram, label: 'Instagram' },
-                  { href: 'https://twitter.com', Icon: Twitter, label: 'Twitter' },
-                  { href: 'https://facebook.com/linecoffee', Icon: Facebook, label: 'Facebook' },
-                ].map(({ href, Icon, label }) => (
+                {socialLinks.map(({ href, Icon, label }) => (
                   <a
                     key={label}
                     href={href}
@@ -240,27 +246,27 @@ export function Footer() {
                 <li className="flex items-start gap-2.5">
                   <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: '#B6885E' }} />
                   <span className="text-sm" style={{ color: 'rgba(183,155,133,0.65)' }}>
-                    {t('Cairo, Egypt', 'القاهرة، مصر')}
+                    {contactAddress || t('Cairo, Egypt', 'القاهرة، مصر')}
                   </span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <Phone className="h-4 w-4 shrink-0" style={{ color: '#B6885E' }} />
                   <a
-                    href={`tel:+${phone}`}
+                    href={contactPhoneHref || undefined}
                     className="text-sm transition-colors duration-200 hover:text-[#D6A373]"
                     style={{ color: 'rgba(183,155,133,0.65)' }}
                   >
-                    {displayPhone}
+                    {settings.contact.phone}
                   </a>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <Mail className="h-4 w-4 shrink-0" style={{ color: '#B6885E' }} />
                   <a
-                    href={`mailto:${CONTACT_EMAIL}`}
+                    href={`mailto:${settings.contact.email}`}
                     className="text-sm transition-colors duration-200 hover:text-[#D6A373]"
                     style={{ color: 'rgba(183,155,133,0.65)' }}
                   >
-                    {CONTACT_EMAIL}
+                    {settings.contact.email}
                   </a>
                 </li>
               </ul>
@@ -280,7 +286,7 @@ export function Footer() {
               style={{ color: 'rgba(183,155,133,0.45)' }}
             >
               <p>
-                &copy; {new Date().getFullYear()} Line Coffee.{' '}
+                &copy; {new Date().getFullYear()} {settings.brand.site_name}.{' '}
                 {t('All rights reserved.', 'جميع الحقوق محفوظة.')}
               </p>
               <div className="flex flex-wrap justify-center gap-3 sm:gap-5">

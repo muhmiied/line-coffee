@@ -18,12 +18,14 @@ import {
   GRAIN_SVG,
 } from '@/lib/media'
 import { toast } from 'sonner'
-import { CONTACT_EMAIL, CONTACT_PHONE } from '@/lib/config/site'
+import { formatPhoneHref, formatPublicAddress } from '@/lib/config/public-settings'
+import { usePublicSettings } from '@/lib/hooks/use-public-settings'
 import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
 
 export default function ContactPage() {
   const { t } = useLanguage()
   const { media: sectionMedia, content: sectionContent } = useSectionContent('contact_page')
+  const settings = usePublicSettings()
   const { phone: whatsappPhone, displayPhone: whatsappDisplayPhone } = useWhatsAppSettings()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -31,6 +33,8 @@ export default function ContactPage() {
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.82) : 0.82
   const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
+  const contactAddress = formatPublicAddress(settings.contact)
+  const contactPhoneHref = formatPhoneHref(settings.contact.phone)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -97,24 +101,24 @@ export default function ContactPage() {
       icon: MapPin,
       labelEn: 'Address',
       labelAr: 'العنوان',
-      valueEn: 'Cairo, Egypt',
-      valueAr: 'القاهرة، مصر',
+      valueEn: contactAddress,
+      valueAr: contactAddress,
     },
     {
       icon: Phone,
       labelEn: 'Phone',
       labelAr: 'الهاتف',
-      valueEn: CONTACT_PHONE,
-      valueAr: CONTACT_PHONE,
-      href: `tel:${CONTACT_PHONE}`,
+      valueEn: settings.contact.phone,
+      valueAr: settings.contact.phone,
+      href: contactPhoneHref,
     },
     {
       icon: Mail,
       labelEn: 'Email',
       labelAr: 'البريد الإلكتروني',
-      valueEn: CONTACT_EMAIL,
-      valueAr: CONTACT_EMAIL,
-      href: `mailto:${CONTACT_EMAIL}`,
+      valueEn: settings.contact.email,
+      valueAr: settings.contact.email,
+      href: `mailto:${settings.contact.email}`,
     },
     {
       icon: MessageCircle,

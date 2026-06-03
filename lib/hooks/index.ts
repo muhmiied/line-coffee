@@ -25,4 +25,5 @@ export { useWishlist } from './use-wishlist'
 export { useSectionContent, useSectionMedia } from './use-section-media'
 
 // Settings hooks
+export { usePublicSettings } from './use-public-settings'
 export { useWhatsAppSettings } from './use-whatsapp-settings'
