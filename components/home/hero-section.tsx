@@ -336,7 +336,7 @@ export function HeroSection() {
               <h1
                 dir={headingDir}
                 aria-label={headingText}
-                className="mb-5 line-clamp-3 font-serif font-extrabold leading-[0.98] text-balance md:mb-6"
+                className="mb-5 font-serif font-extrabold leading-[1.05] text-balance pb-2 md:mb-6 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] overflow-hidden"
                 style={{
                   fontSize: 'clamp(2.8rem,5.4vw,5.8rem)',
                   color: '#F5E6D8',

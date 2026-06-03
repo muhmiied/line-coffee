@@ -1304,7 +1304,7 @@ function HeroLikeMediaPreview({
           transformOrigin: isRtl ? 'top right' : 'top left',
         }}
       >
-        <div className="rounded-lg outline outline-1 outline-transparent transition group-hover/edit:outline-[#D6A373]/55 group-focus-within/edit:outline-[#D6A373]" style={{ width }}>
+        <div className="rounded-lg pb-1 outline outline-1 outline-transparent transition group-hover/edit:outline-[#D6A373]/55 group-focus-within/edit:outline-[#D6A373]" style={{ width }}>
           {node}
         </div>
         {/* Width resize handle */}
@@ -1572,7 +1572,7 @@ function HeroLikeMediaPreview({
               'title',
               <h2
                 {...editable(fieldName('title'), title)}
-                className="font-serif text-[clamp(2.8rem,5.4vw,5.8rem)] font-extrabold leading-[0.98] text-balance text-[#F5E6D8] outline-none"
+                className="font-serif text-[clamp(2.8rem,5.4vw,5.8rem)] font-extrabold leading-[1.05] text-balance text-[#F5E6D8] outline-none"
                 style={{ textShadow: '0 4px 34px rgba(0,0,0,0.62)' }}
               />,
               'title_width',
