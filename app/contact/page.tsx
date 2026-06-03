@@ -18,11 +18,13 @@ import {
   GRAIN_SVG,
 } from '@/lib/media'
 import { toast } from 'sonner'
-import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
+import { CONTACT_EMAIL, CONTACT_PHONE } from '@/lib/config/site'
+import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
 
 export default function ContactPage() {
   const { t } = useLanguage()
   const { media: sectionMedia, content: sectionContent } = useSectionContent('contact_page')
+  const { phone: whatsappPhone, displayPhone: whatsappDisplayPhone } = useWhatsAppSettings()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const bgFx = getVisualEffects(sectionMedia)
@@ -118,9 +120,9 @@ export default function ContactPage() {
       icon: MessageCircle,
       labelEn: 'WhatsApp',
       labelAr: 'واتساب',
-      valueEn: CONTACT_PHONE,
-      valueAr: CONTACT_PHONE,
-      href: `https://wa.me/${WHATSAPP_ORDER_PHONE_E164}`,
+      valueEn: whatsappDisplayPhone,
+      valueAr: whatsappDisplayPhone,
+      href: `https://wa.me/${whatsappPhone}`,
     },
   ]
 

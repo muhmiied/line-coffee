@@ -3,28 +3,12 @@
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { WHATSAPP_ORDER_PHONE_E164 } from '@/lib/config/site'
+import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
 
 export function WhatsAppButton() {
   const pathname = usePathname()
-  const [phone, setPhone] = useState(WHATSAPP_ORDER_PHONE_E164)
+  const { phone } = useWhatsAppSettings()
   const isAdminSurface = pathname.startsWith('/dashboard') || pathname.startsWith('/auth')
-
-  useEffect(() => {
-    let mounted = true
-
-    fetch('/api/settings/whatsapp', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((json) => {
-        if (mounted && json?.data?.phone) setPhone(json.data.phone)
-      })
-      .catch(() => {})
-
-    return () => {
-      mounted = false
-    }
-  }, [])
 
   const handleClick = () => {
     const message = encodeURIComponent('مرحباً، أريد الاستفسار عن منتجاتكم')

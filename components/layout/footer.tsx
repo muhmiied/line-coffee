@@ -6,7 +6,8 @@ import { Instagram, Twitter, Facebook, Mail, Phone, MapPin } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_DISPLAY } from '@/lib/config/site'
+import { CONTACT_EMAIL } from '@/lib/config/site'
+import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
 
 type FooterCategory = {
   slug: string
@@ -33,7 +34,7 @@ export function Footer() {
   const { t } = useLanguage()
   const pathname = usePathname()
   const [categories, setCategories] = useState<FooterCategory[]>([])
-  const [phone, setPhone] = useState(WHATSAPP_DISPLAY)
+  const { phone, displayPhone } = useWhatsAppSettings()
 
   useEffect(() => {
     let mounted = true
@@ -44,13 +45,6 @@ export function Footer() {
         if (mounted && Array.isArray(json?.data)) {
           setCategories(json.data.filter((category: FooterCategory) => category.slug && category.name_en))
         }
-      })
-      .catch(() => {})
-
-    fetch('/api/settings/whatsapp', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((json) => {
-        if (mounted && json?.data?.display_phone) setPhone(json.data.display_phone)
       })
       .catch(() => {})
 
@@ -252,11 +246,11 @@ export function Footer() {
                 <li className="flex items-center gap-2.5">
                   <Phone className="h-4 w-4 shrink-0" style={{ color: '#B6885E' }} />
                   <a
-                    href={`tel:${CONTACT_PHONE}`}
+                    href={`tel:+${phone}`}
                     className="text-sm transition-colors duration-200 hover:text-[#D6A373]"
                     style={{ color: 'rgba(183,155,133,0.65)' }}
                   >
-                    {phone}
+                    {displayPhone}
                   </a>
                 </li>
                 <li className="flex items-center gap-2.5">

@@ -23,3 +23,6 @@ export { useWishlist } from './use-wishlist'
 
 // Media section content
 export { useSectionContent, useSectionMedia } from './use-section-media'
+
+// Settings hooks
+export { useWhatsAppSettings } from './use-whatsapp-settings'

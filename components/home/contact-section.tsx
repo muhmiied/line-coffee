@@ -18,6 +18,7 @@ import {
 } from '@/lib/media'
 import { SectionReveal, FadeUp, StaggerContainer, WordByWord } from '@/components/ui/motion-primitives'
 import { WHATSAPP_ORDER_PHONE_E164, WHATSAPP_DISPLAY, CONTACT_EMAIL } from '@/lib/config/site'
+import { useWhatsAppSettings } from '@/lib/hooks/use-whatsapp-settings'
 import { toast } from 'sonner'
 
 const contactItems = [
@@ -58,11 +59,22 @@ const contactItems = [
 export function ContactSection() {
   const { t } = useLanguage()
   const { media: sectionMedia, content: sectionContent } = useSectionContent('home_contact')
+  const { phone: whatsappPhone, displayPhone: whatsappDisplayPhone } = useWhatsAppSettings()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const bgFx = getVisualEffects(sectionMedia)
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.84) : 0.84
   const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
+  const dynamicContactItems = contactItems.map((item) =>
+    item.labelEn === 'Phone / WhatsApp'
+      ? {
+          ...item,
+          valueEn: whatsappDisplayPhone,
+          valueAr: whatsappDisplayPhone,
+          href: `https://wa.me/${whatsappPhone}`,
+        }
+      : item
+  )
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -157,7 +169,7 @@ export function ContactSection() {
             </p>
 
             <StaggerContainer className="space-y-5">
-              {contactItems.map(({ Icon, labelEn, labelAr, valueEn, valueAr, href }) => (
+              {dynamicContactItems.map(({ Icon, labelEn, labelAr, valueEn, valueAr, href }) => (
                 <FadeUp key={labelEn} className="flex items-start gap-4">
                   <div
                     className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
