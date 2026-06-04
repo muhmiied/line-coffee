@@ -23,11 +23,12 @@ export function AboutJourney({ section, content, media }: AboutJourneyProps) {
     <section className="relative py-16 md:py-24" style={{ background: '#0B0806' }}>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_30%_50%,_rgba(182,136,94,0.04)_0%,_transparent_70%)]" />
       <div className="container relative z-10 mx-auto px-4">
-        <div className="grid items-center gap-12 md:grid-cols-2">
+        <div className="grid items-start gap-12 md:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
+            className="md:pt-6"
           >
             <div className="mb-4 flex items-center gap-3">
               <div className="h-px w-8 bg-gradient-to-r from-[#B6885E]/60 to-transparent" />
@@ -49,7 +50,7 @@ export function AboutJourney({ section, content, media }: AboutJourneyProps) {
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="relative aspect-square overflow-hidden rounded-2xl"
+            className="relative aspect-square overflow-hidden rounded-2xl md:sticky md:top-28"
             style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(182,136,94,0.1)' }}
           >
             <Image

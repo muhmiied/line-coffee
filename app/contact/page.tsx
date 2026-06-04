@@ -33,6 +33,7 @@ export default function ContactPage() {
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.82) : 0.82
   const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
+  const contactHeroImage = sectionMedia?.image_url || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&q=80'
   const contactAddress = formatPublicAddress(settings.contact)
   const contactPhoneHref = formatPhoneHref(settings.contact.phone)
 
@@ -132,23 +133,20 @@ export default function ContactPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: '#0B0806' }}>
-      {sectionMedia?.image_url && (
-        <>
-          <Image
-            src={sectionMedia.image_url}
-            alt={sectionMedia.alt_en || sectionContent.title_en || ''}
-            fill
-            sizes="100vw"
-            loading="lazy"
-            className="object-cover"
-            style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
-            unoptimized
-          />
-          <div className="absolute inset-0" style={{ background: bgOverlay }} />
-          {Number(bgFx.grain || 0) > 0.05 && (
-            <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
-          )}
-        </>
+      <Image
+        src={contactHeroImage}
+        alt={sectionMedia?.alt_en || sectionContent.title_en || 'Contact Line Coffee'}
+        fill
+        sizes="100vw"
+        priority
+        className="object-cover"
+        style={{ objectPosition: sectionMedia ? getMediaObjectPosition(sectionMedia) : 'center center', filter: bgFilter || undefined }}
+        unoptimized
+      />
+      <div className="absolute inset-0" style={{ background: bgOverlay }} />
+      <div className="absolute inset-0 bg-[#0B0806]/38" />
+      {Number(bgFx.grain || 0) > 0.05 && (
+        <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
       )}
 
       {/* Cinematic background */}

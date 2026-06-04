@@ -868,6 +868,19 @@ export const WEBSITE_SECTIONS: WebsiteSectionConfig[] = [
   },
 ]
 
+export const MEDIA_STUDIO_SECTION_KEYS = [
+  'hero',
+  'home_features',
+  'about_lower',
+  'about_top',
+  'about_story',
+  'products_banner',
+  'blog_page',
+  'contact_page',
+] as const
+
+type MediaStudioSectionKey = (typeof MEDIA_STUDIO_SECTION_KEYS)[number]
+
 export const OBJECT_POSITION_OPTIONS = [
   { value: 'center center', labelEn: 'Center', labelAr: 'المنتصف' },
   { value: 'center top', labelEn: 'Top', labelAr: 'أعلى' },
@@ -930,6 +943,33 @@ export function getWebsitePages() {
   const pages = new Map<string, { key: string; labelEn: string; labelAr: string; sections: WebsiteSectionConfig[] }>()
 
   WEBSITE_SECTIONS.forEach((section) => {
+    const existing = pages.get(section.pageKey)
+    if (existing) {
+      existing.sections.push(section)
+      return
+    }
+
+    pages.set(section.pageKey, {
+      key: section.pageKey,
+      labelEn: section.pageLabelEn,
+      labelAr: section.pageLabelAr,
+      sections: [section],
+    })
+  })
+
+  return Array.from(pages.values())
+}
+
+export function getMediaStudioSections() {
+  return WEBSITE_SECTIONS
+    .filter((section) => MEDIA_STUDIO_SECTION_KEYS.includes(section.key as MediaStudioSectionKey))
+    .sort((a, b) => MEDIA_STUDIO_SECTION_KEYS.indexOf(a.key as MediaStudioSectionKey) - MEDIA_STUDIO_SECTION_KEYS.indexOf(b.key as MediaStudioSectionKey))
+}
+
+export function getMediaStudioPages() {
+  const pages = new Map<string, { key: string; labelEn: string; labelAr: string; sections: WebsiteSectionConfig[] }>()
+
+  getMediaStudioSections().forEach((section) => {
     const existing = pages.get(section.pageKey)
     if (existing) {
       existing.sections.push(section)

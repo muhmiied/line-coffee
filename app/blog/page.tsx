@@ -21,7 +21,53 @@ type Post = {
   excerpt_en?: string | null
   published_at: string | null
   created_at: string
+  isFallback?: boolean
 }
+
+const FALLBACK_POSTS: Post[] = [
+  {
+    id: 'fallback-brewing',
+    title_ar: 'كيف تحافظ على القهوة طازجة في البيت',
+    title_en: 'How to Keep Coffee Fresh at Home',
+    slug: '',
+    cover_image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&q=80',
+    content_ar: null,
+    content_en: null,
+    excerpt_ar: 'عادات تخزين بسيطة تحافظ على الرائحة والدفء وجودة القهوة اليومية.',
+    excerpt_en: 'Simple storage habits that protect aroma, warmth, and daily coffee quality.',
+    published_at: null,
+    created_at: '2026-01-10T00:00:00.000Z',
+    isFallback: true,
+  },
+  {
+    id: 'fallback-turkish',
+    title_ar: 'اختيار بروفايل القهوة التركي المناسب',
+    title_en: 'Choosing the Right Turkish Coffee Profile',
+    slug: '',
+    cover_image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&q=80',
+    content_ar: null,
+    content_en: null,
+    excerpt_ar: 'دليل سريع لدرجة التحميص والقوام وطابع الفنجان المناسب لذوقك.',
+    excerpt_en: 'A quick guide to roast depth, texture, and the cup character you prefer.',
+    published_at: null,
+    created_at: '2026-01-08T00:00:00.000Z',
+    isFallback: true,
+  },
+  {
+    id: 'fallback-espresso',
+    title_ar: 'توليفات إسبريسو لطقس يومي أدفأ',
+    title_en: 'Espresso Blends for a Warmer Daily Ritual',
+    slug: '',
+    cover_image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80',
+    content_ar: null,
+    content_en: null,
+    excerpt_ar: 'معنى التوازن والقوام والحلاوة عند اختيار توليفة الإسبريسو.',
+    excerpt_en: 'What balance, body, and sweetness mean when you pick an espresso blend.',
+    published_at: null,
+    created_at: '2026-01-05T00:00:00.000Z',
+    isFallback: true,
+  },
+]
 
 export default function BlogListPage() {
   const { t, language, dir } = useLanguage()
@@ -32,15 +78,18 @@ export default function BlogListPage() {
   useEffect(() => {
     fetch('/api/blog/public', { cache: 'no-store' })
       .then((r) => r.json())
-      .then((json) => setPosts(json.data || []))
-      .catch(() => {})
+      .then((json) => {
+        const livePosts = Array.isArray(json.data) ? json.data : []
+        setPosts(livePosts.length > 0 ? livePosts : FALLBACK_POSTS)
+      })
+      .catch(() => setPosts(FALLBACK_POSTS))
       .finally(() => setLoading(false))
   }, [])
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0B0806] py-14 md:py-24">
+    <div className="relative min-h-screen overflow-hidden bg-[#0B0806]">
       <BlogHero media={sectionMedia} content={sectionContent} />
-      <div className="container relative z-10 mx-auto max-w-5xl px-4">
+      <div className="container relative z-10 mx-auto max-w-5xl px-4 py-14 md:py-20">
         {loading ? (
           <div className="grid gap-6 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -67,7 +116,7 @@ export default function BlogListPage() {
               return (
                 <Link
                   key={post.id}
-                  href={`/blog/${post.slug}`}
+                  href={post.slug ? `/blog/${post.slug}` : '/blog'}
                   className="group overflow-hidden rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/72 transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/35 hover:shadow-[0_16px_40px_rgba(0,0,0,0.45),0_0_24px_rgba(182,136,94,0.09)]"
                 >
                   <div className="relative h-40 overflow-hidden bg-[#1A120D] sm:h-48">

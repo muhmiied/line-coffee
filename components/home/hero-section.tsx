@@ -155,14 +155,14 @@ const fallbackSlides: HeroSlide[] = [
 export function HeroSection() {
   const { t, dir, language } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [slides, setSlides] = useState<HeroSlide[] | null>(null)
+  const [slides, setSlides] = useState<HeroSlide[]>(fallbackSlides)
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
   useEffect(() => {
-    if (!slides || slides.length <= 1) return
+    if (slides.length <= 1) return
     const duration = slides[currentSlide]?.animationDuration ?? 6000
     const timer = setTimeout(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
@@ -172,12 +172,18 @@ export function HeroSection() {
 
   useEffect(() => {
     let mounted = true
-    fetch('/api/media?usage_area=hero', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((json) => {
+    const loadHeroSlides = async () => {
+      try {
+        let res = await fetch('/api/media?section_key=hero', { cache: 'no-store' })
+        let json = await res.json()
+
+        if (!Array.isArray(json?.data) || json.data.length === 0) {
+          res = await fetch('/api/media?usage_area=hero', { cache: 'no-store' })
+          json = await res.json()
+        }
+
         if (!mounted) return
         if (!Array.isArray(json?.data) || json.data.length === 0) {
-          setSlides(fallbackSlides)
           return
         }
         const mediaSlides = (json.data as SiteMediaItem[])
@@ -212,29 +218,17 @@ export function HeroSection() {
           })
         setSlides(mediaSlides.length > 0 ? mediaSlides : fallbackSlides)
         setCurrentSlide(0)
-      })
-      .catch(() => {
+      } catch {
         if (mounted) setSlides(fallbackSlides)
-      })
+      }
+    }
+    loadHeroSlides()
     return () => { mounted = false }
   }, [])
 
   const goToSlide = (index: number) => setCurrentSlide(index)
-  const nextSlide = () => setCurrentSlide((prev) => slides ? (prev + 1) % slides.length : 0)
-  const prevSlide = () => setCurrentSlide((prev) => slides ? (prev - 1 + slides.length) % slides.length : 0)
-
-  if (!slides) {
-    return (
-      <section
-        ref={ref}
-        className="relative flex h-[86svh] min-h-[620px] items-center overflow-hidden -mt-16 pt-28 pb-16 sm:-mt-[4.5rem] sm:pt-32 sm:pb-20 md:-mt-24 md:h-[86vh] md:min-h-[720px] md:max-h-[820px] md:pt-44 md:pb-28"
-        style={{ background: '#0B0806' }}
-      >
-        <div className="absolute inset-0 bg-[#0B0806]" />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 65%, rgba(182,136,94,0.10) 0%, transparent 70%)' }} />
-      </section>
-    )
-  }
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length)
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
 
   const currentHeroSlide = slides[currentSlide]
   const headingText = t(currentHeroSlide.headingEn, currentHeroSlide.headingAr)

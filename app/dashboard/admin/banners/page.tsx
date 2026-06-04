@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { ChangeEvent, useEffect, useMemo, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import {
@@ -28,13 +28,13 @@ import {
   getMediaObjectPosition,
   getMediaOverlayOpacity,
   getMediaSectionKey,
+  getMediaStudioPages,
+  getMediaStudioSections,
   getSectionBuilderContent,
   getSectionBuilderLayout,
   getVisualEffects,
-  getWebsitePages,
   GRAIN_SVG,
   OBJECT_POSITION_OPTIONS,
-  WEBSITE_SECTIONS,
   type SectionBuilderContent,
   type SectionBuilderLayout,
   type SectionStatBlock,
@@ -50,7 +50,9 @@ type StudioSlide = Partial<SiteMediaItem> & {
   isNew?: boolean
 }
 
+type PreviewMode = 'desktop' | 'laptop' | 'mobile'
 type EditorTab = 'content' | 'image' | 'effects' | 'motion' | 'layout' | 'advanced'
+type StudioElementId = 'eyebrow' | 'title' | 'subtitle' | 'body' | 'buttons' | 'stats' | 'features'
 type EditorHistorySnapshot = {
   slides: StudioSlide[]
   selectedId: string | null
@@ -185,6 +187,48 @@ function updateDeviceVisibility(value: unknown, key: 'desktop' | 'tablet' | 'mob
   }
 }
 
+function sectionSupportsButtons(section: WebsiteSectionConfig) {
+  return section.key === 'hero' || section.key === 'about_lower'
+}
+
+function sectionSupportsStats(section: WebsiteSectionConfig) {
+  return section.key === 'hero' || section.key === 'about_lower'
+}
+
+function sectionSupportsFeatures(section: WebsiteSectionConfig) {
+  return section.key === 'home_features' || section.key === 'about_lower' || section.key === 'about_story'
+}
+
+function sectionElementControls(section: WebsiteSectionConfig, content: SectionBuilderContent) {
+  const controls: Array<{ id: StudioElementId; labelEn: string; labelAr: string }> = [
+    { id: 'title', labelEn: 'Title', labelAr: 'العنوان' },
+  ]
+
+  if (content.eyebrow_en || content.eyebrow_ar || section.defaultContent?.eyebrow_en || section.defaultContent?.eyebrow_ar) {
+    controls.unshift({ id: 'eyebrow', labelEn: 'Eyebrow', labelAr: 'عنوان صغير' })
+  }
+
+  if (content.body_en || content.body_ar || section.defaultContent?.body_en || section.defaultContent?.body_ar) {
+    controls.push({ id: 'body', labelEn: 'Body', labelAr: 'النص' })
+  } else {
+    controls.push({ id: 'subtitle', labelEn: 'Subtitle', labelAr: 'النص الفرعي' })
+  }
+
+  if (sectionSupportsButtons(section)) {
+    controls.push({ id: 'buttons', labelEn: 'Button', labelAr: 'الزر' })
+  }
+
+  if (sectionSupportsFeatures(section)) {
+    controls.push({ id: 'features', labelEn: 'Cards', labelAr: 'الكروت' })
+  }
+
+  if (sectionSupportsStats(section)) {
+    controls.push({ id: 'stats', labelEn: 'Stats', labelAr: 'الأرقام' })
+  }
+
+  return controls
+}
+
 function newStat(index: number): SectionStatBlock {
   return {
     id: `stat-${Date.now()}-${index}`,
@@ -228,9 +272,10 @@ export default function MediaStudioPage() {
   const [deletedIds, setDeletedIds] = useState<string[]>([])
   const [tab, setTab] = useState<EditorTab>('content')
   const [previewLanguage, setPreviewLanguage] = useState<'en' | 'ar'>(language)
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
   const [history, setHistory] = useState<EditorHistorySnapshot[]>([])
 
-  const pages = useMemo(() => getWebsitePages(), [])
+  const pages = useMemo(() => getMediaStudioPages(), [])
 
   const load = async () => {
     setLoading(true)
@@ -252,7 +297,7 @@ export default function MediaStudioPage() {
   }, [])
 
   const sectionGroups = useMemo(() => (
-    WEBSITE_SECTIONS.map((section) => {
+    getMediaStudioSections().map((section) => {
       const sectionSlides = items
         .filter((item) => slideBelongsToSection(item, section))
         .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
@@ -335,7 +380,7 @@ export default function MediaStudioPage() {
   }
 
   const addSlide = () => {
-    if (!activeSection) return
+    if (!activeSection || !activeSection.supportsSlides) return
     const next = makeSlide(activeSection, slides.length)
     pushHistory()
     setSlides((prev) => [...prev, next])
@@ -343,7 +388,7 @@ export default function MediaStudioPage() {
   }
 
   const duplicateSlide = () => {
-    if (!selectedSlide) return
+    if (!activeSection?.supportsSlides || !selectedSlide) return
     const localId = createLocalId()
     const copy: StudioSlide = {
       ...selectedSlide,
@@ -483,7 +528,17 @@ export default function MediaStudioPage() {
   if (activeSection) {
     const stats = selectedContent.stats || []
     const features = selectedContent.features || []
+    const elementControls = sectionElementControls(activeSection, selectedContent)
+    const hasButtons = sectionSupportsButtons(activeSection)
+    const hasFeatures = sectionSupportsFeatures(activeSection)
+    const hasStats = sectionSupportsStats(activeSection)
+    const hasTextFrame = activeSection.key === 'hero' || ['about_top', 'products_banner', 'blog_page', 'contact_page'].includes(activeSection.key)
     const sectionStatus = statusFor(slides)
+    const previewFrameClassName = previewMode === 'mobile'
+      ? 'mx-auto w-[390px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border border-[#D6A373]/18 bg-[#0B0806] shadow-[0_24px_80px_rgba(0,0,0,0.55)]'
+      : previewMode === 'laptop'
+        ? 'mx-auto w-[1024px] max-w-full overflow-hidden rounded-2xl'
+        : 'w-full'
 
     return (
       <div className="min-h-screen bg-[#0B0806] p-4 text-white lg:p-5">
@@ -530,20 +585,38 @@ export default function MediaStudioPage() {
             </button>
           </div>
         </div>
-        <div className="mb-4 flex w-fit rounded-2xl border border-[#D6A373]/14 bg-[#120D09]/80 p-1">
-          {[
-            { value: 'en', label: 'EN' },
-            { value: 'ar', label: 'AR' },
-          ].map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => setPreviewLanguage(item.value as 'en' | 'ar')}
-              className={cn('rounded-xl px-4 py-2 text-sm font-bold transition', previewLanguage === item.value ? 'bg-[#D6A373] text-black' : 'text-[#D6B79A]/58 hover:text-[#F5E6D8]')}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="mb-4 flex flex-wrap gap-3">
+          <div className="flex w-fit rounded-2xl border border-[#D6A373]/14 bg-[#120D09]/80 p-1">
+            {[
+              { value: 'en', label: 'EN' },
+              { value: 'ar', label: 'AR' },
+            ].map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setPreviewLanguage(item.value as 'en' | 'ar')}
+                className={cn('rounded-xl px-4 py-2 text-sm font-bold transition', previewLanguage === item.value ? 'bg-[#D6A373] text-black' : 'text-[#D6B79A]/58 hover:text-[#F5E6D8]')}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex w-fit rounded-2xl border border-[#D6A373]/14 bg-[#120D09]/80 p-1">
+            {[
+              { value: 'desktop', label: 'Desktop' },
+              { value: 'laptop', label: 'Laptop' },
+              { value: 'mobile', label: 'Mobile' },
+            ].map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setPreviewMode(item.value as PreviewMode)}
+                className={cn('rounded-xl px-4 py-2 text-sm font-bold transition', previewMode === item.value ? 'bg-[#D6A373] text-black' : 'text-[#D6B79A]/58 hover:text-[#F5E6D8]')}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-5">
@@ -553,7 +626,7 @@ export default function MediaStudioPage() {
                 <p className="text-sm font-bold text-[#F5E6D8]">{t('Slides & Media', 'الشرائح والصور')}</p>
                 <p className="text-xs text-[#D6B79A]/45">{slides.length} {t('items', 'عنصر')}</p>
               </div>
-              <button type="button" onClick={addSlide} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black" aria-label={t('Add slide', 'إضافة شريحة')}>
+              <button type="button" onClick={addSlide} disabled={!activeSection.supportsSlides} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D6A373] text-black disabled:cursor-not-allowed disabled:opacity-35" aria-label={t('Add slide', 'إضافة شريحة')}>
                 <Plus className="h-4 w-4" />
               </button>
             </div>
@@ -590,7 +663,7 @@ export default function MediaStudioPage() {
                 {selectedSlide?.is_active === false ? <Eye className="me-1 inline h-3.5 w-3.5" /> : <EyeOff className="me-1 inline h-3.5 w-3.5" />}
                 {selectedSlide?.is_active === false ? t('Show', 'إظهار') : t('Hide', 'إخفاء')}
               </button>
-              <button type="button" onClick={duplicateSlide} disabled={!selectedSlide} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70 disabled:opacity-40">
+              <button type="button" onClick={duplicateSlide} disabled={!selectedSlide || !activeSection.supportsSlides} className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70 disabled:opacity-40">
                 <Copy className="me-1 inline h-3.5 w-3.5" />
                 {t('Duplicate', 'نسخ')}
               </button>
@@ -610,55 +683,58 @@ export default function MediaStudioPage() {
           </aside>
 
           <main className="order-1 -mx-2 min-w-0 lg:-mx-3">
-            <div className="overflow-hidden rounded-2xl border border-[#D6A373]/14 bg-[#050302] shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
-              <HeroLikeMediaPreview
-                section={activeSection}
-                slide={selectedSlide}
-                content={selectedContent}
-                layout={selectedLayout}
-                effects={selectedFx}
-                image={selectedImage}
-                overlay={selectedOverlay}
-                language={previewLanguage}
-                onContentPatch={(patch) => {
-                  if (!selectedSlide) return
-                  replaceSelected(patchContent(selectedSlide, patch))
-                }}
-                onStatPatch={(statId, patch) => {
-                  if (!selectedSlide) return
-                  replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, statId, patch) }))
-                }}
-                onFeaturePatch={(featureId, patch) => {
-                  if (!selectedSlide) return
-                  replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, featureId, patch) }))
-                }}
-                onBeforeEdit={pushHistory}
-                onTextPositionChange={(x, y) => {
-                  if (!selectedSlide) return
-                  replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), x, y } }), false)
-                }}
-                onElementPositionChange={(elementId, x, y) => {
-                  if (!selectedSlide) return
-                  const els = (selectedLayout.elements || {}) as Record<string, { x?: number; y?: number }>
-                  const cur = els[elementId] || {}
-                  replaceSelected(patchLayout(selectedSlide, { elements: { ...els, [elementId]: { ...cur, x, y } } as Record<string, { x?: number; y?: number }> }), false)
-                }}
-                onElementToggle={(elementId) => {
-                  if (!selectedSlide) return
-                  const current = selectedContent.hidden_elements || []
-                  const idx = current.indexOf(elementId)
-                  const next = idx >= 0 ? current.filter((id) => id !== elementId) : [...current, elementId]
-                  replaceSelected(patchContent(selectedSlide, { hidden_elements: next }))
-                }}
-                onElementWidthChange={(key, width) => {
-                  if (!selectedSlide) return
-                  replaceSelected(patchContent(selectedSlide, { [key]: width } as Partial<SectionBuilderContent>), false)
-                }}
-                onElementScaleChange={(key, scale) => {
-                  if (!selectedSlide) return
-                  replaceSelected(patchContent(selectedSlide, { [key]: scale } as Partial<SectionBuilderContent>), false)
-                }}
-              />
+            <div className="overflow-x-auto rounded-2xl border border-[#D6A373]/14 bg-[#050302] p-2 shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
+              <div className={previewFrameClassName}>
+                <HeroLikeMediaPreview
+                  section={activeSection}
+                  slide={selectedSlide}
+                  content={selectedContent}
+                  layout={selectedLayout}
+                  effects={selectedFx}
+                  image={selectedImage}
+                  overlay={selectedOverlay}
+                  language={previewLanguage}
+                  previewMode={previewMode}
+                  onContentPatch={(patch) => {
+                    if (!selectedSlide) return
+                    replaceSelected(patchContent(selectedSlide, patch))
+                  }}
+                  onStatPatch={(statId, patch) => {
+                    if (!selectedSlide) return
+                    replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, statId, patch) }))
+                  }}
+                  onFeaturePatch={(featureId, patch) => {
+                    if (!selectedSlide) return
+                    replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, featureId, patch) }))
+                  }}
+                  onBeforeEdit={pushHistory}
+                  onTextPositionChange={(x, y) => {
+                    if (!selectedSlide) return
+                    replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), x, y } }), false)
+                  }}
+                  onElementPositionChange={(elementId, x, y) => {
+                    if (!selectedSlide) return
+                    const els = (selectedLayout.elements || {}) as Record<string, { x?: number; y?: number }>
+                    const cur = els[elementId] || {}
+                    replaceSelected(patchLayout(selectedSlide, { elements: { ...els, [elementId]: { ...cur, x, y } } as Record<string, { x?: number; y?: number }> }), false)
+                  }}
+                  onElementToggle={(elementId) => {
+                    if (!selectedSlide) return
+                    const current = selectedContent.hidden_elements || []
+                    const idx = current.indexOf(elementId)
+                    const next = idx >= 0 ? current.filter((id) => id !== elementId) : [...current, elementId]
+                    replaceSelected(patchContent(selectedSlide, { hidden_elements: next }))
+                  }}
+                  onElementWidthChange={(key, width) => {
+                    if (!selectedSlide) return
+                    replaceSelected(patchContent(selectedSlide, { [key]: width } as Partial<SectionBuilderContent>), false)
+                  }}
+                  onElementScaleChange={(key, scale) => {
+                    if (!selectedSlide) return
+                    replaceSelected(patchContent(selectedSlide, { [key]: scale } as Partial<SectionBuilderContent>), false)
+                  }}
+                />
+              </div>
             </div>
           </main>
 
@@ -695,16 +771,10 @@ export default function MediaStudioPage() {
                 {tab === 'content' && (
                   <div className="space-y-3">
                     {/* Element visibility toggles */}
-                    <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                    {hasFeatures && <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
                       <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Show / Hide Elements', 'إظهار / إخفاء العناصر')}</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { id: 'eyebrow', labelEn: 'Eyebrow', labelAr: 'عنوان صغير' },
-                          { id: 'title', labelEn: 'Title', labelAr: 'العنوان' },
-                          { id: 'subtitle', labelEn: 'Subtitle', labelAr: 'النص الفرعي' },
-                          { id: 'buttons', labelEn: 'Buttons', labelAr: 'الأزرار' },
-                          { id: 'stats', labelEn: 'Stats', labelAr: 'الأرقام' },
-                        ].map((el) => {
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {elementControls.map((el) => {
                           const hidden = (selectedContent.hidden_elements || []).includes(el.id)
                           return (
                             <button
@@ -723,8 +793,8 @@ export default function MediaStudioPage() {
                           )
                         })}
                       </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
+                    </div>}
+                    {hasStats && <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Feature Cards', 'كروت التفاصيل')}</p>
                         <button
@@ -760,18 +830,14 @@ export default function MediaStudioPage() {
                                   </button>
                                 </div>
                               </div>
-                              <div className="space-y-2">
-                                <TextField label="Icon" value={feature.icon || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { icon: value }) }))} placeholder="coffee / leaf / award / heart" />
-                                <TextField label="Title EN" value={feature.title_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { title_en: value }) }))} />
-                                <TextField label="Title AR" value={feature.title_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { title_ar: value }) }))} dir="rtl" />
-                                <TextArea label="Description EN" value={feature.description_en || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { description_en: value }) }))} />
-                                <TextArea label="Description AR" value={feature.description_ar || ''} onChange={(value) => replaceSelected(patchContent(selectedSlide, { features: updateFeature(features, feature.id, { description_ar: value }) }))} dir="rtl" />
-                              </div>
+                              <p className="truncate text-xs text-white/42">
+                                {localText(language, feature.title_en, feature.title_ar) || feature.id}
+                              </p>
                             </div>
                           ))}
                         </div>
                       )}
-                    </div>
+                    </div>}
                     <div className="rounded-2xl border border-white/8 bg-black/18 p-3">
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D6A373]/80">{t('Stats', 'الإحصائيات')}</p>
@@ -808,11 +874,9 @@ export default function MediaStudioPage() {
                                   </button>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-3 gap-2">
-                                <input value={stat.value} onChange={(e) => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { value: e.target.value }) }))} className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none" />
-                                <input value={stat.label_en} onChange={(e) => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { label_en: e.target.value }) }))} className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none" />
-                                <input dir="rtl" value={stat.label_ar} onChange={(e) => replaceSelected(patchContent(selectedSlide, { stats: updateStat(stats, stat.id, { label_ar: e.target.value }) }))} className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none" />
-                              </div>
+                              <p className="truncate text-xs text-white/42">
+                                {stat.value} · {localText(language, stat.label_en, stat.label_ar)}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -849,13 +913,15 @@ export default function MediaStudioPage() {
 
                 {tab === 'layout' && (
                   <div className="space-y-4">
-                    <RangeField label="Text X" value={Number(selectedLayout.textPosition?.x || 0)} min={-120} max={120} step={2} onChange={(value) => replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), x: value } }))} suffix="px" />
-                    <RangeField label="Text Y" value={Number(selectedLayout.textPosition?.y || 0)} min={-120} max={120} step={2} onChange={(value) => replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), y: value } }))} suffix="px" />
-                    <RangeField label="Text Width" value={Number(selectedContent.text_width || 704)} min={360} max={920} step={20} onChange={(value) => replaceSelected(patchContent(selectedSlide, { text_width: value }))} suffix="px" />
+                    {hasTextFrame && <RangeField label="Text X" value={Number(selectedLayout.textPosition?.x || 0)} min={-120} max={120} step={2} onChange={(value) => replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), x: value } }))} suffix="px" />}
+                    {hasTextFrame && <RangeField label="Text Y" value={Number(selectedLayout.textPosition?.y || 0)} min={-120} max={120} step={2} onChange={(value) => replaceSelected(patchLayout(selectedSlide, { textPosition: { ...(selectedLayout.textPosition || {}), y: value } }))} suffix="px" />}
+                    {hasTextFrame && <RangeField label="Text Width" value={Number(selectedContent.text_width || 704)} min={280} max={920} step={20} onChange={(value) => replaceSelected(patchContent(selectedSlide, { text_width: value }))} suffix="px" />}
                     <RangeField label="Eyebrow Scale" value={Number(selectedContent.eyebrow_scale || 1)} min={0.65} max={1.35} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { eyebrow_scale: value }))} />
                     <RangeField label="Title Scale" value={Number(selectedContent.title_scale || 1)} min={0.65} max={1.45} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { title_scale: value }))} />
                     <RangeField label="Subtitle Scale" value={Number(selectedContent.subtitle_scale || 1)} min={0.65} max={1.3} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { subtitle_scale: value }))} />
-                    <RangeField label="Stats Scale" value={Number(selectedContent.stats_scale || 1)} min={0.65} max={1.3} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { stats_scale: value }))} />
+                    <RangeField label="Body/Card Text Scale" value={Number(selectedContent.body_scale || 1)} min={0.65} max={1.3} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { body_scale: value }))} />
+                    {hasButtons && <RangeField label="Button Scale" value={Number(selectedContent.button_scale || 1)} min={0.65} max={1.3} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { button_scale: value }))} />}
+                    {hasStats && <RangeField label="Stats Scale" value={Number(selectedContent.stats_scale || 1)} min={0.65} max={1.3} step={0.05} onChange={(value) => replaceSelected(patchContent(selectedSlide, { stats_scale: value }))} />}
                   </div>
                 )}
 
@@ -941,7 +1007,7 @@ export default function MediaStudioPage() {
 
                 {tab === 'advanced' && (
                   <div className="space-y-3">
-                    <TextField label="Button Link" value={selectedContent.button_link || selectedSlide.button_link || selectedSlide.link_url || ''} onChange={(value) => replaceSelected(patchContent({ ...selectedSlide, button_link: value, link_url: value }, { button_link: value }))} />
+                    {hasButtons && <TextField label="Button Link" value={selectedContent.button_link || selectedSlide.button_link || selectedSlide.link_url || ''} onChange={(value) => replaceSelected(patchContent({ ...selectedSlide, button_link: value, link_url: value }, { button_link: value }))} />}
                     <TextField label="Usage Area" value={selectedSlide.usage_area || ''} onChange={(value) => patchSelected({ usage_area: value })} />
                     <TextField label="Section Key" value={selectedSlide.section_key || ''} onChange={(value) => patchSelected({ section_key: value })} />
                     <TextField label="Start Date" type="datetime-local" value={String(selectedSlide.starts_at || '')} onChange={(value) => patchSelected({ starts_at: value })} />
@@ -1070,6 +1136,7 @@ function HeroLikeMediaPreview({
   image,
   overlay,
   language,
+  previewMode,
   onContentPatch,
   onStatPatch,
   onFeaturePatch,
@@ -1088,6 +1155,7 @@ function HeroLikeMediaPreview({
   image: string
   overlay: number
   language: 'en' | 'ar'
+  previewMode: PreviewMode
   onContentPatch?: (patch: Partial<SectionBuilderContent>) => void
   onStatPatch?: (statId: string, patch: Partial<SectionStatBlock>) => void
   onFeaturePatch?: (featureId: string, patch: Partial<SectionTextBlock>) => void
@@ -1099,6 +1167,12 @@ function HeroLikeMediaPreview({
   onElementScaleChange?: (key: keyof SectionBuilderContent, scale: number) => void
 }) {
   const isRtl = language === 'ar'
+  const isMobilePreview = previewMode === 'mobile'
+  const isLaptopPreview = previewMode === 'laptop'
+  const isHomeHero = section.key === 'hero'
+  const isHomeFeatures = section.key === 'home_features'
+  const isPageHero = ['about_top', 'products_banner', 'blog_page', 'contact_page'].includes(section.key)
+  const canUseButtons = sectionSupportsButtons(section)
   const textPosition = layout.textPosition || {}
   const elementPos = (id: string) => {
     const pos = (layout.elements || {})[id]
@@ -1143,8 +1217,15 @@ function HeroLikeMediaPreview({
   const title = previewText('title', section.defaultTitleEn, section.defaultTitleAr) || localText(language, section.defaultTitleEn, section.defaultTitleAr)
   const subtitle = previewText('subtitle', section.defaultSubtitleEn, section.defaultSubtitleAr) || localText(language, section.defaultSubtitleEn, section.defaultSubtitleAr)
   const body = previewText('body')
-  const buttonText = previewText('button_text', section.defaultButtonTextEn || 'Shop Now', section.defaultButtonTextAr || 'تسوق القهوة') || localText(language, section.defaultButtonTextEn, section.defaultButtonTextAr)
-  const secondaryButtonText = previewText('secondary_button_text', 'Our Story', 'قصتنا') || localText(language, 'Our Story', 'قصتنا')
+  const mainCopyElementId: StudioElementId = body ? 'body' : 'subtitle'
+  const buttonText = canUseButtons
+    ? previewText('button_text', section.defaultButtonTextEn || (isHomeHero ? 'Shop Coffee' : ''), section.defaultButtonTextAr || '')
+      || localText(language, section.defaultButtonTextEn, section.defaultButtonTextAr)
+      || (isHomeHero ? localText(language, 'Shop Coffee', 'تسوق القهوة') : '')
+    : ''
+  const secondaryButtonText = isHomeHero
+    ? previewText('secondary_button_text', 'Our Story', 'قصتنا') || localText(language, 'Our Story', 'قصتنا')
+    : previewText('secondary_button_text')
   const eyebrowText = previewText('eyebrow', String(content.eyebrow_en || ''), String(content.eyebrow_ar || ''))
   const showEyebrow = Boolean(eyebrowText) && !['line coffee', 'لاين كوفي'].includes(eyebrowText.trim().toLowerCase())
   const filter = buildEffectsFilter(effects)
@@ -1294,15 +1375,17 @@ function HeroLikeMediaPreview({
     minWidth = 220,
     maxWidth = 920,
     elementId?: string,
+    wrapperClassName?: string,
+    transformOrigin = isRtl ? 'top right' : 'top left',
   ) => {
     const pos = elementId ? elementPos(elementId) : null
     return (
       <div
-        className="group/edit relative w-fit max-w-full"
+        className={cn('group/edit relative w-fit max-w-full', wrapperClassName)}
         style={{
           width,
           transform: `scale(${scale})${pos ? ` translate(${pos.x}px, ${pos.y}px)` : ''}`,
-          transformOrigin: isRtl ? 'top right' : 'top left',
+          transformOrigin,
         }}
       >
         <div className="rounded-lg pb-1 outline outline-1 outline-transparent transition group-hover/edit:outline-[#D6A373]/55 group-focus-within/edit:outline-[#D6A373]" style={{ width }}>
@@ -1348,6 +1431,132 @@ function HeroLikeMediaPreview({
     )
   }
 
+  if (isPageHero) {
+    const isContactHero = section.key === 'contact_page'
+    const isProductsHero = section.key === 'products_banner'
+    const pageHeroImage = isMobilePreview && slide?.mobile_image_url ? slide.mobile_image_url : image
+    const pageHeroHeight = isContactHero
+      ? (isMobilePreview ? 'min-h-[760px]' : 'min-h-[720px]')
+      : isProductsHero
+        ? (isMobilePreview ? 'min-h-[380px]' : 'min-h-[360px]')
+        : (isMobilePreview ? 'min-h-[430px]' : 'min-h-[500px]')
+    const pageTextWidth = Math.min(isMobilePreview ? 340 : 780, Math.max(isMobilePreview ? 260 : 360, Number(content.text_width || 680)))
+    const pageTitleClass = isMobilePreview
+      ? 'font-serif text-4xl font-bold leading-[1.12] text-[#F5E6D8] outline-none'
+      : 'font-serif text-4xl font-bold leading-[1.12] text-[#F5E6D8] outline-none md:text-5xl lg:text-6xl'
+    const pageSubtitleClass = isMobilePreview
+      ? 'text-base leading-relaxed text-[#D6B79A]/82 outline-none'
+      : 'text-lg leading-relaxed text-[#D6B79A]/82 outline-none md:text-xl'
+
+    return (
+      <div className={cn('relative overflow-hidden bg-[#0B0806]', pageHeroHeight)} dir={isRtl ? 'rtl' : 'ltr'}>
+        <style>{`
+          @keyframes mediaStudioImageFade { from { opacity: .72; } to { opacity: 1; } }
+          @keyframes mediaStudioImageZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+          @keyframes mediaStudioImagePanLeft { from { transform: scale(1.05) translateX(2%); } to { transform: scale(1.05) translateX(-2%); } }
+          @keyframes mediaStudioImagePanRight { from { transform: scale(1.05) translateX(-2%); } to { transform: scale(1.05) translateX(2%); } }
+          @keyframes mediaStudioTextFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes mediaStudioTextSlideLeft { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: translateX(0); } }
+          @keyframes mediaStudioTextSlideRight { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+          @keyframes mediaStudioTextZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+        `}</style>
+        <img
+          src={pageHeroImage}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            objectPosition,
+            filter: filter || undefined,
+            animation: imageAnimationName ? `${imageAnimationName} ${imageAnimationDuration} ease-in-out infinite alternate` : undefined,
+          }}
+        />
+        <div className="absolute inset-0" style={{ background: overlayBackground }} />
+        <div className="absolute inset-0 bg-black/35" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_28%,rgba(0,0,0,0.78)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
+        {Number(effects.grain || 0) > 0.05 && (
+          <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(effects.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
+        )}
+
+        <div className={cn('relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5', isMobilePreview ? 'py-14' : 'px-10 py-20', isContactHero ? 'justify-start' : 'justify-center')}>
+          <div
+            className="group mx-auto touch-none cursor-grab text-center active:cursor-grabbing"
+            style={{
+              width: pageTextWidth,
+              transform: `translate(${Number(textPosition.x || 0)}px, ${Number(textPosition.y || 0)}px)`,
+              animation: textAnimationName ? `${textAnimationName} ${textAnimationDuration} ease both` : undefined,
+            }}
+            onPointerDown={handleFramePointerDown}
+            title={localText(language, 'Drag to move text frame', 'اسحب لتحريك إطار النص')}
+          >
+            {showEyebrow && !isHidden('eyebrow') && editableText(
+              'eyebrow',
+              <p {...editable(fieldName('eyebrow'), eyebrowText)} className="mb-4 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373] outline-none" />,
+              'eyebrow_width',
+              'eyebrow_scale',
+              Math.min(pageTextWidth, Math.max(180, Number(content.eyebrow_width || 320))),
+              eyebrowScale,
+              140,
+              pageTextWidth,
+              'eyebrow',
+              'mx-auto text-center',
+              'top center',
+            )}
+            {!isHidden('title') && editableText(
+              'title',
+              <h2 {...editable(fieldName('title'), title)} className={pageTitleClass} style={{ textShadow: '0 4px 32px rgba(0,0,0,0.62)' }} />,
+              'title_width',
+              'title_scale',
+              Math.min(pageTextWidth, Math.max(260, Number(content.title_width || pageTextWidth))),
+              titleScale,
+              240,
+              pageTextWidth,
+              'title',
+              'mx-auto text-center',
+              'top center',
+            )}
+            {!isHidden('subtitle') && subtitle && editableText(
+              'subtitle',
+              <p {...editable(fieldName('subtitle'), subtitle)} className={cn('mx-auto mt-4', pageSubtitleClass)} />,
+              'subtitle_width',
+              'subtitle_scale',
+              Math.min(pageTextWidth, Math.max(240, Number(content.subtitle_width || Math.min(620, pageTextWidth)))),
+              subtitleScale,
+              220,
+              pageTextWidth,
+              'subtitle',
+              'mx-auto text-center',
+              'top center',
+            )}
+          </div>
+
+          {isContactHero && (
+            <div className={cn('mt-10 grid gap-4', isMobilePreview ? 'grid-cols-1' : 'grid-cols-[0.9fr_1.1fr]')}>
+              <div className="space-y-3">
+                {['Address', 'Phone', 'Email', 'WhatsApp'].map((label) => (
+                  <div key={label} className="rounded-2xl border border-[#D6A373]/14 bg-[#120D09]/70 p-4">
+                    <p className="font-serif text-base font-bold text-[#F5E6D8]">{label}</p>
+                    <p className="mt-1 text-sm text-[#D6B79A]/58">Line Coffee contact detail</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-2xl border border-[#D6A373]/14 bg-[#120D09]/76 p-5">
+                <p className="mb-4 font-serif text-xl font-bold text-[#F5E6D8]">Send us a Message</p>
+                <div className="grid gap-3">
+                  <div className="h-10 rounded-xl border border-[#D6A373]/20 bg-black/22" />
+                  <div className="h-10 rounded-xl border border-[#D6A373]/20 bg-black/22" />
+                  <div className="h-20 rounded-xl border border-[#D6A373]/20 bg-black/22" />
+                  <div className="h-11 rounded-xl bg-[#D6A373]" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   // ── Split-content layout (Our Story, About sections) ──────────────────────
   if (section.sectionType === 'split_content') {
     return (
@@ -1355,13 +1564,13 @@ function HeroLikeMediaPreview({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_20%_50%,rgba(182,136,94,0.09)_0%,transparent_70%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#B6885E]/20 to-transparent" />
-        <div className="relative z-10 grid items-center gap-12 px-8 lg:grid-cols-2 lg:gap-16" style={{ animation: textAnimationName ? `${textAnimationName} ${textAnimationDuration} ease both` : undefined }}>
+        <div className={cn('relative z-10 grid gap-12', isMobilePreview ? 'grid-cols-1 px-5' : 'items-start px-8 lg:grid-cols-2 lg:gap-16')} style={{ animation: textAnimationName ? `${textAnimationName} ${textAnimationDuration} ease both` : undefined }}>
           {/* Text column */}
           <div className={cn('space-y-5', isRtl ? 'text-right' : 'text-left')}>
             {showEyebrow && !isHidden('eyebrow') && editableText('eyebrow', <p {...editable(fieldName('eyebrow'), eyebrowText)} className="text-xs uppercase tracking-[0.24em] font-bold outline-none" style={{ color: '#D6A373' }} />, 'eyebrow_width', 'eyebrow_scale', Math.min(560, Math.max(180, Number(content.eyebrow_width || 360))), eyebrowScale, 140, 560, 'eyebrow')}
-            {!isHidden('title') && editableText('title', <h2 {...editable(fieldName('title'), title)} className="font-serif text-3xl font-bold leading-tight outline-none md:text-5xl" style={{ color: '#F5E6D8' }} />, 'title_width', 'title_scale', Math.min(680, Math.max(280, Number(content.title_width || 520))), titleScale, 260, 680, 'title')}
-            {!isHidden('subtitle') && editableText(body ? 'body' : 'subtitle', <p {...editable(body ? fieldName('body') : fieldName('subtitle'), body || subtitle)} className="text-base leading-relaxed outline-none" style={{ color: 'rgba(214,183,154,0.75)' }} />, body ? 'body_width' : 'subtitle_width', body ? 'body_scale' : 'subtitle_scale', Math.min(600, Math.max(240, Number((body ? content.body_width : content.subtitle_width) || 500))), body ? bodyScale : subtitleScale, 200, 620, 'subtitle')}
-            {activeFeatures.length > 0 && (
+            {!isHidden('title') && editableText('title', <h2 {...editable(fieldName('title'), title)} className={cn('font-serif font-bold leading-tight outline-none', isMobilePreview ? 'text-3xl' : 'text-3xl md:text-5xl')} style={{ color: '#F5E6D8' }} />, 'title_width', 'title_scale', Math.min(isMobilePreview ? 340 : 680, Math.max(240, Number(content.title_width || 520))), titleScale, 220, isMobilePreview ? 340 : 680, 'title')}
+            {!isHidden(mainCopyElementId) && editableText(body ? 'body' : 'subtitle', <p {...editable(body ? fieldName('body') : fieldName('subtitle'), body || subtitle)} className="text-base leading-relaxed outline-none" style={{ color: 'rgba(214,183,154,0.75)' }} />, body ? 'body_width' : 'subtitle_width', body ? 'body_scale' : 'subtitle_scale', Math.min(600, Math.max(240, Number((body ? content.body_width : content.subtitle_width) || 500))), body ? bodyScale : subtitleScale, 200, 620, mainCopyElementId)}
+            {activeFeatures.length > 0 && !isHidden('features') && (
               <div className="space-y-4 pt-1">
                 {activeFeatures.map((feature) => (
                   <div key={feature.id} className="flex items-start gap-3">
@@ -1388,7 +1597,7 @@ function HeroLikeMediaPreview({
                 ))}
               </div>
             )}
-            {!isHidden('buttons') && buttonText && editableText('button', <div {...editable(fieldName('button_text'), buttonText)} className="inline-flex items-center gap-2 rounded-full border border-[#D6A373]/40 px-6 py-3 text-sm font-semibold outline-none" style={{ color: '#D6A373' }} />, 'button_width', 'button_scale', Math.min(280, Math.max(130, Number(content.button_width || 200))), buttonScale, 120, 280)}
+            {canUseButtons && !isHidden('buttons') && buttonText && editableText('button', <div {...editable(fieldName('button_text'), buttonText)} className="inline-flex items-center gap-2 rounded-full border border-[#D6A373]/40 px-6 py-3 text-sm font-semibold outline-none" style={{ color: '#D6A373' }} />, 'button_width', 'button_scale', Math.min(280, Math.max(130, Number(content.button_width || 200))), buttonScale, 120, 280)}
           </div>
           {/* Image column */}
           <div className="relative">
@@ -1402,7 +1611,7 @@ function HeroLikeMediaPreview({
               {Number(effects.grain || 0) > 0.05 && <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(effects.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />}
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FFDCC2]/30 to-transparent" />
             </div>
-            {previewStats.length > 0 && !isHidden('stats') && (
+            {sectionSupportsStats(section) && previewStats.length > 0 && !isHidden('stats') && (
               <div className={cn('absolute -bottom-4 rounded-2xl p-4 shadow-2xl', isRtl ? '-right-3' : '-left-3')} style={{ background: 'rgba(18,13,9,0.92)', border: '1px solid rgba(182,136,94,0.18)', backdropFilter: 'blur(12px)' }}>
                 <div className="flex items-center gap-4">
                   {previewStats.slice(0, 3).map((stat, i) => (
@@ -1426,13 +1635,13 @@ function HeroLikeMediaPreview({
   // ── Card / feature grid layout (Features, Testimonials, Values, Categories) ─
   if (section.sectionType !== 'full_hero' && (section.editorTemplate === 'text_cards' || section.editorTemplate === 'cards' || section.sectionType === 'multi_card_slider' || section.sectionType === 'testimonial_highlight')) {
     return (
-      <div className="relative overflow-hidden py-14" style={{ background: '#0B0806' }} dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className={cn('relative overflow-hidden', isMobilePreview ? 'py-10' : 'py-14')} style={{ background: '#0B0806' }} dir={isRtl ? 'rtl' : 'ltr'}>
         <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-8" style={{ objectPosition, filter: filter || undefined }} />
         <div className="absolute inset-0" style={{ background: overlayBackground }} />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(214,163,115,0.08),transparent_70%)]" />
-        <div className="relative z-10 px-8">
+        <div className={cn('relative z-10', isMobilePreview ? 'px-4' : 'px-8')}>
           {/* Section header */}
-          <div className={cn('mb-8', isRtl ? 'text-right' : 'text-left')}>
+          {!isHomeFeatures && <div className={cn('mb-8', isRtl ? 'text-right' : 'text-left')}>
             {showEyebrow && !isHidden('eyebrow') && (
               <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onContentPatch?.({ [fieldName('eyebrow')]: e.currentTarget.textContent || '' } as Partial<SectionBuilderContent>)} className="mb-3 text-xs uppercase tracking-[0.24em] font-bold outline-none" style={{ color: '#D6A373' }}>{eyebrowText}</p>
             )}
@@ -1442,22 +1651,22 @@ function HeroLikeMediaPreview({
             {!isHidden('subtitle') && subtitle && (
               <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onContentPatch?.({ [fieldName('subtitle')]: e.currentTarget.textContent || '' } as Partial<SectionBuilderContent>)} className="text-sm leading-relaxed outline-none" style={{ color: 'rgba(214,183,154,0.75)' }}>{subtitle}</p>
             )}
-          </div>
+          </div>}
           {/* Feature cards */}
-          {activeFeatures.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-3">
+          {activeFeatures.length > 0 && !isHidden('features') ? (
+            <div className={cn('grid gap-4', isMobilePreview ? 'grid-cols-2 gap-3' : activeFeatures.length <= 3 ? 'md:grid-cols-3' : 'lg:grid-cols-4')}>
               {activeFeatures.slice(0, 3).map((feature) => (
-                <div key={feature.id} className="rounded-2xl border border-[#D6A373]/14 p-5 shadow-lg" style={{ background: 'rgba(18,13,9,0.82)' }}>
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'rgba(182,136,94,0.1)', border: '1px solid rgba(182,136,94,0.28)' }}>
+                <div key={feature.id} className={cn('rounded-2xl border border-[#D6A373]/14 shadow-lg', isMobilePreview ? 'p-4 text-center' : 'p-5')} style={{ background: 'rgba(18,13,9,0.82)' }}>
+                  <div className={cn('mb-4 flex items-center justify-center rounded-full', isMobilePreview ? 'mx-auto h-12 w-12' : 'h-10 w-10')} style={{ background: 'rgba(182,136,94,0.1)', border: '1px solid rgba(182,136,94,0.28)' }}>
                     <span style={{ color: '#B6885E', fontSize: 13 }}>★</span>
                   </div>
-                  <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onFeaturePatch?.(feature.id, { [language === 'ar' ? 'title_ar' : 'title_en']: e.currentTarget.textContent || '' } as Partial<SectionTextBlock>)} className="mb-2 font-serif text-sm font-bold outline-none" style={{ color: '#F5E6D8' }}>{localText(language, feature.title_en, feature.title_ar)}</p>
-                  <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onFeaturePatch?.(feature.id, { [language === 'ar' ? 'description_ar' : 'description_en']: e.currentTarget.textContent || '' } as Partial<SectionTextBlock>)} className="text-xs leading-relaxed outline-none" style={{ color: 'rgba(214,183,154,0.65)' }}>{localText(language, feature.description_en, feature.description_ar)}</p>
+                  <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onFeaturePatch?.(feature.id, { [language === 'ar' ? 'title_ar' : 'title_en']: e.currentTarget.textContent || '' } as Partial<SectionTextBlock>)} className="mb-2 font-serif font-bold outline-none" style={{ color: '#F5E6D8', fontSize: `${0.9 * titleScale}rem`, lineHeight: 1.25 }}>{localText(language, feature.title_en, feature.title_ar)}</p>
+                  <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onFeaturePatch?.(feature.id, { [language === 'ar' ? 'description_ar' : 'description_en']: e.currentTarget.textContent || '' } as Partial<SectionTextBlock>)} className="leading-relaxed outline-none" style={{ color: 'rgba(214,183,154,0.65)', fontSize: `${0.75 * bodyScale}rem` }}>{localText(language, feature.description_en, feature.description_ar)}</p>
                 </div>
               ))}
             </div>
-          ) : previewStats.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-3">
+          ) : previewStats.length > 0 && sectionSupportsStats(section) ? (
+            <div className={cn('grid gap-4', isMobilePreview ? 'grid-cols-1' : 'md:grid-cols-3')}>
               {previewStats.slice(0, 3).map((stat, i) => (
                 <div key={stat.id} className="rounded-2xl border border-[#D6A373]/14 p-5 text-center shadow-lg" style={{ background: 'rgba(18,13,9,0.82)' }}>
                   <p dir="ltr" contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onStatPatch?.(stat.id, { value: e.currentTarget.textContent || '' })} className="font-serif text-3xl font-bold outline-none" style={{ color: '#D6A373' }}>{stat.value}</p>
@@ -1494,7 +1703,7 @@ function HeroLikeMediaPreview({
           {!isHidden('subtitle') && subtitle && (
             <p contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onContentPatch?.({ [fieldName('subtitle')]: e.currentTarget.textContent || '' } as Partial<SectionBuilderContent>)} className="mx-auto mb-8 max-w-xl text-base leading-relaxed outline-none" style={{ color: 'rgba(214,183,154,0.85)' }}>{subtitle}</p>
           )}
-          {!isHidden('buttons') && (buttonText || section.supportsCta) && (
+          {canUseButtons && !isHidden('buttons') && buttonText && (
             <div className={cn('flex flex-col items-center gap-4 sm:flex-row sm:justify-center', isRtl ? 'sm:flex-row-reverse' : '')}>
               <div contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onContentPatch?.({ [fieldName('button_text')]: e.currentTarget.textContent || '' } as Partial<SectionBuilderContent>)} className="inline-flex min-h-12 min-w-[9.5rem] cursor-pointer items-center justify-center rounded-xl bg-[#D6A373] px-8 py-3 text-base font-bold text-black outline-none">{buttonText || localText(language, 'Shop Now', 'تسوق القهوة')}</div>
               {secondaryButtonText && <div contentEditable suppressContentEditableWarning onPointerDown={(e) => e.stopPropagation()} onBlur={(e) => onContentPatch?.({ [fieldName('secondary_button_text')]: e.currentTarget.textContent || '' } as Partial<SectionBuilderContent>)} className="inline-flex min-h-12 min-w-[9.5rem] cursor-pointer items-center justify-center rounded-xl border border-[#D6A373]/35 px-8 py-3 text-base font-bold outline-none" style={{ color: '#D6A373' }}>{secondaryButtonText}</div>}
@@ -1507,7 +1716,7 @@ function HeroLikeMediaPreview({
 
   // ── Full hero / full-image banner layout (default) ────────────────────────
   return (
-    <div className="relative h-[clamp(560px,74vh,760px)] overflow-hidden bg-[#0B0806]" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className={cn('relative overflow-hidden bg-[#0B0806]', isMobilePreview ? 'min-h-[720px]' : isLaptopPreview ? 'h-[650px]' : 'h-[clamp(560px,74vh,760px)]')} dir={isRtl ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes mediaStudioImageFade { from { opacity: .72; } to { opacity: 1; } }
         @keyframes mediaStudioImageZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
@@ -1519,7 +1728,7 @@ function HeroLikeMediaPreview({
         @keyframes mediaStudioTextZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
       `}</style>
       <img
-        src={image}
+        src={isMobilePreview && slide?.mobile_image_url ? slide.mobile_image_url : image}
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
         style={{
@@ -1541,11 +1750,11 @@ function HeroLikeMediaPreview({
       )}
       <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#0B0806] to-transparent" />
 
-      <div className={cn('relative z-10 flex h-full items-center px-6 py-10 md:px-12 lg:px-20', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
+      <div className={cn('relative z-10 flex h-full items-center', isMobilePreview ? 'px-5 py-10' : 'px-6 py-10 md:px-12 lg:px-20', isRtl ? 'justify-start text-right' : 'justify-start text-left')}>
         <div
           className={cn('group relative max-w-[min(100%,64rem)] touch-none cursor-grab active:cursor-grabbing', isRtl ? 'text-right' : 'text-left')}
           style={{
-            width: textWidth,
+            width: isMobilePreview ? Math.min(340, Math.max(280, Number(content.text_width || 330))) : textWidth,
             transform: `translate(${Number(textPosition.x || 0)}px, ${Number(textPosition.y || 0)}px)`,
           }}
           title={localText(language, 'Drag to move text frame', 'اسحب لتحريك إطار النص')}
@@ -1573,33 +1782,33 @@ function HeroLikeMediaPreview({
               'title',
               <h2
                 {...editable(fieldName('title'), title)}
-                className="font-serif text-[clamp(2.8rem,5.4vw,5.8rem)] font-extrabold leading-[1.05] text-balance text-[#F5E6D8] outline-none"
+                className={cn('font-serif font-extrabold leading-[1.05] text-balance text-[#F5E6D8] outline-none', isMobilePreview ? 'text-[3rem]' : 'text-[clamp(2.8rem,5.4vw,5.8rem)]')}
                 style={{ textShadow: '0 4px 34px rgba(0,0,0,0.62)' }}
               />,
               'title_width',
               'title_scale',
-              Math.min(920, Math.max(360, Number(content.title_width || textWidth))),
+              Math.min(isMobilePreview ? 340 : 920, Math.max(isMobilePreview ? 260 : 360, Number(content.title_width || (isMobilePreview ? 330 : textWidth)))),
               titleScale,
-              360,
-              920,
+              isMobilePreview ? 240 : 360,
+              isMobilePreview ? 340 : 920,
               'title',
             )}
-            {!isHidden('subtitle') && editableText(
+            {!isHidden(mainCopyElementId) && editableText(
               body ? 'body' : 'subtitle',
               <p
                 {...editable(body ? fieldName('body') : fieldName('subtitle'), body || subtitle)}
-                className="mt-6 text-base leading-relaxed text-[#D6B79A]/86 outline-none md:text-xl"
+                className={cn('mt-6 text-base leading-relaxed text-[#D6B79A]/86 outline-none', !isMobilePreview && 'md:text-xl')}
               />,
               body ? 'body_width' : 'subtitle_width',
               body ? 'body_scale' : 'subtitle_scale',
-              Math.min(820, Math.max(300, Number((body ? content.body_width : content.subtitle_width) || 640))),
+              Math.min(isMobilePreview ? 330 : 820, Math.max(isMobilePreview ? 240 : 300, Number((body ? content.body_width : content.subtitle_width) || (isMobilePreview ? 300 : 640)))),
               body ? bodyScale : subtitleScale,
-              260,
-              820,
-              'subtitle',
+              isMobilePreview ? 220 : 260,
+              isMobilePreview ? 330 : 820,
+              mainCopyElementId,
             )}
-            {(buttonText || section.supportsCta) && !isHidden('buttons') && (
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row" dir={isRtl ? 'rtl' : 'ltr'}>
+            {canUseButtons && buttonText && !isHidden('buttons') && (
+              <div className={cn(isMobilePreview ? 'mt-7 flex flex-col gap-3' : 'mt-8 flex flex-col gap-4 sm:flex-row')} dir={isRtl ? 'rtl' : 'ltr'}>
                 {editableText(
                   'button',
                   <div
@@ -1608,12 +1817,12 @@ function HeroLikeMediaPreview({
                   />,
                   'button_width',
                   'button_scale',
-                  Math.min(360, Math.max(160, Number(content.button_width || 220))),
+                  Math.min(isMobilePreview ? 310 : 360, Math.max(150, Number(content.button_width || 220))),
                   buttonScale,
                   150,
-                  360,
+                  isMobilePreview ? 310 : 360,
                 )}
-                {editableText(
+                {secondaryButtonText && editableText(
                   'secondary-button',
                   <div
                     {...editable(fieldName('secondary_button_text'), secondaryButtonText)}
@@ -1621,15 +1830,15 @@ function HeroLikeMediaPreview({
                   />,
                   'secondary_button_width',
                   'secondary_button_scale',
-                  Math.min(360, Math.max(160, Number(content.secondary_button_width || 220))),
+                  Math.min(isMobilePreview ? 310 : 360, Math.max(150, Number(content.secondary_button_width || 220))),
                   secondaryButtonScale,
                   150,
-                  360,
+                  isMobilePreview ? 310 : 360,
                 )}
               </div>
             )}
-            {previewStats.length > 0 && !isHidden('stats') && (
-              <div className="mt-12 grid max-w-3xl grid-cols-3 gap-8 border-t border-[#D6A373]/22 pt-7" style={{ transform: `scale(${statsScale})${(() => { const p = elementPos('stats'); return p.x || p.y ? ` translate(${p.x}px,${p.y}px)` : '' })()}`, transformOrigin: isRtl ? 'top right' : 'top left' }}>
+            {sectionSupportsStats(section) && previewStats.length > 0 && !isHidden('stats') && (
+              <div className={cn('grid max-w-3xl border-t border-[#D6A373]/22', isMobilePreview ? 'mt-9 grid-cols-1 gap-4 pt-6' : 'mt-12 grid-cols-3 gap-8 pt-7')} style={{ transform: `scale(${statsScale})${(() => { const p = elementPos('stats'); return p.x || p.y ? ` translate(${p.x}px,${p.y}px)` : '' })()}`, transformOrigin: isRtl ? 'top right' : 'top left' }}>
                 {previewStats.slice(0, 3).map((stat, index) => (
                   <div key={stat.id} className="rounded-lg outline outline-1 outline-transparent transition hover:outline-[#D6A373]/45 focus-within:outline-[#D6A373]/70">
                     <p
@@ -1645,7 +1854,7 @@ function HeroLikeMediaPreview({
                           onStatPatch?.(stat.id, { value })
                         }
                       }}
-                      className="font-serif text-3xl font-bold text-[#D6A373] outline-none md:text-4xl"
+                      className={cn('font-serif font-bold text-[#D6A373] outline-none', isMobilePreview ? 'text-2xl' : 'text-3xl md:text-4xl')}
                     >
                       {stat.value}
                     </p>
@@ -1703,31 +1912,6 @@ function TextField({
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-xl border border-white/10 bg-black/24 px-3 py-2 text-sm text-[#F5E6D8] outline-none transition focus:border-[#D6A373]/45"
-      />
-    </label>
-  )
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  dir,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  dir?: 'rtl' | 'ltr'
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/70">{label}</span>
-      <textarea
-        dir={dir}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={3}
-        className="w-full resize-none rounded-xl border border-white/10 bg-black/24 px-3 py-2 text-sm leading-relaxed text-[#F5E6D8] outline-none transition focus:border-[#D6A373]/45"
       />
     </label>
   )
