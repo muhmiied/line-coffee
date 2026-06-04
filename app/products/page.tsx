@@ -2,12 +2,11 @@
 
 import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { motion } from 'framer-motion'
 import { Search, PackageSearch, Sparkles, ChevronRight, Check, X, ShoppingBag, Coffee, Scale, SlidersHorizontal, Minus, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/product-card'
+import { ProductsHero } from '@/components/pages/products'
 import { getCustomStockIssue } from '@/lib/custom-stock'
 import { useLanguage } from '@/lib/context/language'
 import { useCartStore } from '@/lib/store/cart'
@@ -48,7 +47,7 @@ import {
   PremiumConfiguratorShell,
   PremiumOptionCard,
 } from '@/components/products/premium-configurator'
-import { getMediaObjectPosition, getMediaOverlayOpacity, type SiteMediaItem } from '@/lib/media'
+import { type SiteMediaItem } from '@/lib/media'
 import { toast } from 'sonner'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -1359,36 +1358,7 @@ function ProductsPageInner() {
 
   return (
     <div className="min-h-screen" style={{ background: '#0B0806' }}>
-      {/* Hero Banner */}
-      <div className="relative h-[45vh] min-h-[320px] flex items-center justify-center -mt-20 md:-mt-24 pt-20 md:pt-24" style={{ background: '#0B0806' }}>
-        <Image
-          src={productsBanner?.image_url || 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600'}
-          alt={language === 'ar' ? productsBanner?.alt_ar || productsBanner?.alt_en || 'Our Products' : productsBanner?.alt_en || productsBanner?.alt_ar || 'Our Products'}
-          fill
-          className="object-cover brightness-[0.58] contrast-[1.14] saturate-[1.08]"
-          style={{ objectPosition: productsBanner ? getMediaObjectPosition(productsBanner) : 'center center' }}
-          priority
-        />
-        <div className="absolute inset-0 bg-black" style={{ opacity: productsBanner ? getMediaOverlayOpacity(productsBanner, 0.6) : 0.6 }} />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.75)_100%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#0B0806] via-[#0B0806]/60 to-transparent" />
-        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0B0806]/80 via-[#0B0806]/30 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_65%,_rgba(182,136,94,0.08)_0%,_transparent_70%)]" />
-        <div className="relative z-10 text-center text-white px-4">
-          <motion.h1 initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }}
-            className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            {t(productsBanner?.title_en || 'Our Products', productsBanner?.title_ar || productsBanner?.title_en || 'منتجاتنا')}
-          </motion.h1>
-          <motion.p initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} transition={{ delay:0.1 }}
-            className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
-            {t(
-              productsBanner?.subtitle_en || 'Discover our carefully curated selection of premium coffee.',
-              productsBanner?.subtitle_ar || productsBanner?.subtitle_en || 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.',
-            )}
-          </motion.p>
-        </div>
-      </div>
+      <ProductsHero media={productsBanner} />
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">

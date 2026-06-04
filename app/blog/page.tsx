@@ -4,16 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Calendar, FileText } from 'lucide-react'
+import { BlogEmptyState, BlogHero } from '@/components/pages/blog'
 import { useLanguage } from '@/lib/context/language'
 import { useSectionContent } from '@/lib/hooks/use-section-media'
-import {
-  buildEffectsFilter,
-  buildOverlayGradient,
-  getMediaObjectPosition,
-  getMediaOverlayOpacity,
-  getVisualEffects,
-  GRAIN_SVG,
-} from '@/lib/media'
 import { cn } from '@/lib/utils'
 
 type Post = {
@@ -35,10 +28,6 @@ export default function BlogListPage() {
   const { media: sectionMedia, content: sectionContent } = useSectionContent('blog_page')
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
-  const bgFx = getVisualEffects(sectionMedia)
-  const bgFilter = buildEffectsFilter(bgFx)
-  const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.78) : 0.78
-  const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
 
   useEffect(() => {
     fetch('/api/blog/public', { cache: 'no-store' })
@@ -50,37 +39,8 @@ export default function BlogListPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0B0806] py-14 md:py-24">
-      {sectionMedia?.image_url && (
-        <>
-          <Image
-            src={sectionMedia.image_url}
-            alt={sectionMedia.alt_en || sectionContent.title_en || ''}
-            fill
-            sizes="100vw"
-            loading="lazy"
-            className="object-cover"
-            style={{ objectPosition: getMediaObjectPosition(sectionMedia), filter: bgFilter || undefined }}
-            unoptimized
-          />
-          <div className="absolute inset-0" style={{ background: bgOverlay }} />
-          {Number(bgFx.grain || 0) > 0.05 && (
-            <div className="absolute inset-0 mix-blend-screen" style={{ opacity: Number(bgFx.grain), backgroundImage: GRAIN_SVG, backgroundSize: '180px 180px' }} />
-          )}
-        </>
-      )}
+      <BlogHero media={sectionMedia} content={sectionContent} />
       <div className="container relative z-10 mx-auto max-w-5xl px-4">
-        <div className="mb-8 text-center md:mb-12">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]">
-            {t(sectionContent.eyebrow_en || 'Coffee Journal', sectionContent.eyebrow_ar || 'مجلة القهوة')}
-          </p>
-          <h1 className="mb-3 font-serif text-3xl font-bold leading-[1.18] text-[#F5E6D8] md:text-5xl">
-            {t(sectionContent.title_en || 'Blog', sectionContent.title_ar || 'المدونة')}
-          </h1>
-          <p className="text-lg text-[#D6B79A]/72">
-            {t(sectionContent.subtitle_en || 'Coffee stories, brewing guides & more', sectionContent.subtitle_ar || 'قصص القهوة، أدلة التحضير والمزيد')}
-          </p>
-        </div>
-
         {loading ? (
           <div className="grid gap-6 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -94,18 +54,7 @@ export default function BlogListPage() {
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <div className="py-24 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#B6885E]/15 bg-[#B6885E]/8">
-              <FileText className="h-9 w-9 text-[#B6885E]/55" />
-            </div>
-            <h2 className="mb-2 font-serif text-xl font-semibold text-[#F5E6D8]">{t('Coffee notes are being prepared', 'نحضّر ملاحظات القهوة')}</h2>
-            <p className="mx-auto max-w-md text-[#D6B79A]/60">
-              {t(
-                'Guides, Line Coffee updates, and brewing notes will appear here once published.',
-                'ستظهر هنا الإرشادات وتحديثات لاين كوفي وملاحظات التحضير بعد نشرها.',
-              )}
-            </p>
-          </div>
+          <BlogEmptyState />
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {posts.map((post) => {

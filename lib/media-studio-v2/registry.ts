@@ -1,6 +1,7 @@
 export type MediaStudioV2PageId = 'home' | 'about' | 'products' | 'blog' | 'contact'
 
 export type MediaStudioV2MappingStatus = 'reusable' | 'needs-extraction' | 'composite'
+export type MediaStudioV2ControlState = 'preview-only' | 'read-only' | 'local-draft-only' | 'needs-extraction'
 
 export type MediaStudioV2Page = {
   id: MediaStudioV2PageId
@@ -35,6 +36,17 @@ export type MediaStudioV2Section = {
     modes: Array<'desktop' | 'tablet' | 'mobile'>
     supportsOverrides: boolean
   }
+}
+
+export type MediaStudioV2InspectorTab = (typeof MEDIA_STUDIO_V2_CONTROL_TABS)[number]
+
+export type MediaStudioV2InspectorControl = {
+  id: string
+  label: string
+  description: string
+  control: 'text' | 'textarea' | 'media' | 'select' | 'slider' | 'toggle' | 'info'
+  state: MediaStudioV2ControlState
+  value?: string
 }
 
 export const MEDIA_STUDIO_V2_PAGES: MediaStudioV2Page[] = [
@@ -197,9 +209,10 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
     description: 'Products page hero banner above catalog filters.',
     currentSectionKey: 'products_banner',
     componentMapping: {
-      status: 'needs-extraction',
-      component: 'ProductsHeroSection',
-      sourceFile: 'app/products/page.tsx',
+      status: 'reusable',
+      component: 'ProductsHero',
+      sourceFile: 'components/pages/products/products-hero.tsx',
+      notes: 'Shared by the public Products page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['title', 'subtitle'],
     editableMediaFields: ['image', 'alt_text', 'focus_position', 'overlay_opacity'],
@@ -217,9 +230,10 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
     description: 'Blog journal intro with optional managed background.',
     currentSectionKey: 'blog_page',
     componentMapping: {
-      status: 'needs-extraction',
-      component: 'BlogHeroSection',
-      sourceFile: 'app/blog/page.tsx',
+      status: 'reusable',
+      component: 'BlogHero',
+      sourceFile: 'components/pages/blog/blog-hero.tsx',
+      notes: 'Shared by the public Blog page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['eyebrow', 'title', 'subtitle'],
     editableMediaFields: ['image', 'alt_text', 'focus_position', 'overlay_effects'],
@@ -237,10 +251,10 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
     description: 'Empty journal state shown when no public posts exist.',
     currentSectionKey: 'blog_page',
     componentMapping: {
-      status: 'needs-extraction',
+      status: 'reusable',
       component: 'BlogEmptyState',
-      sourceFile: 'app/blog/page.tsx',
-      notes: 'Only visible when the public posts list is empty.',
+      sourceFile: 'components/pages/blog/blog-empty-state.tsx',
+      notes: 'Public page only shows this state when no posts exist; V2 can preview it directly.',
     },
     editableTextFields: ['title', 'body', 'icon_label'],
     editableMediaFields: [],
@@ -302,6 +316,132 @@ export const MEDIA_STUDIO_V2_CONTROL_TABS = [
   'Animation',
   'Advanced',
 ] as const
+
+const layoutFieldIds = new Set(['alignment', 'padding', 'gap', 'max_width', 'section_height', 'text_alignment', 'text_position'])
+
+const fieldLabels: Record<string, string> = {
+  eyebrow: 'Eyebrow',
+  title: 'Title',
+  subtitle: 'Subtitle',
+  body: 'Body',
+  stats: 'Stats',
+  'stats.value': 'Stat values',
+  'stats.label': 'Stat labels',
+  'stats.icon': 'Stat icons',
+  feature_cards: 'Feature cards',
+  'cards.icon': 'Card icons',
+  'cards.title': 'Card titles',
+  'cards.description': 'Card descriptions',
+  image: 'Image',
+  mobile_image: 'Mobile image',
+  background_media: 'Background media',
+  alt_text: 'Alt text',
+  focus_position: 'Focus position',
+  crop_fit: 'Crop mode',
+  overlay_opacity: 'Overlay',
+  overlay_effects: 'Overlay effects',
+  brightness: 'Brightness',
+  contrast: 'Contrast',
+  vignette: 'Vignette',
+  grain: 'Grain',
+  text_width: 'Text width',
+  text_position: 'Text position',
+  padding: 'Padding',
+  gap: 'Gap',
+  max_width: 'Max width',
+  section_height: 'Section height',
+  text_alignment: 'Alignment',
+  image_radius: 'Image radius',
+  shadow: 'Shadow',
+  card_shadow: 'Card shadow',
+  icon_style: 'Icon style',
+  primary_text: 'Primary button text',
+  primary_link: 'Primary button link',
+  secondary_text: 'Secondary button text',
+  secondary_link: 'Secondary button link',
+  button_text: 'Button text',
+  button_link: 'Button link',
+  submit_text: 'Submit text',
+}
+
+function formatControlLabel(field: string) {
+  return fieldLabels[field] || field.replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function getControlState(section: MediaStudioV2Section): MediaStudioV2ControlState {
+  return section.componentMapping.status === 'reusable' ? 'preview-only' : 'needs-extraction'
+}
+
+function makeControls(section: MediaStudioV2Section, fields: string[], control: MediaStudioV2InspectorControl['control']) {
+  const state = getControlState(section)
+
+  return fields.map((field) => ({
+    id: field,
+    label: formatControlLabel(field),
+    description: state === 'preview-only'
+      ? 'Read-only preview control. Local draft editing is planned after component parity.'
+      : 'Needs component extraction before this control can be wired safely.',
+    control,
+    state,
+  }))
+}
+
+export function getMediaStudioV2InspectorControls(section: MediaStudioV2Section, tab: MediaStudioV2InspectorTab): MediaStudioV2InspectorControl[] {
+  if (tab === 'Content') {
+    return makeControls(section, [...section.editableTextFields, ...section.ctaFields], 'text')
+  }
+
+  if (tab === 'Media') {
+    return makeControls(section, section.editableMediaFields, 'media')
+  }
+
+  if (tab === 'Style') {
+    return makeControls(section, section.styleEffectFields.filter((field) => !layoutFieldIds.has(field)), 'slider')
+  }
+
+  if (tab === 'Layout') {
+    return makeControls(section, section.styleEffectFields.filter((field) => layoutFieldIds.has(field)), 'select')
+  }
+
+  if (tab === 'Animation') {
+    return makeControls(section, ['entrance', 'motion', 'hover', 'enabled'], 'toggle')
+  }
+
+  return [
+    {
+      id: 'section-key',
+      label: 'Section key',
+      description: 'Current compatibility key for CMS/media lookup.',
+      control: 'info',
+      state: 'read-only',
+      value: section.currentSectionKey || 'New V2 key pending',
+    },
+    {
+      id: 'component',
+      label: 'Component mapping',
+      description: section.componentMapping.status,
+      control: 'info',
+      state: 'read-only',
+      value: section.componentMapping.component,
+    },
+    {
+      id: 'source',
+      label: 'Component source',
+      description: 'Hidden from the default canvas and shown only under Advanced.',
+      control: 'info',
+      state: 'read-only',
+      value: section.componentMapping.sourceFile,
+    },
+    {
+      id: 'fallback',
+      label: 'Fallback status',
+      description: section.componentMapping.notes || 'Fallback remains active until V2 save/render is connected.',
+      control: 'info',
+      state: 'read-only',
+      value: 'Banners compatibility layer',
+    },
+  ]
+}
 
 export function getMediaStudioV2SectionsByPage(page: MediaStudioV2PageId) {
   return MEDIA_STUDIO_V2_SECTIONS

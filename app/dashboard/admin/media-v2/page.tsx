@@ -1,24 +1,33 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
+  ArrowLeft,
   CheckCircle2,
   Clock,
+  ExternalLink,
   Eye,
   EyeOff,
-  GripVertical,
   Info,
   Layers,
   Monitor,
   PanelLeft,
+  Save,
   SlidersHorizontal,
   Smartphone,
   Tablet,
 } from 'lucide-react'
+import { BlogEmptyState, BlogHero } from '@/components/pages/blog'
 import { AboutHero, AboutJourney, AboutStats, AboutValues } from '@/components/pages/about'
+import { ProductsHero } from '@/components/pages/products'
+import { FeaturesPills } from '@/components/home/features-pills'
+import { HeroSection } from '@/components/home/hero-section'
+import { StorySection } from '@/components/home/story-section'
 import {
   MEDIA_STUDIO_V2_CONTROL_TABS,
   MEDIA_STUDIO_V2_PAGES,
+  getMediaStudioV2InspectorControls,
   getMediaStudioV2Page,
   getMediaStudioV2SectionsByPage,
   type MediaStudioV2PageId,
@@ -28,6 +37,7 @@ import { getSectionBuilderContent, getWebsiteSection } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
 type PreviewMode = 'desktop' | 'tablet' | 'mobile'
+type InspectorTab = (typeof MEDIA_STUDIO_V2_CONTROL_TABS)[number]
 
 const previewModes: Array<{ id: PreviewMode; label: string; icon: typeof Monitor }> = [
   { id: 'desktop', label: 'Desktop', icon: Monitor },
@@ -35,47 +45,36 @@ const previewModes: Array<{ id: PreviewMode; label: string; icon: typeof Monitor
   { id: 'mobile', label: 'Mobile', icon: Smartphone },
 ]
 
-const previewWidth: Record<PreviewMode, string> = {
-  desktop: 'w-full',
-  tablet: 'max-w-[720px]',
-  mobile: 'max-w-[390px]',
+const canvasWidths: Record<PreviewMode, string> = {
+  desktop: 'w-full max-w-[1360px]',
+  tablet: 'w-[760px]',
+  mobile: 'w-[390px]',
 }
 
-const extractedAboutPreviewIds = new Set(['about_hero', 'about_legacy_stats', 'about_journey', 'about_values'])
+const renderablePreviewIds = new Set([
+  'home_hero',
+  'home_story',
+  'home_trust_cards',
+  'about_hero',
+  'about_legacy_stats',
+  'about_journey',
+  'about_values',
+  'products_hero',
+  'blog_hero',
+  'blog_empty_state',
+])
 
-const areaLabels = ['Text', 'Media', 'CTA', 'Style', 'Layout', 'Animation'] as const
-
-const inspectorFields = {
-  Content: ['Title', 'Subtitle', 'Body', 'Stats/Cards', 'CTA labels'],
-  Media: ['Image', 'Mobile image', 'Video', 'Alt text', 'Focus position', 'Crop mode'],
-  Style: ['Overlay', 'Brightness', 'Contrast', 'Blur', 'Radius'],
-  Layout: ['Alignment', 'Padding', 'Gap', 'Max width', 'Section height'],
-  Animation: ['Entrance', 'Parallax/motion', 'Hover', 'Enable/disable'],
+const controlStateLabels = {
+  'preview-only': 'Preview only',
+  'read-only': 'Read-only',
+  'local-draft-only': 'Local draft only',
+  'needs-extraction': 'Needs extraction',
 } as const
 
-function formatField(value: string) {
-  return value
-    .replace(/[._-]+/g, ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
-}
-
-function PillList({ title, fields, formatFields = true }: { title: string; fields: string[]; formatFields?: boolean }) {
-  return (
-    <div className="rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/70">{title}</p>
-      {fields.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {fields.map((field) => (
-            <span key={field} className="rounded-md border border-white/8 bg-white/[0.04] px-2 py-1 text-[11px] text-[#F5E6D8]/70">
-              {formatFields ? formatField(field) : field}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-white/32">None</p>
-      )}
-    </div>
-  )
+function controlStateClassName(state: keyof typeof controlStateLabels) {
+  if (state === 'needs-extraction') return 'border-[#FFDCC2]/16 bg-[#FFDCC2]/8 text-[#FFDCC2]/68'
+  if (state === 'local-draft-only') return 'border-[#D6A373]/20 bg-[#D6A373]/10 text-[#FFDCC2]'
+  return 'border-white/8 bg-white/[0.035] text-white/42'
 }
 
 function getSectionStatus(section: MediaStudioV2Section) {
@@ -83,20 +82,20 @@ function getSectionStatus(section: MediaStudioV2Section) {
     return {
       label: 'Ready',
       icon: CheckCircle2,
-      className: 'border-[#D6A373]/25 bg-[#D6A373]/10 text-[#FFDCC2]',
+      className: 'border-[#D6A373]/26 bg-[#D6A373]/10 text-[#FFDCC2]',
     }
   }
 
   if (section.componentMapping.status === 'needs-extraction') {
     return {
-      label: 'Needs component extraction',
+      label: 'Needs extraction',
       icon: Clock,
-      className: 'border-[#FFDCC2]/18 bg-[#FFDCC2]/8 text-[#FFDCC2]/82',
+      className: 'border-[#FFDCC2]/18 bg-[#FFDCC2]/8 text-[#FFDCC2]/78',
     }
   }
 
   return {
-    label: 'Coming soon',
+    label: 'Planned',
     icon: Clock,
     className: 'border-white/10 bg-white/[0.04] text-white/55',
   }
@@ -107,70 +106,77 @@ function StatusBadge({ section }: { section: MediaStudioV2Section }) {
   const Icon = status.icon
 
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold', status.className)}>
-      <Icon className="h-3.5 w-3.5" />
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold', status.className)}>
+      <Icon className="h-3 w-3" />
       {status.label}
     </span>
   )
 }
 
-function AreaSummary({ section }: { section: MediaStudioV2Section }) {
-  const counts = {
-    Text: section.editableTextFields.length,
-    Media: section.editableMediaFields.length,
-    CTA: section.ctaFields.length,
-    Style: section.styleEffectFields.filter((field) => !['padding', 'gap', 'text_alignment', 'max_width', 'section_height'].includes(field)).length,
-    Layout: section.styleEffectFields.filter((field) => ['padding', 'gap', 'text_alignment', 'max_width', 'section_height'].includes(field)).length,
-    Animation: section.responsive.supportsOverrides ? 1 : 0,
-  }
-
+function SectionFrame({
+  section,
+  selected,
+  onSelect,
+  children,
+}: {
+  section: MediaStudioV2Section
+  selected: boolean
+  onSelect: () => void
+  children: React.ReactNode
+}) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-      {areaLabels.map((label) => (
-        <div key={label} className="rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
-          <p className="text-sm font-semibold text-[#F5E6D8]/84">{label}</p>
-          <p className="mt-1 text-xs text-[#D6B79A]/56">
-            {counts[label] > 0 ? `${counts[label]} planned area${counts[label] === 1 ? '' : 's'}` : 'No controls planned'}
-          </p>
+    <div
+      id={`media-v2-section-${section.id}`}
+      role="button"
+      tabIndex={0}
+      onClick={(event) => {
+        const target = event.target instanceof Element ? event.target : null
+        if (target?.closest('a')) event.preventDefault()
+        onSelect()
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect()
+        }
+      }}
+      className={cn(
+        'group relative scroll-mt-6 outline-none transition',
+        selected && 'z-10 ring-2 ring-[#D6A373] ring-offset-2 ring-offset-[#080503]',
+      )}
+    >
+      {selected && (
+        <div className="pointer-events-none absolute left-3 top-3 z-30 rounded-full border border-[#D6A373]/28 bg-[#080503]/88 px-3 py-1 text-[11px] font-semibold text-[#FFDCC2] shadow-[0_12px_34px_rgba(0,0,0,0.36)] backdrop-blur">
+          {section.displayName}
         </div>
-      ))}
+      )}
+      {children}
     </div>
   )
 }
 
-function InspectorPanel({ section, activeTab }: {
-  section: MediaStudioV2Section
-  activeTab: (typeof MEDIA_STUDIO_V2_CONTROL_TABS)[number]
-}) {
-  if (activeTab === 'Advanced') {
-    return (
-      <div className="space-y-3">
-        <PillList title="Section key" fields={[section.currentSectionKey || 'New V2 key pending']} formatFields={false} />
-        <PillList title="Component mapping" fields={[section.componentMapping.component, section.componentMapping.status]} formatFields={false} />
-        <PillList title="Source" fields={[section.componentMapping.sourceFile]} formatFields={false} />
-        <PillList title="DB/media source" fields={['banners compatibility layer']} />
-        <PillList title="Fallback status" fields={[section.componentMapping.notes || 'Fallback remains active until V2 save/render is connected']} />
-      </div>
-    )
-  }
+function PlaceholderSection({ section }: { section: MediaStudioV2Section }) {
+  const isHero = section.id.includes('hero')
+  const isForm = section.id.includes('contact_info')
+  const minHeight = isHero ? 'min-h-[430px]' : isForm ? 'min-h-[420px]' : 'min-h-[300px]'
 
   return (
-    <div className="space-y-3">
-      <PillList title={`${activeTab} placeholders`} fields={[...inspectorFields[activeTab]]} />
-      <div className="rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
-        <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/70">
-          <Info className="h-3.5 w-3.5" />
-          Read-only
-        </div>
-        <p className="text-xs leading-relaxed text-[#D6B79A]/58">
-          These controls are placeholders for the selected section. Editing and saving stay disabled until the real component preview is connected.
+    <section className={cn('relative flex items-center justify-center overflow-hidden bg-[#0B0806] px-6 py-16', minHeight)}>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_20%,rgba(214,163,115,0.10),transparent_68%)]" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D6A373]/18 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D6A373]/12 to-transparent" />
+      <div className="relative mx-auto max-w-2xl text-center">
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#D6A373]/72">Preview wiring coming soon</p>
+        <h3 className="font-serif text-3xl font-bold text-[#F5E6D8]">{section.displayName}</h3>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#D6B79A]/64">
+          This section is reserved in the real page flow. Component extraction and live preview wiring will be connected in a later phase.
         </p>
       </div>
-    </div>
+    </section>
   )
 }
 
-function AboutComponentPreview({ section }: { section: MediaStudioV2Section }) {
+function AboutPreviewSection({ section }: { section: MediaStudioV2Section }) {
   const aboutTopSection = getWebsiteSection('about_top')
   const aboutStorySection = getWebsiteSection('about_story')
   const aboutValuesSection = getWebsiteSection('about_values')
@@ -194,42 +200,205 @@ function AboutComponentPreview({ section }: { section: MediaStudioV2Section }) {
     return <AboutValues section={aboutValuesSection} content={aboutValuesContent} />
   }
 
-  return null
+  return <PlaceholderSection section={section} />
+}
+
+function HomePreviewSection({ section }: { section: MediaStudioV2Section }) {
+  if (section.id === 'home_hero') return <HeroSection />
+  if (section.id === 'home_story') return <StorySection />
+  if (section.id === 'home_trust_cards') return <FeaturesPills />
+
+  return <PlaceholderSection section={section} />
+}
+
+function ProductsPreviewSection({ section }: { section: MediaStudioV2Section }) {
+  if (section.id === 'products_hero') return <ProductsHero media={null} previewMode />
+
+  return <PlaceholderSection section={section} />
+}
+
+function BlogPreviewSection({ section }: { section: MediaStudioV2Section }) {
+  const blogSection = getWebsiteSection('blog_page')
+  const blogContent = getSectionBuilderContent(blogSection, null)
+
+  if (section.id === 'blog_hero') return <BlogHero media={null} content={blogContent} standalone />
+  if (section.id === 'blog_empty_state') return <BlogEmptyState />
+
+  return <PlaceholderSection section={section} />
+}
+
+function PreviewSection({ section }: { section: MediaStudioV2Section }) {
+  if (section.page === 'home') return <HomePreviewSection section={section} />
+  if (section.page === 'about') return <AboutPreviewSection section={section} />
+  if (section.page === 'products') return <ProductsPreviewSection section={section} />
+  if (section.page === 'blog') return <BlogPreviewSection section={section} />
+
+  return <PlaceholderSection section={section} />
+}
+
+function CanvasSection({
+  section,
+  selected,
+  onSelect,
+}: {
+  section: MediaStudioV2Section
+  selected: boolean
+  onSelect: () => void
+}) {
+  return (
+    <SectionFrame section={section} selected={selected} onSelect={onSelect}>
+      {renderablePreviewIds.has(section.id) ? <PreviewSection section={section} /> : <PlaceholderSection section={section} />}
+    </SectionFrame>
+  )
+}
+
+function InspectorPanel({ section, activeTab }: {
+  section: MediaStudioV2Section
+  activeTab: InspectorTab
+}) {
+  const controls = getMediaStudioV2InspectorControls(section, activeTab)
+
+  return (
+    <div className="space-y-3">
+      {controls.length > 0 ? controls.map((control) => (
+        <div key={control.id} className="rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-[#F5E6D8]/84">{control.label}</p>
+            <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold', controlStateClassName(control.state))}>
+              {controlStateLabels[control.state]}
+            </span>
+          </div>
+          {control.value && (
+            <p className="mb-2 break-words rounded-md border border-white/8 bg-white/[0.035] px-2 py-1 text-[11px] text-[#F5E6D8]/62">
+              {control.value}
+            </p>
+          )}
+          <p className="text-xs leading-relaxed text-[#D6B79A]/55">{control.description}</p>
+        </div>
+      )) : (
+        <div className="rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
+          <p className="text-sm font-semibold text-[#F5E6D8]/84">No controls planned</p>
+          <p className="mt-1 text-xs leading-relaxed text-[#D6B79A]/55">
+            This tab has no schema fields for the selected section yet.
+          </p>
+        </div>
+      )}
+      <div className="rounded-lg border border-[#D6A373]/12 bg-[#D6A373]/7 p-3">
+        <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/78">
+          <Info className="h-3.5 w-3.5" />
+          Read-only
+        </div>
+        <p className="text-xs leading-relaxed text-[#D6B79A]/58">
+          Controls are placeholders. Editing, uploads, drag/drop, and saving are intentionally disabled in this foundation pass.
+        </p>
+      </div>
+    </div>
+  )
 }
 
 export default function MediaStudioV2Page() {
-  const [activePageId, setActivePageId] = useState<MediaStudioV2PageId>('home')
-  const [activeSectionId, setActiveSectionId] = useState('home_hero')
+  const [selectedPageId, setSelectedPageId] = useState<MediaStudioV2PageId>('home')
+  const [selectedSectionId, setSelectedSectionId] = useState('home_hero')
+  const [selectedElementId, setSelectedElementId] = useState<string | null>('home_hero:section')
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
-  const [activeTab, setActiveTab] = useState<(typeof MEDIA_STUDIO_V2_CONTROL_TABS)[number]>('Content')
+  const [activeInspectorTab, setActiveInspectorTab] = useState<InspectorTab>('Content')
+  const [draftValues] = useState<Record<string, unknown>>({})
 
-  const sections = useMemo(() => getMediaStudioV2SectionsByPage(activePageId), [activePageId])
-  const activePage = getMediaStudioV2Page(activePageId)
-  const activeSection = sections.find((section) => section.id === activeSectionId) ?? sections[0]
-  const componentPreview = activeSection && extractedAboutPreviewIds.has(activeSection.id)
-    ? <AboutComponentPreview section={activeSection} />
-    : null
+  const sections = useMemo(() => getMediaStudioV2SectionsByPage(selectedPageId), [selectedPageId])
+  const selectedPage = getMediaStudioV2Page(selectedPageId)
+  const selectedSection = sections.find((section) => section.id === selectedSectionId) ?? sections[0]
+
+  useEffect(() => {
+    const frame = document.getElementById(`media-v2-section-${selectedSectionId}`)
+    frame?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [selectedPageId, selectedSectionId])
 
   const selectPage = (pageId: MediaStudioV2PageId) => {
     const nextSections = getMediaStudioV2SectionsByPage(pageId)
-    setActivePageId(pageId)
-    setActiveSectionId(nextSections[0]?.id || '')
+    const nextSectionId = nextSections[0]?.id || ''
+
+    setSelectedPageId(pageId)
+    setSelectedSectionId(nextSectionId)
+    setSelectedElementId(nextSectionId ? `${nextSectionId}:section` : null)
+  }
+
+  const selectSection = (sectionId: string) => {
+    setSelectedSectionId(sectionId)
+    setSelectedElementId(`${sectionId}:section`)
+  }
+
+  const editorState = {
+    selectedPageId,
+    selectedSectionId,
+    selectedElementId,
+    previewMode,
+    activeInspectorTab,
+    draftValues,
   }
 
   return (
-    <div className="min-h-screen bg-transparent p-4 text-[#F5E6D8] sm:p-5" dir="ltr">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D6A373]/70">Media Studio V2</p>
-          <h1 className="font-serif text-2xl font-bold text-[#F5E6D8]">Visual Editor Foundation</h1>
+    <div className="flex min-h-[calc(100dvh-4rem)] flex-col bg-transparent text-[#F5E6D8]" dir="ltr" data-editor-state={JSON.stringify(editorState)}>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D6A373]/12 bg-[#080503]/74 px-3 py-3 backdrop-blur-xl sm:px-4">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#D6A373]/68">Media Studio V2</p>
+          <h1 className="truncate font-serif text-xl font-bold text-[#F5E6D8]">Visual CMS</h1>
         </div>
-        <span className="rounded-md border border-[#D6A373]/18 bg-[#D6A373]/8 px-3 py-1.5 text-xs font-semibold text-[#FFDCC2]">
-          Read-only foundation
-        </span>
-      </div>
 
-      <div className="grid gap-4 xl:grid-cols-[270px_minmax(0,1fr)_320px]">
-        <aside className="rounded-lg border border-[#D6A373]/12 bg-[#120D09]/82 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-[#D6A373]/18 bg-[#D6A373]/8 px-3 py-1.5 text-xs font-semibold text-[#FFDCC2]">
+            Read-only foundation
+          </span>
+
+          <div className="flex rounded-lg border border-white/8 bg-black/20 p-1">
+            {previewModes.map((mode) => {
+              const Icon = mode.icon
+              const active = mode.id === previewMode
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => setPreviewMode(mode.id)}
+                  className={cn(
+                    'flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold transition',
+                    active ? 'bg-[#D6A373] text-[#0B0806]' : 'text-white/46 hover:text-white/82',
+                  )}
+                  aria-label={`${mode.label} preview`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{mode.label}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <Link
+            href="/dashboard/admin/banners"
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white/55 transition hover:text-[#F5E6D8]"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Legacy
+          </Link>
+          <Link
+            href={selectedPage.route}
+            target="_blank"
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white/55 transition hover:text-[#F5E6D8]"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Preview website
+          </Link>
+          <button
+            type="button"
+            disabled
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-[#D6A373]/16 bg-[#D6A373]/8 px-3 text-xs font-semibold text-[#FFDCC2]/45"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save soon
+          </button>
+        </div>
+      </header>
+
+      <div className="grid min-h-0 flex-1 gap-3 p-3 xl:grid-cols-[230px_minmax(0,1fr)_280px]">
+        <aside className="min-h-0 rounded-lg border border-[#D6A373]/12 bg-[#120D09]/82 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#FFDCC2]">
             <PanelLeft className="h-4 w-4 text-[#D6A373]" />
             Pages
@@ -237,7 +406,7 @@ export default function MediaStudioV2Page() {
 
           <div className="space-y-1">
             {MEDIA_STUDIO_V2_PAGES.map((page) => {
-              const active = page.id === activePageId
+              const active = page.id === selectedPageId
               return (
                 <button
                   key={page.id}
@@ -247,11 +416,11 @@ export default function MediaStudioV2Page() {
                     'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition',
                     active
                       ? 'border-[#D6A373]/28 bg-[#D6A373]/12 text-[#FFDCC2]'
-                      : 'border-transparent text-white/48 hover:border-white/8 hover:bg-white/[0.035] hover:text-white/78',
+                      : 'border-transparent text-white/50 hover:border-white/8 hover:bg-white/[0.035] hover:text-white/82',
                   )}
                 >
                   <span>{page.displayName}</span>
-                  <span className="text-[11px] text-white/30">{page.route}</span>
+                  <span className="text-[10px] text-white/28">{page.route}</span>
                 </button>
               )
             })}
@@ -261,114 +430,80 @@ export default function MediaStudioV2Page() {
 
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#FFDCC2]">
             <Layers className="h-4 w-4 text-[#D6A373]" />
-            Section Tree
+            Sections
           </div>
 
-          <div className="space-y-2">
+          <div className="max-h-[calc(100dvh-20rem)] space-y-2 overflow-y-auto pr-1">
             {sections.map((section) => {
-              const active = section.id === activeSection.id
-              const status = getSectionStatus(section)
+              const active = section.id === selectedSection?.id
               return (
                 <button
                   key={section.id}
                   type="button"
-                  onClick={() => setActiveSectionId(section.id)}
+                  onClick={() => selectSection(section.id)}
                   className={cn(
-                    'w-full rounded-lg border p-3 text-left transition',
+                    'w-full rounded-lg border p-2.5 text-left transition',
                     active
-                      ? 'border-[#D6A373]/30 bg-[#D6A373]/10'
+                      ? 'border-[#D6A373]/35 bg-[#D6A373]/11'
                       : 'border-white/6 bg-black/14 hover:border-[#D6A373]/18',
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-3.5 w-3.5 text-white/22" />
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5E6D8]/88">
-                      {section.displayName}
-                    </span>
+                  <div className="flex items-start gap-2">
                     {section.visibility.defaultVisible ? (
-                      <Eye className="h-3.5 w-3.5 text-[#D6A373]/80" />
+                      <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D6A373]/76" />
                     ) : (
-                      <EyeOff className="h-3.5 w-3.5 text-white/30" />
+                      <EyeOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/30" />
                     )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[#F5E6D8]/88">{section.displayName}</p>
+                      <div className="mt-1">
+                        <StatusBadge section={section} />
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-1 truncate text-[11px] text-white/34">{status.label}</p>
                 </button>
               )
             })}
           </div>
         </aside>
 
-        <main className="min-w-0 rounded-lg border border-[#D6A373]/12 bg-[#0B0806]/72 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-white/38">{activePage.displayName}</p>
-              <h2 className="font-serif text-xl font-bold text-[#F5E6D8]">{activeSection.displayName}</h2>
+        <main className="min-h-0 min-w-0 rounded-lg border border-[#D6A373]/12 bg-[#080503]/82 shadow-[0_22px_80px_rgba(0,0,0,0.30)]">
+          <div className="flex items-center justify-between gap-3 border-b border-[#D6A373]/10 px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#D6A373]/62">Canvas</p>
+              <p className="truncate text-sm font-semibold text-[#F5E6D8]/84">{selectedPage.displayName} preview</p>
             </div>
-            <div className="flex rounded-lg border border-white/8 bg-black/20 p-1">
-              {previewModes.map((mode) => {
-                const Icon = mode.icon
-                const active = mode.id === previewMode
-                return (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => setPreviewMode(mode.id)}
-                    aria-label={mode.label}
-                    className={cn(
-                      'flex h-8 w-8 items-center justify-center rounded-md transition',
-                      active ? 'bg-[#D6A373] text-[#0B0806]' : 'text-white/42 hover:text-white/80',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                )
-              })}
-            </div>
+            {selectedSection && <StatusBadge section={selectedSection} />}
           </div>
 
-          <div className="flex min-h-[520px] items-start justify-center overflow-auto rounded-lg border border-white/8 bg-[#080503] p-3">
-            <div className={cn('min-h-[490px] rounded-lg border border-[#D6A373]/16 bg-[#120D09] transition-all', previewWidth[previewMode])}>
-              <div className="border-b border-[#D6A373]/12 p-4">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <StatusBadge section={activeSection} />
-                  <span className="rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] font-semibold text-white/48">
-                    Read-only foundation
-                  </span>
-                </div>
-                <p className="text-xs text-white/38">{activePage.displayName}</p>
-                <h3 className="mt-1 font-serif text-2xl font-bold text-[#F5E6D8]">{activeSection.displayName}</h3>
-                <p className="max-w-2xl text-sm leading-relaxed text-[#D6B79A]/72">{activeSection.description}</p>
-              </div>
-
-              <div className="space-y-4 p-4">
-                <div>
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/70">Editable areas summary</p>
-                  <AreaSummary section={activeSection} />
+          <div className="h-[calc(100dvh-12.5rem)] overflow-auto bg-[#050302] p-4">
+            <div className="mx-auto min-w-0 transition-all duration-300">
+              <div className={cn('mx-auto overflow-hidden rounded-lg border border-[#D6A373]/14 bg-[#0B0806] shadow-[0_28px_110px_rgba(0,0,0,0.46)]', canvasWidths[previewMode])}>
+                <div className="flex items-center justify-between border-b border-[#D6A373]/10 bg-[#0B0806] px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#D6A373]/55" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#D6A373]/28" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/12" />
+                  </div>
+                  <p className="text-[11px] text-white/34">{selectedPage.route}</p>
                 </div>
 
-                {componentPreview ? (
-                  <div className="overflow-hidden rounded-lg border border-[#D6A373]/16 bg-[#0B0806]">
-                    <div className="border-b border-[#D6A373]/12 bg-black/24 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#D6A373]/72">
-                      Component preview foundation
-                    </div>
-                    {componentPreview}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed border-[#D6A373]/20 bg-[#0B0806]/70 p-5">
-                    <div className="mx-auto max-w-xl text-center">
-                      <p className="font-serif text-xl font-bold text-[#F5E6D8]">Preview canvas placeholder</p>
-                      <p className="mt-2 text-sm leading-relaxed text-[#D6B79A]/62">
-                        Extracted About sections now render with shared components. Other page previews will be connected in the next phase.
-                      </p>
-                    </div>
-                  </div>
-                )}
+                <div className="max-h-[calc(100dvh-17rem)] overflow-y-auto overflow-x-hidden bg-[#0B0806]">
+                  {sections.map((section) => (
+                    <CanvasSection
+                      key={section.id}
+                      section={section}
+                      selected={section.id === selectedSection?.id}
+                      onSelect={() => selectSection(section.id)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </main>
 
-        <aside className="rounded-lg border border-[#D6A373]/12 bg-[#120D09]/82 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+        <aside className="min-h-0 rounded-lg border border-[#D6A373]/12 bg-[#120D09]/82 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#FFDCC2]">
             <SlidersHorizontal className="h-4 w-4 text-[#D6A373]" />
             Inspector
@@ -379,10 +514,10 @@ export default function MediaStudioV2Page() {
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveInspectorTab(tab)}
                 className={cn(
                   'rounded-md px-2 py-1.5 text-xs font-semibold transition',
-                  activeTab === tab ? 'bg-[#D6A373] text-[#0B0806]' : 'text-white/42 hover:text-white/78',
+                  activeInspectorTab === tab ? 'bg-[#D6A373] text-[#0B0806]' : 'text-white/42 hover:text-white/78',
                 )}
               >
                 {tab}
@@ -390,7 +525,18 @@ export default function MediaStudioV2Page() {
             ))}
           </div>
 
-          <InspectorPanel section={activeSection} activeTab={activeTab} />
+          {selectedSection ? (
+            <div className="max-h-[calc(100dvh-17rem)] overflow-y-auto pr-1">
+              <div className="mb-3 rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
+                <p className="text-xs text-white/35">{selectedPage.displayName}</p>
+                <h2 className="mt-1 font-serif text-lg font-bold text-[#F5E6D8]">{selectedSection.displayName}</h2>
+                <p className="mt-2 text-xs leading-relaxed text-[#D6B79A]/56">{selectedSection.description}</p>
+              </div>
+              <InspectorPanel section={selectedSection} activeTab={activeInspectorTab} />
+            </div>
+          ) : (
+            <p className="text-sm text-white/38">Select a section to inspect it.</p>
+          )}
         </aside>
       </div>
     </div>
