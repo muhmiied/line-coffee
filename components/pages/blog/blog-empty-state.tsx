@@ -3,19 +3,12 @@
 import { FileText } from 'lucide-react'
 import { useLanguage } from '@/lib/context/language'
 
-type BlogEmptyStateProps = {
-  previewOverrides?: {
-    title?: string
-    body?: string
-  }
-}
-
-export function BlogEmptyState({ previewOverrides }: BlogEmptyStateProps) {
+export function BlogEmptyState() {
   const { t } = useLanguage()
-  const titleEn = previewOverrides?.title ?? 'Coffee notes are being prepared'
-  const titleAr = previewOverrides?.title ?? 'نحضر ملاحظات القهوة'
-  const bodyEn = previewOverrides?.body ?? 'Guides, Line Coffee updates, and brewing notes will appear here once published.'
-  const bodyAr = previewOverrides?.body ?? 'ستظهر هنا الإرشادات وتحديثات لاين كوفي وملاحظات التحضير بعد نشرها.'
+  const titleEn = 'Coffee notes are being prepared'
+  const titleAr = 'نحضر ملاحظات القهوة'
+  const bodyEn = 'Guides, Line Coffee updates, and brewing notes will appear here once published.'
+  const bodyAr = 'ستظهر هنا الإرشادات وتحديثات لاين كوفي وملاحظات التحضير بعد نشرها.'
 
   return (
     <div className="py-24 text-center">

@@ -16,26 +16,20 @@ import { useLanguage } from '@/lib/context/language'
 type BlogHeroProps = {
   media: SiteMediaItem | null
   content: SectionBuilderContent
-  standalone?: boolean
-  previewOverrides?: {
-    eyebrow?: string
-    title?: string
-    subtitle?: string
-  }
 }
 
-export function BlogHero({ media, content, standalone = false, previewOverrides }: BlogHeroProps) {
+export function BlogHero({ media, content }: BlogHeroProps) {
   const { t } = useLanguage()
   const bgFx = getVisualEffects(media)
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = media ? getMediaOverlayOpacity(media, 0.78) : 0.78
   const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
-  const eyebrowEn = previewOverrides?.eyebrow ?? content.eyebrow_en ?? 'Coffee Journal'
-  const eyebrowAr = previewOverrides?.eyebrow ?? content.eyebrow_ar ?? 'مجلة القهوة'
-  const titleEn = previewOverrides?.title ?? content.title_en ?? 'Blog'
-  const titleAr = previewOverrides?.title ?? content.title_ar ?? 'المدونة'
-  const subtitleEn = previewOverrides?.subtitle ?? content.subtitle_en ?? 'Coffee stories, brewing guides & more'
-  const subtitleAr = previewOverrides?.subtitle ?? content.subtitle_ar ?? 'قصص القهوة، أدلة التحضير والمزيد'
+  const eyebrowEn = content.eyebrow_en ?? 'Coffee Journal'
+  const eyebrowAr = content.eyebrow_ar ?? 'مجلة القهوة'
+  const titleEn = content.title_en ?? 'Blog'
+  const titleAr = content.title_ar ?? 'المدونة'
+  const subtitleEn = content.subtitle_en ?? 'Coffee stories, brewing guides & more'
+  const subtitleAr = content.subtitle_ar ?? 'قصص القهوة، أدلة التحضير والمزيد'
 
   const hero = (
     <>
@@ -74,11 +68,5 @@ export function BlogHero({ media, content, standalone = false, previewOverrides 
     </>
   )
 
-  if (!standalone) return hero
-
-  return (
-    <section className="relative min-h-[360px] overflow-hidden bg-[#0B0806] py-14 md:py-24">
-      {hero}
-    </section>
-  )
+  return hero
 }

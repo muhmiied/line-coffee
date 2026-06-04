@@ -4,30 +4,21 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/lib/context/language'
 import { getMediaObjectPosition, getMediaOverlayOpacity, type SiteMediaItem } from '@/lib/media'
-import { cn } from '@/lib/utils'
 
 type ProductsHeroProps = {
   media: SiteMediaItem | null
-  previewMode?: boolean
-  previewOverrides?: {
-    title?: string
-    subtitle?: string
-  }
 }
 
-export function ProductsHero({ media, previewMode = false, previewOverrides }: ProductsHeroProps) {
+export function ProductsHero({ media }: ProductsHeroProps) {
   const { t, language } = useLanguage()
-  const titleEn = previewOverrides?.title ?? media?.title_en ?? 'Our Products'
-  const titleAr = previewOverrides?.title ?? media?.title_ar ?? media?.title_en ?? 'منتجاتنا'
-  const subtitleEn = previewOverrides?.subtitle ?? media?.subtitle_en ?? 'Discover our carefully curated selection of premium coffee.'
-  const subtitleAr = previewOverrides?.subtitle ?? media?.subtitle_ar ?? media?.subtitle_en ?? 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.'
+  const titleEn = media?.title_en ?? 'Our Products'
+  const titleAr = media?.title_ar ?? media?.title_en ?? 'منتجاتنا'
+  const subtitleEn = media?.subtitle_en ?? 'Discover our carefully curated selection of premium coffee.'
+  const subtitleAr = media?.subtitle_ar ?? media?.subtitle_en ?? 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.'
 
   return (
     <div
-      className={cn(
-        'relative flex h-[45vh] min-h-[320px] items-center justify-center',
-        previewMode ? 'pt-0' : '-mt-20 pt-20 md:-mt-24 md:pt-24',
-      )}
+      className="relative flex h-[45vh] min-h-[320px] items-center justify-center -mt-20 pt-20 md:-mt-24 md:pt-24"
       style={{ background: '#0B0806' }}
     >
       <Image
@@ -36,7 +27,7 @@ export function ProductsHero({ media, previewMode = false, previewOverrides }: P
         fill
         className="object-cover brightness-[0.58] contrast-[1.14] saturate-[1.08]"
         style={{ objectPosition: media ? getMediaObjectPosition(media) : 'center center' }}
-        priority={!previewMode}
+        priority
       />
       <div className="absolute inset-0 bg-black" style={{ opacity: media ? getMediaOverlayOpacity(media, 0.6) : 0.6 }} />
       <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />

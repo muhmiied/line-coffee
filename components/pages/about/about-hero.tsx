@@ -4,24 +4,19 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/lib/context/language'
 import { getMediaObjectPosition, type SectionBuilderContent, type SiteMediaItem, type WebsiteSectionConfig } from '@/lib/media'
-import { cn } from '@/lib/utils'
 
 type AboutHeroProps = {
   section: WebsiteSectionConfig
   content: SectionBuilderContent
   media: SiteMediaItem | null
-  previewMode?: boolean
 }
 
-export function AboutHero({ section, content, media, previewMode = false }: AboutHeroProps) {
+export function AboutHero({ section, content, media }: AboutHeroProps) {
   const { t } = useLanguage()
 
   return (
     <div
-      className={cn(
-        'relative flex h-[55vh] min-h-[420px] items-center justify-center',
-        previewMode ? 'mt-0 pt-0' : '-mt-20 pt-20 md:-mt-24 md:pt-24',
-      )}
+      className="relative flex h-[55vh] min-h-[420px] items-center justify-center -mt-20 pt-20 md:-mt-24 md:pt-24"
       style={{ background: '#0B0806' }}
     >
       <Image
@@ -31,7 +26,7 @@ export function AboutHero({ section, content, media, previewMode = false }: Abou
         sizes="100vw"
         className="object-cover"
         style={{ objectPosition: media ? getMediaObjectPosition(media) : 'center center' }}
-        priority={!previewMode}
+        priority
       />
       <div className="absolute inset-0 bg-black/60" />
       <div className="absolute inset-0 bg-gradient-to-br from-[#0B0806]/70 via-transparent to-[#120D09]/50 mix-blend-multiply" />

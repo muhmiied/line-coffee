@@ -1,7 +1,6 @@
 'use client'
 
 import { ChangeEvent, useEffect, useMemo, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import Link from 'next/link'
 import {
   ArrowDown,
   ArrowLeft,
@@ -990,13 +989,6 @@ export default function MediaStudioPage() {
           <p className="mt-1 text-sm text-[#D6B79A]/55">{t('Manage every visual section from one clean workspace.', 'تحكم في كل أقسام الموقع المرئية من مساحة عمل واحدة.')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/dashboard/admin/media-v2"
-            className="flex h-10 items-center gap-2 rounded-xl border border-[#D6A373]/24 bg-[#D6A373]/10 px-4 text-sm font-bold text-[#FFDCC2] transition hover:border-[#D6A373]/40 hover:bg-[#D6A373]/14"
-          >
-            <Sparkles className="h-4 w-4" />
-            {t('Open Media Studio V2', 'افتح استوديو الوسائط V2')}
-          </Link>
           <button type="button" onClick={load} disabled={loading} className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm font-bold text-white/62 transition hover:text-white disabled:opacity-50">
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
             {t('Refresh', 'تحديث')}
