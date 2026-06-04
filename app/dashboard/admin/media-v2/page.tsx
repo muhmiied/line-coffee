@@ -19,7 +19,7 @@ import {
   Tablet,
 } from 'lucide-react'
 import { BlogEmptyState, BlogHero } from '@/components/pages/blog'
-import { AboutHero, AboutJourney, AboutStats, AboutValues } from '@/components/pages/about'
+import { AboutHero, AboutJourney, AboutStats, AboutValues, DEFAULT_ABOUT_STATS, type AboutStat } from '@/components/pages/about'
 import { ProductsHero } from '@/components/pages/products'
 import { FeaturesPills } from '@/components/home/features-pills'
 import { HeroSection } from '@/components/home/hero-section'
@@ -33,11 +33,13 @@ import {
   type MediaStudioV2PageId,
   type MediaStudioV2Section,
 } from '@/lib/media-studio-v2/registry'
-import { getSectionBuilderContent, getWebsiteSection } from '@/lib/media'
+import { getSectionBuilderContent, getWebsiteSection, type SectionBuilderContent } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
 type PreviewMode = 'desktop' | 'tablet' | 'mobile'
 type InspectorTab = (typeof MEDIA_STUDIO_V2_CONTROL_TABS)[number]
+type SectionDraftValues = Record<string, string>
+type DraftValuesBySection = Record<string, SectionDraftValues>
 
 const previewModes: Array<{ id: PreviewMode; label: string; icon: typeof Monitor }> = [
   { id: 'desktop', label: 'Desktop', icon: Monitor },
@@ -75,6 +77,90 @@ function controlStateClassName(state: keyof typeof controlStateLabels) {
   if (state === 'needs-extraction') return 'border-[#FFDCC2]/16 bg-[#FFDCC2]/8 text-[#FFDCC2]/68'
   if (state === 'local-draft-only') return 'border-[#D6A373]/20 bg-[#D6A373]/10 text-[#FFDCC2]'
   return 'border-white/8 bg-white/[0.035] text-white/42'
+}
+
+function getDraftValue(draft: SectionDraftValues, fieldId: string) {
+  return Object.prototype.hasOwnProperty.call(draft, fieldId) ? draft[fieldId] : undefined
+}
+
+function getSectionBaseContent(section: MediaStudioV2Section) {
+  if (!section.currentSectionKey) return null
+  const websiteSection = getWebsiteSection(section.currentSectionKey)
+  return getSectionBuilderContent(websiteSection, null)
+}
+
+function withContentDrafts(content: SectionBuilderContent, draft: SectionDraftValues): SectionBuilderContent {
+  const next: SectionBuilderContent = { ...content }
+
+  ;(['eyebrow', 'title', 'subtitle', 'body'] as const).forEach((field) => {
+    const value = getDraftValue(draft, field)
+    if (value === undefined) return
+    next[`${field}_en`] = value
+    next[`${field}_ar`] = value
+  })
+
+  if (content.features?.length) {
+    next.features = content.features.map((feature, index) => {
+      const cardNumber = index + 1
+      const title = getDraftValue(draft, `card_${cardNumber}_title`)
+      const body = getDraftValue(draft, `card_${cardNumber}_body`)
+
+      return {
+        ...feature,
+        ...(title !== undefined ? { title_en: title, title_ar: title } : {}),
+        ...(body !== undefined ? { description_en: body, description_ar: body } : {}),
+      }
+    })
+  }
+
+  return next
+}
+
+function withStatsDrafts(stats: AboutStat[], draft: SectionDraftValues): AboutStat[] {
+  return stats.map((stat, index) => {
+    const statNumber = index + 1
+    const value = getDraftValue(draft, `stat_${statNumber}_value`)
+    const label = getDraftValue(draft, `stat_${statNumber}_label`)
+
+    return {
+      ...stat,
+      ...(value !== undefined ? { valueEn: value, valueAr: value } : {}),
+      ...(label !== undefined ? { labelEn: label, labelAr: label } : {}),
+    }
+  })
+}
+
+function getDraftDefaultValue(section: MediaStudioV2Section, fieldId: string) {
+  if (section.id === 'blog_empty_state') {
+    if (fieldId === 'title') return 'Coffee notes are being prepared'
+    if (fieldId === 'body') return 'Guides, Line Coffee updates, and brewing notes will appear here once published.'
+  }
+
+  if (section.id === 'about_legacy_stats') {
+    const match = fieldId.match(/^stat_(\d+)_(value|label)$/)
+    if (!match) return ''
+
+    const stat = DEFAULT_ABOUT_STATS[Number(match[1]) - 1]
+    if (!stat) return ''
+    return match[2] === 'value' ? stat.valueEn : stat.labelEn
+  }
+
+  const content = getSectionBaseContent(section)
+  if (!content) return ''
+
+  if (fieldId === 'eyebrow') return content.eyebrow_en || ''
+  if (fieldId === 'title') return content.title_en || ''
+  if (fieldId === 'subtitle') return content.subtitle_en || ''
+  if (fieldId === 'body') return content.body_en || content.subtitle_en || ''
+
+  const cardMatch = fieldId.match(/^card_(\d+)_(title|body)$/)
+  if (cardMatch) {
+    const card = content.features?.[Number(cardMatch[1]) - 1]
+    if (!card) return ''
+    return cardMatch[2] === 'title' ? card.title_en : card.description_en || ''
+  }
+
+  return ''
 }
 
 function getSectionStatus(section: MediaStudioV2Section) {
@@ -176,20 +262,20 @@ function PlaceholderSection({ section }: { section: MediaStudioV2Section }) {
   )
 }
 
-function AboutPreviewSection({ section }: { section: MediaStudioV2Section }) {
+function AboutPreviewSection({ section, draftValues }: { section: MediaStudioV2Section; draftValues: SectionDraftValues }) {
   const aboutTopSection = getWebsiteSection('about_top')
   const aboutStorySection = getWebsiteSection('about_story')
   const aboutValuesSection = getWebsiteSection('about_values')
-  const aboutTopContent = getSectionBuilderContent(aboutTopSection, null)
-  const aboutStoryContent = getSectionBuilderContent(aboutStorySection, null)
-  const aboutValuesContent = getSectionBuilderContent(aboutValuesSection, null)
+  const aboutTopContent = withContentDrafts(getSectionBuilderContent(aboutTopSection, null), draftValues)
+  const aboutStoryContent = withContentDrafts(getSectionBuilderContent(aboutStorySection, null), draftValues)
+  const aboutValuesContent = withContentDrafts(getSectionBuilderContent(aboutValuesSection, null), draftValues)
 
   if (section.id === 'about_hero') {
     return <AboutHero section={aboutTopSection} content={aboutTopContent} media={null} previewMode />
   }
 
   if (section.id === 'about_legacy_stats') {
-    return <AboutStats />
+    return <AboutStats stats={withStatsDrafts(DEFAULT_ABOUT_STATS, draftValues)} />
   }
 
   if (section.id === 'about_journey') {
@@ -211,27 +297,45 @@ function HomePreviewSection({ section }: { section: MediaStudioV2Section }) {
   return <PlaceholderSection section={section} />
 }
 
-function ProductsPreviewSection({ section }: { section: MediaStudioV2Section }) {
-  if (section.id === 'products_hero') return <ProductsHero media={null} previewMode />
+function ProductsPreviewSection({ section, draftValues }: { section: MediaStudioV2Section; draftValues: SectionDraftValues }) {
+  if (section.id === 'products_hero') {
+    return <ProductsHero media={null} previewMode previewOverrides={{ title: getDraftValue(draftValues, 'title'), subtitle: getDraftValue(draftValues, 'subtitle') }} />
+  }
 
   return <PlaceholderSection section={section} />
 }
 
-function BlogPreviewSection({ section }: { section: MediaStudioV2Section }) {
+function BlogPreviewSection({ section, draftValues }: { section: MediaStudioV2Section; draftValues: SectionDraftValues }) {
   const blogSection = getWebsiteSection('blog_page')
   const blogContent = getSectionBuilderContent(blogSection, null)
 
-  if (section.id === 'blog_hero') return <BlogHero media={null} content={blogContent} standalone />
-  if (section.id === 'blog_empty_state') return <BlogEmptyState />
+  if (section.id === 'blog_hero') {
+    return (
+      <BlogHero
+        media={null}
+        content={blogContent}
+        standalone
+        previewOverrides={{
+          eyebrow: getDraftValue(draftValues, 'eyebrow'),
+          title: getDraftValue(draftValues, 'title'),
+          subtitle: getDraftValue(draftValues, 'subtitle'),
+        }}
+      />
+    )
+  }
+
+  if (section.id === 'blog_empty_state') {
+    return <BlogEmptyState previewOverrides={{ title: getDraftValue(draftValues, 'title'), body: getDraftValue(draftValues, 'body') }} />
+  }
 
   return <PlaceholderSection section={section} />
 }
 
-function PreviewSection({ section }: { section: MediaStudioV2Section }) {
+function PreviewSection({ section, draftValues }: { section: MediaStudioV2Section; draftValues: SectionDraftValues }) {
   if (section.page === 'home') return <HomePreviewSection section={section} />
-  if (section.page === 'about') return <AboutPreviewSection section={section} />
-  if (section.page === 'products') return <ProductsPreviewSection section={section} />
-  if (section.page === 'blog') return <BlogPreviewSection section={section} />
+  if (section.page === 'about') return <AboutPreviewSection section={section} draftValues={draftValues} />
+  if (section.page === 'products') return <ProductsPreviewSection section={section} draftValues={draftValues} />
+  if (section.page === 'blog') return <BlogPreviewSection section={section} draftValues={draftValues} />
 
   return <PlaceholderSection section={section} />
 }
@@ -240,21 +344,26 @@ function CanvasSection({
   section,
   selected,
   onSelect,
+  draftValues,
 }: {
   section: MediaStudioV2Section
   selected: boolean
   onSelect: () => void
+  draftValues: SectionDraftValues
 }) {
   return (
     <SectionFrame section={section} selected={selected} onSelect={onSelect}>
-      {renderablePreviewIds.has(section.id) ? <PreviewSection section={section} /> : <PlaceholderSection section={section} />}
+      {renderablePreviewIds.has(section.id) ? <PreviewSection section={section} draftValues={draftValues} /> : <PlaceholderSection section={section} />}
     </SectionFrame>
   )
 }
 
-function InspectorPanel({ section, activeTab }: {
+function InspectorPanel({ section, activeTab, draftValues, onDraftChange, onSelectElement }: {
   section: MediaStudioV2Section
   activeTab: InspectorTab
+  draftValues: SectionDraftValues
+  onDraftChange: (fieldId: string, value: string) => void
+  onSelectElement: (fieldId: string) => void
 }) {
   const controls = getMediaStudioV2InspectorControls(section, activeTab)
 
@@ -273,7 +382,40 @@ function InspectorPanel({ section, activeTab }: {
               {control.value}
             </p>
           )}
-          <p className="text-xs leading-relaxed text-[#D6B79A]/55">{control.description}</p>
+          {activeTab === 'Content' && control.state === 'local-draft-only' ? (
+            <div className="space-y-2">
+              {control.control === 'textarea' ? (
+                <textarea
+                  aria-label={control.label}
+                  value={getDraftValue(draftValues, control.id) ?? getDraftDefaultValue(section, control.id)}
+                  onChange={(event) => onDraftChange(control.id, event.target.value)}
+                  onFocus={() => onSelectElement(control.id)}
+                  rows={4}
+                  className="min-h-24 w-full resize-y rounded-lg border border-[#D6A373]/14 bg-[#080503]/80 px-3 py-2 text-sm leading-relaxed text-[#F5E6D8] outline-none transition placeholder:text-white/24 focus:border-[#D6A373]/45"
+                />
+              ) : (
+                <input
+                  aria-label={control.label}
+                  value={getDraftValue(draftValues, control.id) ?? getDraftDefaultValue(section, control.id)}
+                  onChange={(event) => onDraftChange(control.id, event.target.value)}
+                  onFocus={() => onSelectElement(control.id)}
+                  className="h-9 w-full rounded-lg border border-[#D6A373]/14 bg-[#080503]/80 px-3 text-sm text-[#F5E6D8] outline-none transition placeholder:text-white/24 focus:border-[#D6A373]/45"
+                />
+              )}
+              <p className="text-xs leading-relaxed text-[#D6B79A]/55">{control.description}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs leading-relaxed text-[#D6B79A]/55">{control.description}</p>
+              {activeTab === 'Content' && (
+                <input
+                  disabled
+                  value="Coming soon"
+                  className="h-9 w-full rounded-lg border border-white/8 bg-white/[0.025] px-3 text-sm text-white/28"
+                />
+              )}
+            </div>
+          )}
         </div>
       )) : (
         <div className="rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
@@ -289,7 +431,7 @@ function InspectorPanel({ section, activeTab }: {
           Read-only
         </div>
         <p className="text-xs leading-relaxed text-[#D6B79A]/58">
-          Controls are placeholders. Editing, uploads, drag/drop, and saving are intentionally disabled in this foundation pass.
+          Content inputs update this preview locally only. Uploads, drag/drop, database writes, and saving are intentionally disabled.
         </p>
       </div>
     </div>
@@ -302,11 +444,13 @@ export default function MediaStudioV2Page() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>('home_hero:section')
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
   const [activeInspectorTab, setActiveInspectorTab] = useState<InspectorTab>('Content')
-  const [draftValues] = useState<Record<string, unknown>>({})
+  const [draftValues, setDraftValues] = useState<DraftValuesBySection>({})
 
   const sections = useMemo(() => getMediaStudioV2SectionsByPage(selectedPageId), [selectedPageId])
   const selectedPage = getMediaStudioV2Page(selectedPageId)
   const selectedSection = sections.find((section) => section.id === selectedSectionId) ?? sections[0]
+  const selectedDraftValues = selectedSection ? draftValues[selectedSection.id] || {} : {}
+  const hasSelectedDraftValues = Object.keys(selectedDraftValues).length > 0
 
   useEffect(() => {
     const frame = document.getElementById(`media-v2-section-${selectedSectionId}`)
@@ -325,6 +469,27 @@ export default function MediaStudioV2Page() {
   const selectSection = (sectionId: string) => {
     setSelectedSectionId(sectionId)
     setSelectedElementId(`${sectionId}:section`)
+  }
+
+  const updateDraftValue = (sectionId: string, fieldId: string, value: string) => {
+    setDraftValues((current) => ({
+      ...current,
+      [sectionId]: {
+        ...(current[sectionId] || {}),
+        [fieldId]: value,
+      },
+    }))
+    setSelectedElementId(`${sectionId}:${fieldId}`)
+  }
+
+  const resetSelectedDraft = () => {
+    if (!selectedSection) return
+    setDraftValues((current) => {
+      const next = { ...current }
+      delete next[selectedSection.id]
+      return next
+    })
+    setSelectedElementId(`${selectedSection.id}:section`)
   }
 
   const editorState = {
@@ -495,6 +660,7 @@ export default function MediaStudioV2Page() {
                       section={section}
                       selected={section.id === selectedSection?.id}
                       onSelect={() => selectSection(section.id)}
+                      draftValues={draftValues[section.id] || {}}
                     />
                   ))}
                 </div>
@@ -528,11 +694,35 @@ export default function MediaStudioV2Page() {
           {selectedSection ? (
             <div className="max-h-[calc(100dvh-17rem)] overflow-y-auto pr-1">
               <div className="mb-3 rounded-lg border border-[#D6A373]/12 bg-black/18 p-3">
-                <p className="text-xs text-white/35">{selectedPage.displayName}</p>
-                <h2 className="mt-1 font-serif text-lg font-bold text-[#F5E6D8]">{selectedSection.displayName}</h2>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <p className="text-xs text-white/35">{selectedPage.displayName}</p>
+                  {selectedSection.localDraftFields?.length ? (
+                    <span className="rounded-full border border-[#D6A373]/18 bg-[#D6A373]/8 px-2 py-0.5 text-[10px] font-semibold text-[#FFDCC2]">
+                      Local draft only - not saved yet
+                    </span>
+                  ) : null}
+                </div>
+                <h2 className="font-serif text-lg font-bold text-[#F5E6D8]">{selectedSection.displayName}</h2>
                 <p className="mt-2 text-xs leading-relaxed text-[#D6B79A]/56">{selectedSection.description}</p>
+                <div className="mt-3 rounded-md border border-white/8 bg-white/[0.03] px-2 py-1.5 text-[11px] text-white/42">
+                  Selected: <span className="text-[#FFDCC2]/72">{selectedElementId || 'section'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetSelectedDraft}
+                  disabled={!hasSelectedDraftValues}
+                  className="mt-3 h-8 w-full rounded-lg border border-[#D6A373]/14 bg-[#D6A373]/8 text-xs font-semibold text-[#FFDCC2]/70 transition hover:border-[#D6A373]/28 hover:text-[#FFDCC2] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.025] disabled:text-white/24"
+                >
+                  Reset local draft
+                </button>
               </div>
-              <InspectorPanel section={selectedSection} activeTab={activeInspectorTab} />
+              <InspectorPanel
+                section={selectedSection}
+                activeTab={activeInspectorTab}
+                draftValues={selectedDraftValues}
+                onDraftChange={(fieldId, value) => updateDraftValue(selectedSection.id, fieldId, value)}
+                onSelectElement={(fieldId) => setSelectedElementId(`${selectedSection.id}:${fieldId}`)}
+              />
             </div>
           ) : (
             <p className="text-sm text-white/38">Select a section to inspect it.</p>

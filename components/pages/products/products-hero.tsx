@@ -9,10 +9,18 @@ import { cn } from '@/lib/utils'
 type ProductsHeroProps = {
   media: SiteMediaItem | null
   previewMode?: boolean
+  previewOverrides?: {
+    title?: string
+    subtitle?: string
+  }
 }
 
-export function ProductsHero({ media, previewMode = false }: ProductsHeroProps) {
+export function ProductsHero({ media, previewMode = false, previewOverrides }: ProductsHeroProps) {
   const { t, language } = useLanguage()
+  const titleEn = previewOverrides?.title ?? media?.title_en ?? 'Our Products'
+  const titleAr = previewOverrides?.title ?? media?.title_ar ?? media?.title_en ?? 'منتجاتنا'
+  const subtitleEn = previewOverrides?.subtitle ?? media?.subtitle_en ?? 'Discover our carefully curated selection of premium coffee.'
+  const subtitleAr = previewOverrides?.subtitle ?? media?.subtitle_ar ?? media?.subtitle_en ?? 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.'
 
   return (
     <div
@@ -42,7 +50,7 @@ export function ProductsHero({ media, previewMode = false }: ProductsHeroProps) 
           animate={{ opacity: 1, y: 0 }}
           className="mb-4 font-serif text-4xl font-bold md:text-5xl lg:text-6xl"
         >
-          {t(media?.title_en || 'Our Products', media?.title_ar || media?.title_en || 'منتجاتنا')}
+          {t(titleEn, titleAr)}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -50,10 +58,7 @@ export function ProductsHero({ media, previewMode = false }: ProductsHeroProps) 
           transition={{ delay: 0.1 }}
           className="mx-auto max-w-2xl text-lg text-white/90 md:text-xl"
         >
-          {t(
-            media?.subtitle_en || 'Discover our carefully curated selection of premium coffee.',
-            media?.subtitle_ar || media?.subtitle_en || 'اكتشف مجموعتنا المنتقاة من القهوة الفاخرة.',
-          )}
+          {t(subtitleEn, subtitleAr)}
         </motion.p>
       </div>
     </div>

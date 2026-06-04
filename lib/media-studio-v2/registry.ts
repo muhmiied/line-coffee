@@ -2,6 +2,7 @@ export type MediaStudioV2PageId = 'home' | 'about' | 'products' | 'blog' | 'cont
 
 export type MediaStudioV2MappingStatus = 'reusable' | 'needs-extraction' | 'composite'
 export type MediaStudioV2ControlState = 'preview-only' | 'read-only' | 'local-draft-only' | 'needs-extraction'
+export type MediaStudioV2DraftControl = 'text' | 'textarea'
 
 export type MediaStudioV2Page = {
   id: MediaStudioV2PageId
@@ -23,6 +24,7 @@ export type MediaStudioV2Section = {
     notes?: string
   }
   editableTextFields: string[]
+  localDraftFields?: MediaStudioV2DraftField[]
   editableMediaFields: string[]
   ctaFields: string[]
   styleEffectFields: string[]
@@ -39,6 +41,13 @@ export type MediaStudioV2Section = {
 }
 
 export type MediaStudioV2InspectorTab = (typeof MEDIA_STUDIO_V2_CONTROL_TABS)[number]
+
+export type MediaStudioV2DraftField = {
+  id: string
+  label: string
+  control: MediaStudioV2DraftControl
+  description?: string
+}
 
 export type MediaStudioV2InspectorControl = {
   id: string
@@ -132,6 +141,11 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Shared by the public About page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['eyebrow', 'title', 'subtitle'],
+    localDraftFields: [
+      { id: 'eyebrow', label: 'Eyebrow', control: 'text' },
+      { id: 'title', label: 'Title', control: 'text' },
+      { id: 'subtitle', label: 'Subtitle', control: 'textarea' },
+    ],
     editableMediaFields: ['image', 'alt_text', 'focus_position', 'overlay_opacity'],
     ctaFields: [],
     styleEffectFields: ['section_height', 'padding', 'gradient', 'vignette'],
@@ -152,6 +166,16 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Shared by the public About page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['stats.value', 'stats.label', 'stats.icon'],
+    localDraftFields: [
+      { id: 'stat_1_value', label: 'Stat 1 Value', control: 'text' },
+      { id: 'stat_1_label', label: 'Stat 1 Label', control: 'text' },
+      { id: 'stat_2_value', label: 'Stat 2 Value', control: 'text' },
+      { id: 'stat_2_label', label: 'Stat 2 Label', control: 'text' },
+      { id: 'stat_3_value', label: 'Stat 3 Value', control: 'text' },
+      { id: 'stat_3_label', label: 'Stat 3 Label', control: 'text' },
+      { id: 'stat_4_value', label: 'Stat 4 Value', control: 'text' },
+      { id: 'stat_4_label', label: 'Stat 4 Label', control: 'text' },
+    ],
     editableMediaFields: [],
     ctaFields: [],
     styleEffectFields: ['padding', 'gap', 'icon_style'],
@@ -173,6 +197,11 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Shared by the public About page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['eyebrow', 'title', 'body'],
+    localDraftFields: [
+      { id: 'eyebrow', label: 'Eyebrow', control: 'text' },
+      { id: 'title', label: 'Title', control: 'text' },
+      { id: 'body', label: 'Body', control: 'textarea' },
+    ],
     editableMediaFields: ['image', 'alt_text', 'focus_position'],
     ctaFields: [],
     styleEffectFields: ['padding', 'gap', 'image_radius', 'shadow'],
@@ -194,6 +223,17 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Shared by the public About page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['eyebrow', 'title', 'subtitle', 'cards.title', 'cards.description'],
+    localDraftFields: [
+      { id: 'eyebrow', label: 'Eyebrow', control: 'text' },
+      { id: 'title', label: 'Title', control: 'text' },
+      { id: 'subtitle', label: 'Subtitle', control: 'textarea' },
+      { id: 'card_1_title', label: 'Card 1 Title', control: 'text' },
+      { id: 'card_1_body', label: 'Card 1 Body', control: 'textarea' },
+      { id: 'card_2_title', label: 'Card 2 Title', control: 'text' },
+      { id: 'card_2_body', label: 'Card 2 Body', control: 'textarea' },
+      { id: 'card_3_title', label: 'Card 3 Title', control: 'text' },
+      { id: 'card_3_body', label: 'Card 3 Body', control: 'textarea' },
+    ],
     editableMediaFields: [],
     ctaFields: [],
     styleEffectFields: ['padding', 'gap', 'card_shadow', 'text_alignment'],
@@ -215,6 +255,10 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Shared by the public Products page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['title', 'subtitle'],
+    localDraftFields: [
+      { id: 'title', label: 'Title', control: 'text' },
+      { id: 'subtitle', label: 'Subtitle', control: 'textarea' },
+    ],
     editableMediaFields: ['image', 'alt_text', 'focus_position', 'overlay_opacity'],
     ctaFields: [],
     styleEffectFields: ['section_height', 'gradient', 'vignette'],
@@ -236,6 +280,11 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Shared by the public Blog page and Media Studio V2 preview foundation.',
     },
     editableTextFields: ['eyebrow', 'title', 'subtitle'],
+    localDraftFields: [
+      { id: 'eyebrow', label: 'Eyebrow', control: 'text' },
+      { id: 'title', label: 'Title', control: 'text' },
+      { id: 'subtitle', label: 'Subtitle', control: 'textarea' },
+    ],
     editableMediaFields: ['image', 'alt_text', 'focus_position', 'overlay_effects'],
     ctaFields: [],
     styleEffectFields: ['padding', 'max_width', 'text_alignment'],
@@ -257,6 +306,10 @@ export const MEDIA_STUDIO_V2_SECTIONS: MediaStudioV2Section[] = [
       notes: 'Public page only shows this state when no posts exist; V2 can preview it directly.',
     },
     editableTextFields: ['title', 'body', 'icon_label'],
+    localDraftFields: [
+      { id: 'title', label: 'Title', control: 'text' },
+      { id: 'body', label: 'Body', control: 'textarea' },
+    ],
     editableMediaFields: [],
     ctaFields: [],
     styleEffectFields: ['padding', 'icon_style', 'text_alignment'],
@@ -388,6 +441,16 @@ function makeControls(section: MediaStudioV2Section, fields: string[], control: 
 
 export function getMediaStudioV2InspectorControls(section: MediaStudioV2Section, tab: MediaStudioV2InspectorTab): MediaStudioV2InspectorControl[] {
   if (tab === 'Content') {
+    if (section.localDraftFields?.length) {
+      return section.localDraftFields.map((field) => ({
+        id: field.id,
+        label: field.label,
+        description: field.description || 'Updates the V2 preview locally only. Nothing is saved yet.',
+        control: field.control,
+        state: 'local-draft-only',
+      }))
+    }
+
     return makeControls(section, [...section.editableTextFields, ...section.ctaFields], 'text')
   }
 

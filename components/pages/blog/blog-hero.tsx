@@ -17,14 +17,25 @@ type BlogHeroProps = {
   media: SiteMediaItem | null
   content: SectionBuilderContent
   standalone?: boolean
+  previewOverrides?: {
+    eyebrow?: string
+    title?: string
+    subtitle?: string
+  }
 }
 
-export function BlogHero({ media, content, standalone = false }: BlogHeroProps) {
+export function BlogHero({ media, content, standalone = false, previewOverrides }: BlogHeroProps) {
   const { t } = useLanguage()
   const bgFx = getVisualEffects(media)
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = media ? getMediaOverlayOpacity(media, 0.78) : 0.78
   const bgOverlay = buildOverlayGradient(bgFx.gradient_type, bgFx.overlay_color, overlayOpacity)
+  const eyebrowEn = previewOverrides?.eyebrow ?? content.eyebrow_en ?? 'Coffee Journal'
+  const eyebrowAr = previewOverrides?.eyebrow ?? content.eyebrow_ar ?? 'مجلة القهوة'
+  const titleEn = previewOverrides?.title ?? content.title_en ?? 'Blog'
+  const titleAr = previewOverrides?.title ?? content.title_ar ?? 'المدونة'
+  const subtitleEn = previewOverrides?.subtitle ?? content.subtitle_en ?? 'Coffee stories, brewing guides & more'
+  const subtitleAr = previewOverrides?.subtitle ?? content.subtitle_ar ?? 'قصص القهوة، أدلة التحضير والمزيد'
 
   const hero = (
     <>
@@ -50,13 +61,13 @@ export function BlogHero({ media, content, standalone = false }: BlogHeroProps) 
       <div className="container relative z-10 mx-auto max-w-5xl px-4">
         <div className="mb-8 text-center md:mb-12">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-[#D6A373]">
-            {t(content.eyebrow_en || 'Coffee Journal', content.eyebrow_ar || 'مجلة القهوة')}
+            {t(eyebrowEn, eyebrowAr)}
           </p>
           <h1 className="mb-3 font-serif text-3xl font-bold leading-[1.18] text-[#F5E6D8] md:text-5xl">
-            {t(content.title_en || 'Blog', content.title_ar || 'المدونة')}
+            {t(titleEn, titleAr)}
           </h1>
           <p className="text-lg text-[#D6B79A]/72">
-            {t(content.subtitle_en || 'Coffee stories, brewing guides & more', content.subtitle_ar || 'قصص القهوة، أدلة التحضير والمزيد')}
+            {t(subtitleEn, subtitleAr)}
           </p>
         </div>
       </div>
