@@ -428,7 +428,7 @@ function InspectorPanel({ section, activeTab, draftValues, onDraftChange, onSele
       <div className="rounded-lg border border-[#D6A373]/12 bg-[#D6A373]/7 p-3">
         <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#D6A373]/78">
           <Info className="h-3.5 w-3.5" />
-          Read-only
+          Local draft only
         </div>
         <p className="text-xs leading-relaxed text-[#D6B79A]/58">
           Content inputs update this preview locally only. Uploads, drag/drop, database writes, and saving are intentionally disabled.
@@ -451,11 +451,18 @@ export default function MediaStudioV2Page() {
   const selectedSection = sections.find((section) => section.id === selectedSectionId) ?? sections[0]
   const selectedDraftValues = selectedSection ? draftValues[selectedSection.id] || {} : {}
   const hasSelectedDraftValues = Object.keys(selectedDraftValues).length > 0
+  const selectedSectionHasLocalDraft = Boolean(selectedSection?.localDraftFields?.length)
 
   useEffect(() => {
     const frame = document.getElementById(`media-v2-section-${selectedSectionId}`)
     frame?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [selectedPageId, selectedSectionId])
+
+  useEffect(() => {
+    if (selectedSectionHasLocalDraft && activeInspectorTab !== 'Content') {
+      setActiveInspectorTab('Content')
+    }
+  }, [activeInspectorTab, selectedSectionHasLocalDraft, selectedSectionId])
 
   const selectPage = (pageId: MediaStudioV2PageId) => {
     const nextSections = getMediaStudioV2SectionsByPage(pageId)
@@ -464,11 +471,14 @@ export default function MediaStudioV2Page() {
     setSelectedPageId(pageId)
     setSelectedSectionId(nextSectionId)
     setSelectedElementId(nextSectionId ? `${nextSectionId}:section` : null)
+    if (nextSections[0]?.localDraftFields?.length) setActiveInspectorTab('Content')
   }
 
   const selectSection = (sectionId: string) => {
     setSelectedSectionId(sectionId)
     setSelectedElementId(`${sectionId}:section`)
+    const nextSection = sections.find((section) => section.id === sectionId)
+    if (nextSection?.localDraftFields?.length) setActiveInspectorTab('Content')
   }
 
   const updateDraftValue = (sectionId: string, fieldId: string, value: string) => {
@@ -511,7 +521,7 @@ export default function MediaStudioV2Page() {
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-[#D6A373]/18 bg-[#D6A373]/8 px-3 py-1.5 text-xs font-semibold text-[#FFDCC2]">
-            Read-only foundation
+            Local draft only
           </span>
 
           <div className="flex rounded-lg border border-white/8 bg-black/20 p-1">
@@ -621,8 +631,13 @@ export default function MediaStudioV2Page() {
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-[#F5E6D8]/88">{section.displayName}</p>
-                      <div className="mt-1">
+                      <div className="mt-1 flex flex-wrap gap-1.5">
                         <StatusBadge section={section} />
+                        {section.localDraftFields?.length ? (
+                          <span className="inline-flex items-center rounded-full border border-[#D6A373]/20 bg-[#D6A373]/10 px-2 py-0.5 text-[10px] font-semibold text-[#FFDCC2]/78">
+                            Draft inputs
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
