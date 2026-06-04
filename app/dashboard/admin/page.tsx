@@ -208,7 +208,7 @@ export default function AdminOverviewPage() {
 
         <div className="relative flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized className="w-28 sm:w-[170px] h-auto object-contain mb-2 sm:mb-3" />
+            <Image src="/brand/logo-white.svg" alt="Line Coffee" width={170} height={74} unoptimized className="w-28 sm:w-[170px] h-auto object-contain mb-2 sm:mb-3" style={{ height: 'auto' }} />
             <p className="text-white/40 text-xs">{t("Here's what's happening with your store today.", 'إليك ملخص أداء متجرك اليوم')}</p>
           </div>
           <div className="text-right">
@@ -371,8 +371,7 @@ export default function AdminOverviewPage() {
             {loading ? <Sk className="h-44 w-full" /> : (
               <>
                 <div className="relative">
-                  <ResponsiveContainer width={180} height={180}>
-                    <PieChart>
+                  <PieChart width={180} height={180}>
                       <Pie
                         data={customerPieData.every(d => d.value === 0) ? [{ name: '-', value: 1 }] : customerPieData}
                         cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" strokeWidth={0}
@@ -382,8 +381,7 @@ export default function AdminOverviewPage() {
                           : customerPieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)
                         }
                       </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
+                  </PieChart>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <p className="text-white font-bold text-2xl">{data?.customers.total || 0}</p>
                     <p className="text-white/30 text-[10px]">{t('Total', 'إجمالي')}</p>

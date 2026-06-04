@@ -1274,7 +1274,6 @@ function HeroLikeMediaPreview({
     fallback: string,
     patchKey: keyof SectionBuilderContent = key,
   ) => ({
-    key: `${language}-${String(key)}`,
     contentEditable: true,
     suppressContentEditableWarning: true,
     dir: isRtl ? 'rtl' : 'ltr',

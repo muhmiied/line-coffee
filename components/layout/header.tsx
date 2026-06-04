@@ -210,6 +210,8 @@ export function Header() {
                   alt="Line Coffee"
                   fill
                   priority
+                  loading="eager"
+                  sizes="(min-width: 768px) 15rem, (min-width: 640px) 9rem, 7rem"
                   unoptimized
                   className="object-contain object-center"
                 />
