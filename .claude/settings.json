@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(echo \"Exit: $?\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in deps.items\\(\\) if 'supabase' in k.lower\\(\\)]\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in deps.items\\(\\) if 'supabase' in k.lower\\(\\)]\")",
+      "Bash(Get-Content \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\output\\\\LINE_COFFEE_AUDIT_PART1.md\", \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\output\\\\LINE_COFFEE_AUDIT_PART2.md\", \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\output\\\\LINE_COFFEE_AUDIT_PART3.md\", \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\output\\\\LINE_COFFEE_AUDIT_PART4.md\")",
+      "Bash(Set-Content -Encoding utf8 \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\output\\\\LINE_COFFEE_COMPLETE_AUDIT.md\")",
+      "PowerShell(\\(Get-Item \"d:\\\\Graphic\\\\LINE COFFEE\\\\New folder\\\\LINE COFFEE 1\\\\output\\\\LINE_COFFEE_COMPLETE_AUDIT.md\"\\).Length / 1KB)"
     ]
   },
   "enableAllProjectMcpServers": true
