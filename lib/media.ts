@@ -881,6 +881,240 @@ export const MEDIA_STUDIO_SECTION_KEYS = [
 
 type MediaStudioSectionKey = (typeof MEDIA_STUDIO_SECTION_KEYS)[number]
 
+const WEBSITE_SECTION_KEY_ALIASES: Record<string, string> = {
+  features: 'home_features',
+  story: 'about_lower',
+  blog: 'home_blog',
+  instagram: 'home_instagram',
+  contact: 'home_contact',
+}
+
+type HomepageFallbackInput = {
+  key: string
+  usageArea?: string
+  mediaType?: string
+  sectionType?: SectionType
+  editorTemplate?: SectionEditorTemplate
+  labelEn: string
+  fallbackImage: string
+  defaultTitleEn: string
+  defaultSubtitleEn: string
+  defaultButtonTextEn?: string
+  defaultButtonLink?: string
+  supportsSlides?: boolean
+  supportsCta?: boolean
+  minWidth?: number
+  minHeight?: number
+  defaultContent?: SectionBuilderContent
+}
+
+function makeHomepageSectionFallback(input: HomepageFallbackInput): WebsiteSectionConfig {
+  const baseContent: SectionBuilderContent = {
+    eyebrow_en: input.labelEn,
+    eyebrow_ar: input.labelEn,
+    title_en: input.defaultTitleEn,
+    title_ar: input.defaultTitleEn,
+    subtitle_en: input.defaultSubtitleEn,
+    subtitle_ar: input.defaultSubtitleEn,
+  }
+
+  if (input.defaultButtonTextEn) {
+    baseContent.button_text_en = input.defaultButtonTextEn
+    baseContent.button_text_ar = input.defaultButtonTextEn
+  }
+
+  if (input.defaultButtonLink) baseContent.button_link = input.defaultButtonLink
+
+  return {
+    key: input.key,
+    pageKey: 'home',
+    pageLabelEn: 'Homepage',
+    pageLabelAr: 'Homepage',
+    usageArea: input.usageArea || input.key,
+    mediaType: input.mediaType || 'section',
+    sectionType: input.sectionType || 'full_image_banner',
+    editorTemplate: input.editorTemplate || 'generic',
+    labelEn: input.labelEn,
+    labelAr: input.labelEn,
+    descriptionEn: `${input.labelEn} website fallback.`,
+    descriptionAr: `${input.labelEn} website fallback.`,
+    fallbackImage: input.fallbackImage,
+    defaultTitleEn: input.defaultTitleEn,
+    defaultTitleAr: input.defaultTitleEn,
+    defaultSubtitleEn: input.defaultSubtitleEn,
+    defaultSubtitleAr: input.defaultSubtitleEn,
+    defaultButtonTextEn: input.defaultButtonTextEn,
+    defaultButtonTextAr: input.defaultButtonTextEn,
+    defaultButtonLink: input.defaultButtonLink,
+    supportsSlides: input.supportsSlides ?? false,
+    supportsCta: input.supportsCta ?? false,
+    minWidth: input.minWidth || 1600,
+    minHeight: input.minHeight || 800,
+    defaultContent: {
+      ...baseContent,
+      ...(input.defaultContent || {}),
+    },
+  }
+}
+
+const WEBSITE_SECTION_FALLBACKS = [
+  makeHomepageSectionFallback({
+    key: 'hero',
+    mediaType: 'hero',
+    sectionType: 'full_hero',
+    editorTemplate: 'hero',
+    labelEn: 'Hero Section',
+    fallbackImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
+    defaultTitleEn: 'Coffee Crafted for Quiet Luxury',
+    defaultSubtitleEn: 'Selected beans, slow-roasted for depth, warmth, and a finish that lingers beautifully.',
+    defaultButtonTextEn: 'Shop Coffee',
+    defaultButtonLink: '/products',
+    supportsSlides: true,
+    minWidth: 1920,
+    minHeight: 900,
+  }),
+  makeHomepageSectionFallback({
+    key: 'categories',
+    mediaType: 'category',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'cards',
+    labelEn: 'Categories Banner',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=1000&fit=crop',
+    defaultTitleEn: 'Shop by Category',
+    defaultSubtitleEn: 'Browse Line Coffee categories.',
+    supportsSlides: true,
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Browse by Category',
+      eyebrow_ar: 'Browse by Category',
+    },
+  }),
+  makeHomepageSectionFallback({
+    key: 'home_features',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'text_cards',
+    labelEn: 'Feature Pills',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80',
+    defaultTitleEn: 'Crafted for Your Daily Ritual',
+    defaultSubtitleEn: 'Premium quality, fresh roasting, and warm service.',
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Why Line Coffee',
+      eyebrow_ar: 'Why Line Coffee',
+      features: [
+        { id: 'quality', icon: 'shield', title_en: 'Premium Beans', title_ar: 'Premium Beans', description_en: 'Carefully selected coffee with a rich, balanced profile.', description_ar: 'Carefully selected coffee with a rich, balanced profile.', is_active: true },
+        { id: 'fresh', icon: 'coffee', title_en: 'Freshly Packed', title_ar: 'Freshly Packed', description_en: 'Packed with care to preserve aroma and freshness.', description_ar: 'Packed with care to preserve aroma and freshness.', is_active: true },
+        { id: 'service', icon: 'headphones', title_en: 'Made With Care', title_ar: 'Made With Care', description_en: 'A warm coffee experience from order to cup.', description_ar: 'A warm coffee experience from order to cup.', is_active: true },
+      ],
+    },
+  }),
+  makeHomepageSectionFallback({
+    key: 'about_lower',
+    sectionType: 'split_content',
+    editorTemplate: 'story',
+    labelEn: 'Our Story',
+    fallbackImage: '/images/story.jpg',
+    defaultTitleEn: 'A Family Coffee Legacy, Now Online',
+    defaultSubtitleEn: 'Line Coffee grew from cafe supply roots into a direct online coffee brand.',
+    defaultButtonTextEn: 'Learn More About Us',
+    defaultButtonLink: '/about',
+    supportsCta: true,
+    minWidth: 1000,
+    minHeight: 1000,
+    defaultContent: {
+      eyebrow_en: 'Our Story',
+      eyebrow_ar: 'Our Story',
+      body_en: 'Line Coffee began as a family supply business and grew into a direct online coffee brand for customers who want trusted coffee at home.',
+      body_ar: 'Line Coffee began as a family supply business and grew into a direct online coffee brand for customers who want trusted coffee at home.',
+      features: [
+        { id: 'supply', icon: 'leaf', title_en: 'Supply Roots', title_ar: 'Supply Roots', description_en: 'Built first by serving cafes and coffee shops with dependable coffee supply.', description_ar: 'Built first by serving cafes and coffee shops with dependable coffee supply.', is_active: true },
+        { id: 'direct', icon: 'heart', title_en: 'Now Direct to You', title_ar: 'Now Direct to You', description_en: 'The same careful supply mindset now shapes our online customer experience.', description_ar: 'The same careful supply mindset now shapes our online customer experience.', is_active: true },
+      ],
+      stats: [
+        { id: 'since', value: '2015', label_en: 'Family Business', label_ar: 'Family Business', is_active: true },
+      ],
+    },
+  }),
+  makeHomepageSectionFallback({
+    key: 'best_sellers',
+    labelEn: 'Best Sellers',
+    fallbackImage: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1600&q=80',
+    defaultTitleEn: 'Best Sellers',
+    defaultSubtitleEn: 'Customer favorites from Line Coffee.',
+    defaultButtonTextEn: 'View All Best Sellers',
+    defaultButtonLink: '/products?filter=best-seller',
+    supportsCta: true,
+  }),
+  makeHomepageSectionFallback({
+    key: 'home_blog',
+    sectionType: 'multi_card_slider',
+    labelEn: 'Home Blog Section',
+    fallbackImage: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1600&q=80',
+    defaultTitleEn: 'Latest From the Blog',
+    defaultSubtitleEn: 'Stories, guides, and brewing notes.',
+    defaultButtonTextEn: 'Read More',
+    defaultButtonLink: '/blog',
+    supportsCta: true,
+  }),
+  makeHomepageSectionFallback({
+    key: 'testimonials',
+    mediaType: 'testimonial',
+    sectionType: 'testimonial_highlight',
+    editorTemplate: 'text_cards',
+    labelEn: 'Testimonials Section',
+    fallbackImage: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200',
+    defaultTitleEn: 'Loved in Everyday Rituals',
+    defaultSubtitleEn: 'A warm highlight image for customer stories.',
+    minWidth: 1000,
+    minHeight: 700,
+    defaultContent: {
+      eyebrow_en: 'Customer Notes',
+      eyebrow_ar: 'Customer Notes',
+    },
+  }),
+  makeHomepageSectionFallback({
+    key: 'home_instagram',
+    sectionType: 'multi_card_slider',
+    editorTemplate: 'cards',
+    labelEn: 'Instagram Section',
+    fallbackImage: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=1200&q=80',
+    defaultTitleEn: 'Follow the Aroma',
+    defaultSubtitleEn: 'A visual feed for Line Coffee moments.',
+    defaultButtonTextEn: 'Follow Us',
+    defaultButtonLink: '#',
+    supportsSlides: true,
+    supportsCta: true,
+    minWidth: 1000,
+    minHeight: 700,
+  }),
+  makeHomepageSectionFallback({
+    key: 'home_contact',
+    sectionType: 'centered_cta',
+    editorTemplate: 'contact',
+    labelEn: 'Home Contact Section',
+    fallbackImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&q=80',
+    defaultTitleEn: 'Let Us Help You Choose',
+    defaultSubtitleEn: 'Contact us and we will guide you to the right coffee.',
+    defaultButtonTextEn: 'Contact Us',
+    defaultButtonLink: '/contact',
+    supportsCta: true,
+  }),
+]
+
+const WEBSITE_SECTION_FALLBACKS_BY_KEY = new Map<string, WebsiteSectionConfig>()
+
+WEBSITE_SECTION_FALLBACKS.forEach((section) => {
+  WEBSITE_SECTION_FALLBACKS_BY_KEY.set(section.key, section)
+  WEBSITE_SECTION_FALLBACKS_BY_KEY.set(section.usageArea, section)
+})
+
+Object.entries(WEBSITE_SECTION_KEY_ALIASES).forEach(([alias, key]) => {
+  const section = WEBSITE_SECTION_FALLBACKS_BY_KEY.get(key)
+  if (section) WEBSITE_SECTION_FALLBACKS_BY_KEY.set(alias, section)
+})
+
 export const OBJECT_POSITION_OPTIONS = [
   { value: 'center center', labelEn: 'Center', labelAr: 'المنتصف' },
   { value: 'center top', labelEn: 'Top', labelAr: 'أعلى' },
@@ -936,7 +1170,18 @@ export type SiteMediaItem = {
 }
 
 export function getWebsiteSection(key: string | null | undefined) {
-  return WEBSITE_SECTIONS.find((section) => section.key === key || section.usageArea === key) ?? WEBSITE_SECTIONS[0]
+  const lookup = key || 'hero'
+  const canonicalKey = WEBSITE_SECTION_KEY_ALIASES[lookup] || lookup
+
+  return WEBSITE_SECTIONS.find((section) =>
+    section.key === lookup
+    || section.usageArea === lookup
+    || section.key === canonicalKey
+    || section.usageArea === canonicalKey
+  )
+    ?? WEBSITE_SECTION_FALLBACKS_BY_KEY.get(canonicalKey)
+    ?? WEBSITE_SECTION_FALLBACKS_BY_KEY.get(lookup)
+    ?? WEBSITE_SECTION_FALLBACKS_BY_KEY.get('hero')!
 }
 
 export function getWebsitePages() {

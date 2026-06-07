@@ -30,10 +30,52 @@ type Post = {
   created_at: string
 }
 
+const fallbackPosts: Post[] = [
+  {
+    id: 'fallback-brewing',
+    title_ar: 'Simple Brewing Notes',
+    title_en: 'Simple Brewing Notes',
+    slug: 'brewing-notes',
+    cover_image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=900&q=80',
+    content_ar: 'Small coffee notes from Line Coffee for a warmer daily cup.',
+    content_en: 'Small coffee notes from Line Coffee for a warmer daily cup.',
+    excerpt_ar: 'Small coffee notes from Line Coffee for a warmer daily cup.',
+    excerpt_en: 'Small coffee notes from Line Coffee for a warmer daily cup.',
+    published_at: null,
+    created_at: '2025-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'fallback-roast',
+    title_ar: 'Choosing Your Roast',
+    title_en: 'Choosing Your Roast',
+    slug: 'choosing-your-roast',
+    cover_image: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=900&q=80',
+    content_ar: 'A quick guide to matching roast depth with your preferred coffee ritual.',
+    content_en: 'A quick guide to matching roast depth with your preferred coffee ritual.',
+    excerpt_ar: 'A quick guide to matching roast depth with your preferred coffee ritual.',
+    excerpt_en: 'A quick guide to matching roast depth with your preferred coffee ritual.',
+    published_at: null,
+    created_at: '2025-01-02T00:00:00.000Z',
+  },
+  {
+    id: 'fallback-freshness',
+    title_ar: 'Keeping Coffee Fresh',
+    title_en: 'Keeping Coffee Fresh',
+    slug: 'keeping-coffee-fresh',
+    cover_image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=900&q=80',
+    content_ar: 'How careful storage helps preserve aroma, body, and comfort.',
+    content_en: 'How careful storage helps preserve aroma, body, and comfort.',
+    excerpt_ar: 'How careful storage helps preserve aroma, body, and comfort.',
+    excerpt_en: 'How careful storage helps preserve aroma, body, and comfort.',
+    published_at: null,
+    created_at: '2025-01-03T00:00:00.000Z',
+  },
+]
+
 export function BlogSection() {
   const { t, language, dir } = useLanguage()
   const { media: sectionMedia, content: sectionContent } = useSectionContent('home_blog')
-  const [posts, setPosts] = useState<Post[]>([])
+  const [posts, setPosts] = useState<Post[]>(fallbackPosts)
   const bgFx = getVisualEffects(sectionMedia)
   const bgFilter = buildEffectsFilter(bgFx)
   const overlayOpacity = sectionMedia ? getMediaOverlayOpacity(sectionMedia, 0.78) : 0.78
@@ -47,8 +89,6 @@ export function BlogSection() {
       })
       .catch(() => {})
   }, [])
-
-  if (posts.length === 0) return null
 
   return (
     <section className="cinematic-section relative overflow-hidden py-20 md:py-28" style={{ background: '#0F0A07' }}>
@@ -101,11 +141,12 @@ export function BlogSection() {
               ? (post.excerpt_ar || post.content_ar)
               : (post.excerpt_en || post.content_en)
             const date = post.published_at || post.created_at
+            const href = post.id.startsWith('fallback-') ? '/blog' : `/blog/${post.slug}`
 
             return (
               <Link
                 key={post.id}
-                href={`/blog/${post.slug}`}
+                href={href}
                 className="group overflow-hidden rounded-2xl border border-[#B6885E]/14 bg-[#120D09]/72 transition-all duration-300 hover:-translate-y-1 hover:border-[#D6A373]/30"
               >
                 <div className="relative h-44 bg-[#1A120D]">

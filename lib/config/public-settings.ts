@@ -215,7 +215,7 @@ function readHomepageVisibility(rows: PublicSettingsRow[] | null | undefined): R
     if (v && typeof v === 'object' && !Array.isArray(v)) {
       const result: Record<string, boolean> = {}
       for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
-        if (VALID_SECTION_KEYS.includes(k as SectionKey)) result[k] = Boolean(val)
+        if (VALID_SECTION_KEYS.includes(k as SectionKey)) result[k] = val === false ? false : true
       }
       return Object.keys(result).length > 0 ? result : null
     }
@@ -279,6 +279,17 @@ export function withPublicSettingsFallback(value: unknown): PublicSiteSettings {
 
   if (!isRecord(value)) return fallback
 
+  const homepageOrder = (isRecord(value.homepage) && Array.isArray(value.homepage.section_order))
+    ? (value.homepage.section_order as unknown[]).filter((s): s is string => typeof s === 'string' && VALID_SECTION_KEYS.includes(s as SectionKey))
+    : fallback.homepage.section_order
+  const homepageVisibility = (isRecord(value.homepage) && isRecord(value.homepage.section_visibility))
+    ? Object.fromEntries(
+        Object.entries(value.homepage.section_visibility as Record<string, unknown>)
+          .filter(([k]) => VALID_SECTION_KEYS.includes(k as SectionKey))
+          .map(([k, v]) => [k, v === false ? false : true])
+      )
+    : {}
+
   return {
     brand: {
       site_name: getPayloadValue(value.brand, 'site_name', fallback.brand.site_name),
@@ -318,12 +329,8 @@ export function withPublicSettingsFallback(value: unknown): PublicSiteSettings {
       terms_of_use_content: getPayloadValue(value.legal, 'terms_of_use_content', fallback.legal.terms_of_use_content),
     },
     homepage: {
-      section_order: (isRecord(value.homepage) && Array.isArray(value.homepage.section_order))
-        ? (value.homepage.section_order as unknown[]).filter((s): s is string => typeof s === 'string' && VALID_SECTION_KEYS.includes(s as SectionKey))
-        : fallback.homepage.section_order,
-      section_visibility: (isRecord(value.homepage) && isRecord(value.homepage.section_visibility))
-        ? { ...fallback.homepage.section_visibility, ...Object.fromEntries(Object.entries(value.homepage.section_visibility as Record<string, unknown>).map(([k, v]) => [k, Boolean(v)])) }
-        : fallback.homepage.section_visibility,
+      section_order: homepageOrder.length > 0 ? homepageOrder : fallback.homepage.section_order,
+      section_visibility: { ...fallback.homepage.section_visibility, ...homepageVisibility },
     },
   }
 }

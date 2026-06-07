@@ -86,7 +86,7 @@ export async function PATCH(request: NextRequest) {
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         const filtered: Record<string, boolean> = {}
         for (const [sk, sv] of Object.entries(value as Record<string, unknown>)) {
-          if (VALID_SECTION_KEYS.includes(sk as typeof VALID_SECTION_KEYS[number])) filtered[sk] = Boolean(sv)
+          if (VALID_SECTION_KEYS.includes(sk as typeof VALID_SECTION_KEYS[number])) filtered[sk] = sv === false ? false : true
         }
         rows.push({ key, value: JSON.stringify(filtered) })
       }
