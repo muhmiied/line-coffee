@@ -242,7 +242,7 @@ export default function BlogPage() {
           <div>
             <p className="text-sm font-semibold text-amber-400">{t('Blog schema is not ready', 'جدول المدونة غير جاهز')}</p>
             <p className="mt-1 text-xs text-amber-400/70">
-              {t('Run scripts/022_fix_blog_schema.sql in Supabase SQL Editor, then refresh this page.', 'شغّل scripts/022_fix_blog_schema.sql في Supabase SQL Editor ثم حدّث الصفحة.')}
+              {t('Run the latest migrations in supabase/migrations in your Supabase SQL Editor, then refresh this page.', 'شغّل أحدث الـ migrations الموجودة في supabase/migrations في Supabase SQL Editor ثم حدّث الصفحة.')}
             </p>
           </div>
         </div>
